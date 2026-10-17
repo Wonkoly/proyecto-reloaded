@@ -1,0 +1,19 @@
+# Juego original y derivados (material con copyright; se regeneran con el pipeline del README)
+/original/
+/*.zip
+/decompiled/
+/extracted/
+/gamedata/
+
+# Código generado por tools/gml2gd (se regenera)
+/godot/gen/
+
+# Godot
+/godot/.godot/
+*.import
+
+# Herramientas externas y binarios
+/tools/OpenGMK/
+/tools/.venv/
+/tools/Godot_*
+target/

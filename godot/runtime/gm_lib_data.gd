@@ -17,13 +17,13 @@ static func f_round(s: GMInstance, x: Variant) -> float:
 	return rf(x)
 
 static func f_floor(s: GMInstance, x: Variant) -> float:
-	return floorf(x)
+	return floorf(rn(x))
 
 static func f_ceil(s: GMInstance, x: Variant) -> float:
-	return ceilf(x)
+	return ceilf(rn(x))
 
 static func f_abs(s: GMInstance, x: Variant) -> float:
-	return absf(x)
+	return absf(rn(x))
 
 static func f_sign(s: GMInstance, x: Variant) -> float:
 	if x >= EPS:

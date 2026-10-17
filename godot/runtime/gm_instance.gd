@@ -7,15 +7,33 @@ extends RefCounted
 var v: Dictionary = {}
 
 var id: float = 0.0
-var object_index: float = 0.0
+var object_index: float = 0.0:
+	set(val):
+		if object_index != val:
+			GMCore.inst_changed(self, int(object_index))
+			object_index = val
+			GMCore.inst_changed(self, int(val))
 ## Cached GMObject for object_index.
 var obj: GMObject
 ## True once destroyed or deactivated; `with` loops and iterators skip such instances.
-var gone := false
+var gone := false:
+	set(val):
+		if gone != val:
+			gone = val
+			GMCore.inst_changed(self, int(object_index))
 var destroyed := false
 var deactivated := false
-## Whether bbox_* must be recomputed before use.
-var bbox_stale := true
+## Insertion order (identity order for collision grid results).
+var seq := 0
+## Position in the persistent draw order (GM8 keeps it between frames and sorts it stably by depth).
+var draw_pos := 0
+## Whether bbox_* must be recomputed before use. Setting it also tells the collision grids
+## (gm_lib_inst.gd) that this instance's object changed.
+var bbox_stale := true:
+	set(val):
+		bbox_stale = val
+		if val:
+			GMCore.inst_changed(self, int(object_index))
 var _bbox := [0, 0, 0, 0] # left, top, right, bottom
 
 var alarm: Array = [-1.0, -1.0, -1.0, -1.0, -1.0, -1.0, -1.0, -1.0, -1.0, -1.0, -1.0, -1.0]
@@ -72,7 +90,11 @@ var gravity_direction := 270.0
 var solid := false
 var visible := true
 var persistent := false
-var depth := 0.0
+var depth := 0.0:
+	set(val):
+		if depth != val:
+			depth = val
+			GMCore.draw_dirty = true
 
 var sprite_index := -1.0:
 	set(val):

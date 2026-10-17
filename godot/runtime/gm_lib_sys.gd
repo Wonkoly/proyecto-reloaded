@@ -621,6 +621,7 @@ static func f_tile_delete(s: GMInstance, id: Variant) -> float:
 	var td := _tile(id)
 	if not td.is_empty():
 		tiles.erase(td)
+		tiles_dirty = true
 	return 0.0
 
 static func f_tile_set_alpha(s: GMInstance, id: Variant, a: Variant) -> float:
@@ -655,106 +656,151 @@ static func f_script_get_name(s: GMInstance, id: Variant) -> String:
 static func f_script_get_text(s: GMInstance, id: Variant) -> String:
 	return GMAssets.script_raw.get(f_script_get_name(s, id), "")
 
-# ------------------------------------------------------------------ paths (linear/smooth following)
+# ------------------------------------------------------------------ paths (port of OpenGMK's asset/path.rs)
 
-static func _path_point(p: Dictionary, pos: float) -> Vector3:
-	var pts: Array = p.points
-	if pts.is_empty():
-		return Vector3.ZERO
-	if pts.size() == 1:
-		return Vector3(pts[0][0], pts[0][1], pts[0][2])
-	var segs := []
-	var total := 0.0
-	var n := pts.size() if p.closed else pts.size() - 1
-	for i in n:
-		var a: Array = pts[i]
-		var b: Array = pts[(i + 1) % pts.size()]
-		var l := Vector2(b[0] - a[0], b[1] - a[1]).length()
-		segs.append(l)
-		total += l
-	var d := clampf(pos, 0.0, 1.0) * total
-	for i in n:
-		if d <= segs[i] or i == n - 1:
-			var a: Array = pts[i]
-			var b: Array = pts[(i + 1) % pts.size()]
-			var f: float = d / segs[i] if segs[i] > 0.0 else 0.0
-			return Vector3(lerpf(a[0], b[0], f), lerpf(a[1], b[1], f), lerpf(a[2], b[2], f))
-		d -= segs[i]
-	return Vector3(pts[-1][0], pts[-1][1], pts[-1][2])
+## Control nodes [x, y, speed, distance] of a path (smooth paths are subdivided like GM8), cached.
+static func _path_nodes(p: Dictionary) -> Array:
+	if p.has("_nodes"):
+		return p._nodes
+	var nodes := []
+	var push := func(pt: Vector3) -> void:
+		var d := 0.0
+		if not nodes.is_empty():
+			var last: Array = nodes[-1]
+			d = last[3] + Vector2(pt.x - last[0], pt.y - last[1]).length()
+		nodes.append([pt.x, pt.y, pt.z, d])
+	var pts := []
+	for q in p.points:
+		pts.append(Vector3(q[0], q[1], q[2]))
+	if p.get("smooth", false):
+		if not pts.is_empty():
+			if not p.closed:
+				push.call(pts[0])
+			var count: int = pts.size() if p.closed else pts.size() - 2
+			for i in maxi(count, 0):
+				var p0: Vector3 = pts[i % pts.size()]
+				var p1: Vector3 = pts[(i + 1) % pts.size()]
+				var p2: Vector3 = pts[(i + 2) % pts.size()]
+				_path_smooth(push, int(p.get("precision", 4)), (p0 + p1) / 2.0, p1, (p1 + p2) / 2.0)
+			if p.closed:
+				var first: Vector3 = Vector3(nodes[0][0], nodes[0][1], nodes[0][2]) if not nodes.is_empty() else pts[0]
+				push.call(first)
+			else:
+				push.call(pts[-1])
+	else:
+		for q in pts:
+			push.call(q)
+		if p.closed and not pts.is_empty():
+			push.call(pts[0])
+	p._nodes = nodes
+	return nodes
+
+static func _path_smooth(push: Callable, precision: int, a: Vector3, b: Vector3, c: Vector3) -> void:
+	if precision <= 0:
+		return
+	var avg := (a + b + b + c) / 4.0
+	if Vector2(b.x - a.x, b.y - a.y).length() > 4.0:
+		_path_smooth(push, precision - 1, a, (a + b) / 2.0, avg)
+	push.call(avg)
+	if Vector2(c.x - b.x, c.y - b.y).length() > 4.0:
+		_path_smooth(push, precision - 1, avg, (b + c) / 2.0, c)
 
 static func _path_length(p: Dictionary) -> float:
-	var pts: Array = p.points
-	var total := 0.0
-	var n := pts.size() if p.closed else pts.size() - 1
-	for i in n:
-		var a: Array = pts[i]
-		var b: Array = pts[(i + 1) % pts.size()]
-		total += Vector2(b[0] - a[0], b[1] - a[1]).length()
-	return total
+	var n := _path_nodes(p)
+	return n[-1][3] if not n.is_empty() else 0.0
+
+## Point (x, y, speed) at offset 0..1 along the path.
+static func _path_point(p: Dictionary, pos: float) -> Vector3:
+	var nodes := _path_nodes(p)
+	if nodes.is_empty():
+		return Vector3.ZERO
+	if nodes.size() == 1 or pos * nodes[-1][3] <= 0.0:
+		return Vector3(nodes[0][0], nodes[0][1], nodes[0][2])
+	var d: float = pos * nodes[-1][3]
+	for i in nodes.size() - 1:
+		var a: Array = nodes[i]
+		var b: Array = nodes[i + 1]
+		if d >= a[3] and d <= b[3]:
+			var k: float = (d - a[3]) / (b[3] - a[3]) if b[3] > a[3] else 0.0
+			return Vector3(lerpf(a[0], b[0], k), lerpf(a[1], b[1], k), lerpf(a[2], b[2], k))
+	return Vector3(nodes[-1][0], nodes[-1][1], nodes[-1][2])
 
 static func f_path_start(s: GMInstance, path: Variant, sp: Variant, endaction: Variant, absolute: Variant) -> float:
 	var k := ri(path)
-	if k < 0 or k >= GMAssets.paths.size():
+	if k < 0 or k >= GMAssets.paths.size() or _path_length(GMAssets.paths[k]) <= 0.0:
+		s.path_index = float(mini(k, -1))
 		return 0.0
+	var p: Dictionary = GMAssets.paths[k]
 	s.path_index = float(k)
 	s.path_speed = float(sp)
-	s.path_endaction = float(endaction)
-	s.path_position = 0.0
+	s.path_endaction = float(ri(endaction))
+	var forwards := float(sp) >= 0.0
+	s.path_position = 0.0 if forwards else 1.0
+	s.path_positionprevious = s.path_position
 	s.path_scale = 1.0
 	s.path_orientation = 0.0
-	var p: Dictionary = GMAssets.paths[k]
-	var start := _path_point(p, 0.0)
 	if t(absolute):
-		s.path_xstart = start.x
-		s.path_ystart = start.y
+		var start := _path_point(p, 0.0 if forwards else 1.0)
 		s.x = start.x
 		s.y = start.y
-	else:
-		s.path_xstart = s.x - start.x
-		s.path_ystart = s.y - start.y
-		s.path_xstart = s.x
-		s.path_ystart = s.y
-	s.v["@path_abs"] = t(absolute)
-	s.v["@path_origin"] = Vector2(s.x, s.y) - Vector2(start.x, start.y)
+	s.path_xstart = s.x
+	s.path_ystart = s.y
 	return 0.0
 
 static func f_path_end(s: GMInstance) -> float:
 	s.path_index = -1.0
 	return 0.0
 
+## Advances an instance along its path (OpenGMK's apply_speeds). True when the path ended.
 static func path_advance(inst: GMInstance) -> bool:
-	if inst.path_index < 0.0 or inst.path_speed == 0.0:
+	var k := int(inst.path_index)
+	if k < 0 or k >= GMAssets.paths.size() or inst.path_speed == 0.0:
 		return false
-	var p: Dictionary = GMAssets.paths[int(inst.path_index)]
+	var p: Dictionary = GMAssets.paths[k]
 	var length := _path_length(p)
-	if length <= 0.0:
+	if length == 0.0:
 		return false
-	var pt := _path_point(p, inst.path_position)
-	var offset := inst.path_speed * (pt.z / 100.0) / (length * inst.path_scale)
+	var angle := deg_to_rad(inst.path_orientation)
+	var offset := inst.path_speed * (_path_point(p, inst.path_position).z / 100.0) / (length * inst.path_scale)
 	var npos := inst.path_position + offset
 	var ended := false
 	if npos <= 0.0 or npos >= 1.0:
-		ended = true
+		var reversed := npos < 0.0
+		var opposite := npos + 1.0 if reversed else npos - 1.0
 		match int(inst.path_endaction):
-			1, 2:
-				npos = npos - 1.0 if npos >= 1.0 else npos + 1.0
+			1:
+				inst.path_position = opposite
+			2:
+				inst.path_position = opposite
+				var a := _path_point(p, 1.0 if reversed else 0.0)
+				var b := _path_point(p, 0.0 if reversed else 1.0)
+				var size := Vector2(b.x - a.x, b.y - a.y).rotated(angle)
+				inst.path_xstart += size.x * inst.path_scale
+				inst.path_ystart += size.y * inst.path_scale
 			3:
-				inst.path_speed = -inst.path_speed
-				npos = clampf(npos, 0.0, 1.0)
+				inst.path_position = 1.0 - opposite
+				inst.path_speed = absf(inst.path_speed) if reversed else -absf(inst.path_speed)
 			_:
-				npos = clampf(npos, 0.0, 1.0)
+				inst.path_position = 1.0
 				inst.path_index = -1.0
-	inst.path_position = npos
-	var np := _path_point(p, npos)
-	var origin: Vector2 = inst.v.get("@path_origin", Vector2.ZERO)
-	inst.x = origin.x + np.x * inst.path_scale
-	inst.y = origin.y + np.y * inst.path_scale
+		ended = true
+	else:
+		inst.path_position = npos
+	var start := _path_point(p, 0.0)
+	var pt := _path_point(p, inst.path_position)
+	var rel := (Vector2(pt.x - start.x, pt.y - start.y) * inst.path_scale).rotated(angle)
+	var nx := rel.x + inst.path_xstart
+	var ny := rel.y + inst.path_ystart
+	inst.direction = rad_to_deg(atan2(inst.y - ny, nx - inst.x))
+	inst.speed = 0.0
+	inst.x = nx
+	inst.y = ny
 	return ended
 
 # ------------------------------------------------------------------ misc
 
 static func f_sleep(s: GMInstance, ms: Variant) -> float:
-	var m := ri(ms)
+	var m := int(ri(ms) / GMDev.turbo)
 	if m > 0:
 		OS.delay_msec(m)
 	return 0.0

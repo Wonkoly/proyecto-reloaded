@@ -1,6 +1,8 @@
-"""Extracts GM8 constants, functions and built-in variables from OpenGMK's mappings.rs.
+"""Extracts GM8 constants, functions, built-in variables and function argument types from OpenGMK.
 
-Usage: python3 -I gen_builtins.py <OpenGMK/gm8emulator/src/gml/mappings.rs> <out.json>
+Usage: python3 -I gen_builtins.py <OpenGMK/gm8emulator/src/gml/mappings.rs> <out.json> [kernel.rs]
+Argument types come from each kernel function's `expect_args!(args, [int, real, ...])`; GM8 reads a
+string passed as real/int as 0 and a real passed as string as "".
 """
 import json, re, sys
 
@@ -24,6 +26,20 @@ for name, ref in re.findall(r'"([a-z0-9_]+)"\s*=>\s*([^,\n]+),', consts_block):
 
 variables = re.findall(r'\("([a-z0-9_]+)",\s*InstanceVariable::', vars_block)
 functions = re.findall(r'"([a-zA-Z0-9_]+)"\s*=>\s*Function::', funcs_block)
-json.dump({"constants": constants, "variables": variables, "functions": functions},
+
+signatures = {}
+if len(sys.argv) > 3:
+    kernel = open(sys.argv[3]).read()
+    bodies = {}
+    starts = [(m.group(1), m.start()) for m in re.finditer(r"pub fn ([a-z0-9_]+)\(", kernel)]
+    for (name, a), (_, b) in zip(starts, starts[1:] + [("", len(kernel))]):
+        bodies[name] = kernel[a:b]
+    for gml_name, fn in re.findall(r'"([a-zA-Z0-9_]+)"\s*=>\s*Function::\w+\(Game::([a-z0-9_]+)\)', funcs_block):
+        m = re.search(r"expect_args!\(args, \[([a-z, ]*)\]\)", bodies.get(fn, ""))
+        if m:
+            signatures[gml_name] = [t.strip() for t in m.group(1).split(",") if t.strip()]
+
+json.dump({"constants": constants, "variables": variables, "functions": functions, "signatures": signatures},
           open(sys.argv[2], "w"), indent=1)
-print(f"{len(constants)} constants, {len(variables)} variables, {len(functions)} functions")
+print(f"{len(constants)} constants, {len(variables)} variables, {len(functions)} functions, "
+      f"{len(signatures)} signatures")

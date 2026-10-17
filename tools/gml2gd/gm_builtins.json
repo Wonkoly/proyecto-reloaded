@@ -1763,5 +1763,4252 @@
   "d3d_model_ellipsoid",
   "d3d_model_wall",
   "d3d_model_floor"
- ]
+ ],
+ "signatures": {
+  "display_get_width": [],
+  "display_get_height": [],
+  "display_get_colordepth": [],
+  "display_get_frequency": [],
+  "window_set_visible": [
+   "bool"
+  ],
+  "window_get_visible": [],
+  "window_set_fullscreen": [
+   "bool"
+  ],
+  "window_get_fullscreen": [],
+  "window_set_showborder": [
+   "bool"
+  ],
+  "window_get_showborder": [],
+  "window_set_showicons": [
+   "bool"
+  ],
+  "window_get_showicons": [],
+  "window_set_sizeable": [
+   "bool"
+  ],
+  "window_get_sizeable": [],
+  "window_set_caption": [
+   "string"
+  ],
+  "window_get_caption": [],
+  "window_set_cursor": [
+   "int"
+  ],
+  "window_get_cursor": [],
+  "window_set_color": [
+   "int"
+  ],
+  "window_get_color": [],
+  "window_set_position": [
+   "int",
+   "int"
+  ],
+  "window_set_size": [
+   "int",
+   "int"
+  ],
+  "window_get_x": [],
+  "window_get_y": [],
+  "window_get_width": [],
+  "window_get_height": [],
+  "window_get_region_width": [],
+  "window_get_region_height": [],
+  "window_set_region_scale": [
+   "real",
+   "bool"
+  ],
+  "window_get_region_scale": [],
+  "window_mouse_get_x": [],
+  "window_mouse_get_y": [],
+  "set_synchronization": [
+   "bool"
+  ],
+  "set_automatic_draw": [
+   "bool"
+  ],
+  "screen_redraw": [],
+  "screen_refresh": [],
+  "screen_wait_vsync": [],
+  "screen_save": [
+   "string"
+  ],
+  "screen_save_part": [
+   "string",
+   "int",
+   "int",
+   "int",
+   "int"
+  ],
+  "draw_getpixel": [
+   "int",
+   "int"
+  ],
+  "draw_set_color": [
+   "int"
+  ],
+  "draw_set_alpha": [
+   "real"
+  ],
+  "draw_get_color": [],
+  "draw_get_alpha": [],
+  "make_color": [
+   "int",
+   "int",
+   "int"
+  ],
+  "make_color_rgb": [
+   "int",
+   "int",
+   "int"
+  ],
+  "make_color_hsv": [
+   "real",
+   "real",
+   "real"
+  ],
+  "color_get_red": [
+   "int"
+  ],
+  "color_get_green": [
+   "int"
+  ],
+  "color_get_blue": [
+   "int"
+  ],
+  "color_get_hue": [
+   "int"
+  ],
+  "color_get_saturation": [
+   "int"
+  ],
+  "color_get_value": [
+   "int"
+  ],
+  "merge_color": [
+   "int",
+   "int",
+   "real"
+  ],
+  "draw_set_blend_mode": [
+   "int"
+  ],
+  "draw_set_blend_mode_ext": [
+   "int",
+   "int"
+  ],
+  "draw_clear": [
+   "int"
+  ],
+  "draw_clear_alpha": [
+   "int",
+   "real"
+  ],
+  "draw_point": [
+   "real",
+   "real"
+  ],
+  "draw_line": [
+   "real",
+   "real",
+   "real",
+   "real"
+  ],
+  "draw_line_width": [
+   "real",
+   "real",
+   "real",
+   "real",
+   "real"
+  ],
+  "draw_rectangle": [
+   "real",
+   "real",
+   "real",
+   "real",
+   "bool"
+  ],
+  "draw_roundrect": [
+   "real",
+   "real",
+   "real",
+   "real",
+   "bool"
+  ],
+  "draw_triangle": [
+   "real",
+   "real",
+   "real",
+   "real",
+   "real",
+   "real",
+   "bool"
+  ],
+  "draw_circle": [
+   "real",
+   "real",
+   "real",
+   "bool"
+  ],
+  "draw_ellipse": [
+   "real",
+   "real",
+   "real",
+   "real",
+   "bool"
+  ],
+  "draw_arrow": [
+   "real",
+   "real",
+   "real",
+   "real",
+   "real"
+  ],
+  "draw_button": [
+   "real",
+   "real",
+   "real",
+   "real",
+   "bool"
+  ],
+  "draw_healthbar": [
+   "real",
+   "real",
+   "real",
+   "real",
+   "real",
+   "int",
+   "int",
+   "int",
+   "int",
+   "bool",
+   "bool"
+  ],
+  "draw_path": [
+   "int",
+   "real",
+   "real",
+   "bool"
+  ],
+  "draw_point_color": [
+   "real",
+   "real",
+   "int"
+  ],
+  "draw_line_color": [
+   "real",
+   "real",
+   "real",
+   "real",
+   "int",
+   "int"
+  ],
+  "draw_line_width_color": [
+   "real",
+   "real",
+   "real",
+   "real",
+   "real",
+   "int",
+   "int"
+  ],
+  "draw_rectangle_color": [
+   "real",
+   "real",
+   "real",
+   "real",
+   "int",
+   "int",
+   "int",
+   "int",
+   "bool"
+  ],
+  "draw_roundrect_color": [
+   "real",
+   "real",
+   "real",
+   "real",
+   "int",
+   "int",
+   "bool"
+  ],
+  "draw_triangle_color": [
+   "real",
+   "real",
+   "real",
+   "real",
+   "real",
+   "real",
+   "int",
+   "int",
+   "int",
+   "bool"
+  ],
+  "draw_circle_color": [
+   "real",
+   "real",
+   "real",
+   "int",
+   "int",
+   "bool"
+  ],
+  "draw_ellipse_color": [
+   "real",
+   "real",
+   "real",
+   "real",
+   "int",
+   "int",
+   "bool"
+  ],
+  "draw_set_circle_precision": [
+   "int"
+  ],
+  "draw_primitive_begin": [
+   "int"
+  ],
+  "draw_primitive_begin_texture": [
+   "int",
+   "int"
+  ],
+  "draw_primitive_end": [],
+  "draw_vertex": [
+   "real",
+   "real"
+  ],
+  "draw_vertex_color": [
+   "real",
+   "real",
+   "int",
+   "real"
+  ],
+  "draw_vertex_texture": [
+   "real",
+   "real",
+   "real",
+   "real"
+  ],
+  "draw_vertex_texture_color": [
+   "real",
+   "real",
+   "real",
+   "real",
+   "int",
+   "real"
+  ],
+  "sprite_get_texture": [
+   "int",
+   "int"
+  ],
+  "background_get_texture": [
+   "int"
+  ],
+  "texture_exists": [
+   "int"
+  ],
+  "texture_set_interpolation": [
+   "bool"
+  ],
+  "texture_set_blending": [
+   "bool"
+  ],
+  "texture_set_repeat": [
+   "bool"
+  ],
+  "texture_get_width": [
+   "int"
+  ],
+  "texture_get_height": [
+   "int"
+  ],
+  "texture_preload": [
+   "int"
+  ],
+  "texture_set_priority": [
+   "int",
+   "int"
+  ],
+  "draw_set_font": [
+   "int"
+  ],
+  "draw_set_halign": [
+   "int"
+  ],
+  "draw_set_valign": [
+   "int"
+  ],
+  "string_width": [
+   "bytes"
+  ],
+  "string_height": [
+   "bytes"
+  ],
+  "string_width_ext": [
+   "bytes",
+   "int",
+   "int"
+  ],
+  "string_height_ext": [
+   "bytes",
+   "int",
+   "int"
+  ],
+  "draw_text": [
+   "real",
+   "real",
+   "any"
+  ],
+  "draw_text_ext": [
+   "real",
+   "real",
+   "any",
+   "int",
+   "int"
+  ],
+  "draw_text_transformed": [
+   "real",
+   "real",
+   "any",
+   "real",
+   "real",
+   "real"
+  ],
+  "draw_text_ext_transformed": [
+   "real",
+   "real",
+   "any",
+   "int",
+   "int",
+   "real",
+   "real",
+   "real"
+  ],
+  "draw_text_color": [
+   "real",
+   "real",
+   "any",
+   "int",
+   "int",
+   "int",
+   "int",
+   "real"
+  ],
+  "draw_text_transformed_color": [
+   "real",
+   "real",
+   "any",
+   "real",
+   "real",
+   "real",
+   "int",
+   "int",
+   "int",
+   "int",
+   "real"
+  ],
+  "draw_text_ext_color": [
+   "real",
+   "real",
+   "any",
+   "int",
+   "int",
+   "int",
+   "int",
+   "int",
+   "int",
+   "real"
+  ],
+  "draw_text_ext_transformed_color": [
+   "real",
+   "real",
+   "any",
+   "int",
+   "int",
+   "real",
+   "real",
+   "real",
+   "int",
+   "int",
+   "int",
+   "int",
+   "real"
+  ],
+  "draw_self": [],
+  "draw_sprite": [
+   "int",
+   "int",
+   "real",
+   "real"
+  ],
+  "draw_sprite_ext": [
+   "int",
+   "int",
+   "real",
+   "real",
+   "real",
+   "real",
+   "real",
+   "int",
+   "real"
+  ],
+  "draw_sprite_stretched": [
+   "any",
+   "any",
+   "any",
+   "any",
+   "any",
+   "any"
+  ],
+  "draw_sprite_stretched_ext": [
+   "int",
+   "int",
+   "real",
+   "real",
+   "real",
+   "real",
+   "int",
+   "real"
+  ],
+  "draw_sprite_part": [
+   "any",
+   "any",
+   "any",
+   "any",
+   "any",
+   "any",
+   "any",
+   "any"
+  ],
+  "draw_sprite_part_ext": [
+   "int",
+   "int",
+   "real",
+   "real",
+   "real",
+   "real",
+   "real",
+   "real",
+   "real",
+   "real",
+   "int",
+   "real"
+  ],
+  "draw_sprite_tiled": [
+   "any",
+   "any",
+   "any",
+   "any"
+  ],
+  "draw_sprite_tiled_ext": [
+   "int",
+   "int",
+   "real",
+   "real",
+   "real",
+   "real",
+   "int",
+   "real"
+  ],
+  "draw_background": [
+   "any",
+   "any",
+   "any"
+  ],
+  "draw_background_ext": [
+   "int",
+   "real",
+   "real",
+   "real",
+   "real",
+   "real",
+   "int",
+   "real"
+  ],
+  "draw_background_stretched": [
+   "any",
+   "any",
+   "any",
+   "any",
+   "any"
+  ],
+  "draw_background_stretched_ext": [
+   "int",
+   "real",
+   "real",
+   "real",
+   "real",
+   "int",
+   "real"
+  ],
+  "draw_background_part": [
+   "any",
+   "any",
+   "any",
+   "any",
+   "any",
+   "any",
+   "any"
+  ],
+  "draw_background_part_ext": [
+   "int",
+   "real",
+   "real",
+   "real",
+   "real",
+   "real",
+   "real",
+   "real",
+   "real",
+   "int",
+   "real"
+  ],
+  "draw_background_general": [
+   "int",
+   "real",
+   "real",
+   "real",
+   "real",
+   "real",
+   "real",
+   "real",
+   "real",
+   "real",
+   "int",
+   "int",
+   "int",
+   "int",
+   "real"
+  ],
+  "draw_background_tiled": [
+   "any",
+   "any",
+   "any"
+  ],
+  "draw_background_tiled_ext": [
+   "int",
+   "real",
+   "real",
+   "real",
+   "real",
+   "int",
+   "real"
+  ],
+  "tile_get_x": [
+   "int"
+  ],
+  "tile_get_y": [
+   "int"
+  ],
+  "tile_get_left": [
+   "int"
+  ],
+  "tile_get_top": [
+   "int"
+  ],
+  "tile_get_width": [
+   "int"
+  ],
+  "tile_get_height": [
+   "int"
+  ],
+  "tile_get_depth": [
+   "int"
+  ],
+  "tile_get_visible": [
+   "int"
+  ],
+  "tile_get_xscale": [
+   "int"
+  ],
+  "tile_get_yscale": [
+   "int"
+  ],
+  "tile_get_blend": [
+   "int"
+  ],
+  "tile_get_alpha": [
+   "int"
+  ],
+  "tile_get_background": [
+   "int"
+  ],
+  "tile_set_visible": [
+   "int",
+   "bool"
+  ],
+  "tile_set_background": [
+   "int",
+   "int"
+  ],
+  "tile_set_region": [
+   "int",
+   "int",
+   "int",
+   "int",
+   "int"
+  ],
+  "tile_set_position": [
+   "int",
+   "real",
+   "real"
+  ],
+  "tile_set_depth": [
+   "int",
+   "real"
+  ],
+  "tile_set_scale": [
+   "int",
+   "real",
+   "real"
+  ],
+  "tile_set_blend": [
+   "int",
+   "int"
+  ],
+  "tile_set_alpha": [
+   "int",
+   "real"
+  ],
+  "tile_add": [
+   "int",
+   "int",
+   "int",
+   "int",
+   "int",
+   "real",
+   "real",
+   "real"
+  ],
+  "tile_exists": [
+   "int"
+  ],
+  "tile_delete": [
+   "int"
+  ],
+  "tile_layer_hide": [
+   "real"
+  ],
+  "tile_layer_show": [
+   "real"
+  ],
+  "tile_layer_delete": [
+   "real"
+  ],
+  "tile_layer_shift": [
+   "real",
+   "real",
+   "real"
+  ],
+  "tile_layer_find": [
+   "real",
+   "real",
+   "real"
+  ],
+  "tile_layer_delete_at": [
+   "real",
+   "real",
+   "real"
+  ],
+  "tile_layer_depth": [
+   "real",
+   "real"
+  ],
+  "surface_create": [
+   "int",
+   "int"
+  ],
+  "surface_create_ext": [
+   "any",
+   "any"
+  ],
+  "surface_free": [
+   "int"
+  ],
+  "surface_exists": [
+   "int"
+  ],
+  "surface_get_width": [
+   "int"
+  ],
+  "surface_get_height": [
+   "int"
+  ],
+  "surface_get_texture": [
+   "int"
+  ],
+  "surface_set_target": [
+   "int"
+  ],
+  "surface_reset_target": [],
+  "draw_surface": [
+   "any",
+   "any",
+   "any"
+  ],
+  "draw_surface_ext": [
+   "int",
+   "real",
+   "real",
+   "real",
+   "real",
+   "real",
+   "int",
+   "real"
+  ],
+  "draw_surface_stretched": [
+   "int",
+   "any",
+   "any",
+   "real",
+   "real"
+  ],
+  "draw_surface_stretched_ext": [
+   "int",
+   "any",
+   "any",
+   "real",
+   "real",
+   "any",
+   "any"
+  ],
+  "draw_surface_part": [
+   "any",
+   "any",
+   "any",
+   "any",
+   "any",
+   "any",
+   "any"
+  ],
+  "draw_surface_part_ext": [
+   "int",
+   "real",
+   "real",
+   "real",
+   "real",
+   "real",
+   "real",
+   "real",
+   "real",
+   "int",
+   "real"
+  ],
+  "draw_surface_general": [
+   "int",
+   "real",
+   "real",
+   "real",
+   "real",
+   "real",
+   "real",
+   "real",
+   "real",
+   "real",
+   "int",
+   "int",
+   "int",
+   "int",
+   "real"
+  ],
+  "draw_surface_tiled": [
+   "any",
+   "any",
+   "any"
+  ],
+  "draw_surface_tiled_ext": [
+   "int",
+   "real",
+   "real",
+   "real",
+   "real",
+   "int",
+   "real"
+  ],
+  "surface_save": [
+   "int",
+   "string"
+  ],
+  "surface_save_part": [
+   "int",
+   "string",
+   "int",
+   "int",
+   "int",
+   "int"
+  ],
+  "surface_getpixel": [
+   "int",
+   "int",
+   "int"
+  ],
+  "surface_copy": [
+   "int",
+   "int",
+   "int",
+   "int"
+  ],
+  "surface_copy_part": [
+   "int",
+   "int",
+   "int",
+   "int",
+   "int",
+   "int",
+   "int",
+   "int"
+  ],
+  "action_path_old": [
+   "any",
+   "any",
+   "any"
+  ],
+  "action_set_sprite": [
+   "int",
+   "real"
+  ],
+  "action_draw_font": [
+   "any"
+  ],
+  "action_draw_font_old": [
+   "any",
+   "any",
+   "any",
+   "any",
+   "any",
+   "any"
+  ],
+  "action_fill_color": [
+   "any"
+  ],
+  "action_line_color": [
+   "any"
+  ],
+  "action_highscore": [],
+  "action_move": [
+   "bytes",
+   "real"
+  ],
+  "action_set_motion": [
+   "real",
+   "real"
+  ],
+  "action_set_hspeed": [
+   "real"
+  ],
+  "action_set_vspeed": [
+   "real"
+  ],
+  "action_set_gravity": [
+   "real",
+   "real"
+  ],
+  "action_set_friction": [
+   "real"
+  ],
+  "action_move_point": [
+   "real",
+   "real",
+   "real"
+  ],
+  "action_move_to": [
+   "real",
+   "real"
+  ],
+  "action_move_start": [],
+  "action_move_random": [
+   "int",
+   "int"
+  ],
+  "action_snap": [
+   "real",
+   "real"
+  ],
+  "action_wrap": [
+   "int"
+  ],
+  "action_reverse_xdir": [],
+  "action_reverse_ydir": [],
+  "action_move_contact": [
+   "any",
+   "any",
+   "int"
+  ],
+  "action_bounce": [
+   "any",
+   "int"
+  ],
+  "action_path": [
+   "int",
+   "real",
+   "int",
+   "bool"
+  ],
+  "action_path_end": [],
+  "action_path_position": [
+   "real"
+  ],
+  "action_path_speed": [
+   "real"
+  ],
+  "action_linear_step": [
+   "real",
+   "real",
+   "real",
+   "bool"
+  ],
+  "action_potential_step": [
+   "real",
+   "real",
+   "real",
+   "bool"
+  ],
+  "action_kill_object": [],
+  "action_create_object": [
+   "int",
+   "real",
+   "real"
+  ],
+  "action_create_object_motion": [
+   "int",
+   "real",
+   "real",
+   "real",
+   "real"
+  ],
+  "action_create_object_random": [
+   "int",
+   "int",
+   "int",
+   "int",
+   "real",
+   "real"
+  ],
+  "action_change_object": [
+   "int",
+   "bool"
+  ],
+  "action_kill_position": [
+   "any",
+   "any"
+  ],
+  "action_sprite_set": [
+   "int",
+   "real",
+   "real"
+  ],
+  "action_sprite_transform": [
+   "real",
+   "real",
+   "real",
+   "int"
+  ],
+  "action_sprite_color": [
+   "int",
+   "real"
+  ],
+  "action_sound": [
+   "any",
+   "bool"
+  ],
+  "action_end_sound": [
+   "int"
+  ],
+  "action_another_room": [
+   "any",
+   "int"
+  ],
+  "action_current_room": [
+   "int"
+  ],
+  "action_previous_room": [
+   "int"
+  ],
+  "action_next_room": [
+   "int"
+  ],
+  "action_if_previous_room": [],
+  "action_if_next_room": [],
+  "action_set_alarm": [
+   "int",
+   "int"
+  ],
+  "action_sleep": [
+   "any",
+   "bool"
+  ],
+  "action_set_timeline": [
+   "int",
+   "real"
+  ],
+  "action_timeline_set": [
+   "int",
+   "real",
+   "int",
+   "int"
+  ],
+  "action_timeline_start": [],
+  "action_timeline_pause": [],
+  "action_timeline_stop": [],
+  "action_set_timeline_position": [
+   "real"
+  ],
+  "action_set_timeline_speed": [
+   "real"
+  ],
+  "action_message": [
+   "any"
+  ],
+  "action_end_game": [],
+  "action_restart_game": [],
+  "action_save_game": [
+   "string"
+  ],
+  "action_load_game": [
+   "string"
+  ],
+  "action_if_collision": [
+   "real",
+   "real",
+   "bool"
+  ],
+  "action_if": [
+   "any"
+  ],
+  "action_if_number": [
+   "int",
+   "int",
+   "int"
+  ],
+  "action_if_object": [
+   "any",
+   "real",
+   "real"
+  ],
+  "action_if_question": [
+   "any"
+  ],
+  "action_if_dice": [
+   "real"
+  ],
+  "action_if_mouse": [
+   "int"
+  ],
+  "action_if_aligned": [
+   "real",
+   "real"
+  ],
+  "action_execute_script": [
+   "int",
+   "any",
+   "any",
+   "any",
+   "any",
+   "any"
+  ],
+  "action_inherited": [],
+  "action_if_variable": [
+   "any",
+   "any",
+   "int"
+  ],
+  "action_draw_variable": [
+   "any",
+   "real",
+   "real"
+  ],
+  "action_set_score": [
+   "int"
+  ],
+  "action_if_score": [
+   "real",
+   "int"
+  ],
+  "action_draw_score": [
+   "real",
+   "real",
+   "bytes"
+  ],
+  "action_set_life": [
+   "int"
+  ],
+  "action_if_life": [
+   "real",
+   "int"
+  ],
+  "action_draw_life": [
+   "real",
+   "real",
+   "bytes"
+  ],
+  "action_draw_life_images": [
+   "real",
+   "real",
+   "int"
+  ],
+  "action_set_health": [
+   "real"
+  ],
+  "action_if_health": [
+   "real",
+   "int"
+  ],
+  "action_draw_health": [
+   "real",
+   "real",
+   "real",
+   "real",
+   "int",
+   "int"
+  ],
+  "action_set_caption": [
+   "bool",
+   "bytes",
+   "bool",
+   "bytes",
+   "bool",
+   "bytes"
+  ],
+  "action_partsyst_create": [
+   "real"
+  ],
+  "action_partsyst_destroy": [],
+  "action_partsyst_clear": [],
+  "action_parttype_create_old": [
+   "int",
+   "int",
+   "real",
+   "real",
+   "int",
+   "int"
+  ],
+  "action_parttype_create": [
+   "int",
+   "int",
+   "int",
+   "real",
+   "real",
+   "real"
+  ],
+  "action_parttype_color": [
+   "int",
+   "bool",
+   "int",
+   "int",
+   "real",
+   "real"
+  ],
+  "action_parttype_life": [
+   "int",
+   "int",
+   "int"
+  ],
+  "action_parttype_speed": [
+   "int",
+   "real",
+   "real",
+   "real",
+   "real",
+   "real"
+  ],
+  "action_parttype_gravity": [
+   "int",
+   "real",
+   "real"
+  ],
+  "action_parttype_secondary": [
+   "int",
+   "int",
+   "int",
+   "int",
+   "int"
+  ],
+  "action_partemit_create": [
+   "int",
+   "int",
+   "real",
+   "real",
+   "real",
+   "real"
+  ],
+  "action_partemit_destroy": [
+   "int"
+  ],
+  "action_partemit_burst": [
+   "int",
+   "int",
+   "int"
+  ],
+  "action_partemit_stream": [
+   "int",
+   "int",
+   "int"
+  ],
+  "action_set_cursor": [
+   "int",
+   "bool"
+  ],
+  "action_draw_sprite": [
+   "any",
+   "real",
+   "real",
+   "any"
+  ],
+  "action_draw_background": [
+   "any",
+   "any",
+   "any",
+   "bool"
+  ],
+  "action_draw_text": [
+   "any",
+   "real",
+   "real"
+  ],
+  "action_draw_text_transformed": [
+   "any",
+   "real",
+   "real",
+   "any",
+   "any",
+   "any"
+  ],
+  "action_draw_rectangle": [
+   "real",
+   "real",
+   "real",
+   "real",
+   "any"
+  ],
+  "action_draw_gradient_hor": [
+   "any",
+   "any",
+   "any",
+   "any",
+   "any",
+   "any"
+  ],
+  "action_draw_gradient_vert": [
+   "any",
+   "any",
+   "any",
+   "any",
+   "any",
+   "any"
+  ],
+  "action_draw_ellipse": [
+   "any",
+   "any",
+   "any",
+   "any",
+   "any"
+  ],
+  "action_draw_ellipse_gradient": [
+   "any",
+   "any",
+   "any",
+   "any",
+   "any",
+   "any"
+  ],
+  "action_draw_line": [
+   "any",
+   "any",
+   "any",
+   "any"
+  ],
+  "action_draw_arrow": [
+   "any",
+   "any",
+   "any",
+   "any",
+   "any"
+  ],
+  "action_color": [
+   "int"
+  ],
+  "action_font": [
+   "int",
+   "int"
+  ],
+  "action_fullscreen": [
+   "int"
+  ],
+  "action_snapshot": [
+   "string"
+  ],
+  "action_effect": [
+   "any",
+   "real",
+   "real",
+   "any",
+   "any",
+   "bool"
+  ],
+  "is_real": [
+   "any"
+  ],
+  "is_string": [
+   "any"
+  ],
+  "random": [
+   "real"
+  ],
+  "random_range": [
+   "real",
+   "real"
+  ],
+  "irandom": [
+   "int"
+  ],
+  "irandom_range": [
+   "int",
+   "int"
+  ],
+  "random_set_seed": [
+   "int"
+  ],
+  "random_get_seed": [],
+  "randomize": [],
+  "abs": [
+   "real"
+  ],
+  "round": [
+   "real"
+  ],
+  "floor": [
+   "real"
+  ],
+  "ceil": [
+   "real"
+  ],
+  "sign": [
+   "real"
+  ],
+  "frac": [
+   "real"
+  ],
+  "sqrt": [
+   "real"
+  ],
+  "sqr": [
+   "real"
+  ],
+  "exp": [
+   "real"
+  ],
+  "ln": [
+   "real"
+  ],
+  "log2": [
+   "real"
+  ],
+  "log10": [
+   "real"
+  ],
+  "sin": [
+   "real"
+  ],
+  "cos": [
+   "real"
+  ],
+  "tan": [
+   "real"
+  ],
+  "arcsin": [
+   "real"
+  ],
+  "arccos": [
+   "real"
+  ],
+  "arctan": [
+   "real"
+  ],
+  "arctan2": [
+   "real",
+   "real"
+  ],
+  "degtorad": [
+   "real"
+  ],
+  "radtodeg": [
+   "real"
+  ],
+  "power": [
+   "real",
+   "real"
+  ],
+  "logn": [
+   "real",
+   "real"
+  ],
+  "min3": [
+   "any",
+   "any",
+   "any"
+  ],
+  "max3": [
+   "any",
+   "any",
+   "any"
+  ],
+  "clamp": [
+   "real",
+   "real",
+   "real"
+  ],
+  "lerp": [
+   "real",
+   "real",
+   "real"
+  ],
+  "real": [
+   "any"
+  ],
+  "string": [
+   "any"
+  ],
+  "string_format": [
+   "any",
+   "int",
+   "int"
+  ],
+  "ansi_char": [
+   "int"
+  ],
+  "ord": [
+   "bytes"
+  ],
+  "string_length": [
+   "bytes"
+  ],
+  "string_byte_length": [
+   "bytes"
+  ],
+  "string_byte_at": [
+   "bytes",
+   "int"
+  ],
+  "string_pos": [
+   "bytes",
+   "bytes"
+  ],
+  "string_copy": [
+   "bytes",
+   "int",
+   "int"
+  ],
+  "string_char_at": [
+   "bytes",
+   "int"
+  ],
+  "string_delete": [
+   "bytes",
+   "int",
+   "int"
+  ],
+  "string_insert": [
+   "bytes",
+   "bytes",
+   "int"
+  ],
+  "string_lower": [
+   "bytes"
+  ],
+  "string_upper": [
+   "bytes"
+  ],
+  "string_repeat": [
+   "bytes",
+   "real"
+  ],
+  "string_letters": [
+   "string"
+  ],
+  "string_digits": [
+   "string"
+  ],
+  "string_lettersdigits": [
+   "string"
+  ],
+  "string_replace": [
+   "bytes",
+   "bytes",
+   "bytes"
+  ],
+  "string_replace_all": [
+   "bytes",
+   "bytes",
+   "bytes"
+  ],
+  "string_count": [
+   "string",
+   "string"
+  ],
+  "dot_product": [
+   "real",
+   "real",
+   "real",
+   "real"
+  ],
+  "dot_product_3d": [
+   "real",
+   "real",
+   "real",
+   "real",
+   "real",
+   "real"
+  ],
+  "point_distance_3d": [
+   "real",
+   "real",
+   "real",
+   "real",
+   "real",
+   "real"
+  ],
+  "point_distance": [
+   "real",
+   "real",
+   "real",
+   "real"
+  ],
+  "point_direction": [
+   "real",
+   "real",
+   "real",
+   "real"
+  ],
+  "lengthdir_x": [
+   "real",
+   "real"
+  ],
+  "lengthdir_y": [
+   "real",
+   "real"
+  ],
+  "move_random": [
+   "int",
+   "int"
+  ],
+  "place_free": [
+   "real",
+   "real"
+  ],
+  "place_empty": [
+   "real",
+   "real"
+  ],
+  "place_meeting": [
+   "real",
+   "real",
+   "int"
+  ],
+  "place_snapped": [
+   "real",
+   "real"
+  ],
+  "move_snap": [
+   "real",
+   "real"
+  ],
+  "move_towards_point": [
+   "real",
+   "real",
+   "real"
+  ],
+  "move_contact": [
+   "any"
+  ],
+  "move_contact_solid": [
+   "real",
+   "real"
+  ],
+  "move_contact_all": [
+   "real",
+   "real"
+  ],
+  "move_outside_solid": [
+   "real",
+   "real"
+  ],
+  "move_outside_all": [
+   "real",
+   "real"
+  ],
+  "move_bounce": [
+   "int"
+  ],
+  "move_bounce_solid": [
+   "int"
+  ],
+  "move_bounce_all": [
+   "int"
+  ],
+  "move_wrap": [
+   "bool",
+   "bool",
+   "real"
+  ],
+  "motion_set": [
+   "real",
+   "real"
+  ],
+  "motion_add": [
+   "real",
+   "real"
+  ],
+  "distance_to_point": [
+   "real",
+   "real"
+  ],
+  "distance_to_object": [
+   "int"
+  ],
+  "path_start": [
+   "int",
+   "real",
+   "int",
+   "bool"
+  ],
+  "path_end": [],
+  "mp_linear_step": [
+   "real",
+   "real",
+   "real",
+   "bool"
+  ],
+  "mp_linear_path": [
+   "int",
+   "real",
+   "real",
+   "real",
+   "bool"
+  ],
+  "mp_linear_step_object": [
+   "real",
+   "real",
+   "real",
+   "int"
+  ],
+  "mp_potential_settings": [
+   "real",
+   "real",
+   "real",
+   "bool"
+  ],
+  "mp_potential_step": [
+   "real",
+   "real",
+   "real",
+   "bool"
+  ],
+  "mp_potential_step_object": [
+   "real",
+   "real",
+   "real",
+   "int"
+  ],
+  "mp_grid_create": [
+   "int",
+   "int",
+   "int",
+   "int",
+   "int",
+   "int"
+  ],
+  "mp_grid_destroy": [
+   "int"
+  ],
+  "mp_grid_clear_all": [
+   "int"
+  ],
+  "mp_grid_clear_cell": [
+   "int",
+   "int",
+   "int"
+  ],
+  "mp_grid_clear_rectangle": [
+   "int",
+   "int",
+   "int",
+   "int",
+   "int"
+  ],
+  "mp_grid_add_cell": [
+   "int",
+   "int",
+   "int"
+  ],
+  "mp_grid_add_rectangle": [
+   "int",
+   "int",
+   "int",
+   "int",
+   "int"
+  ],
+  "mp_grid_draw": [
+   "int"
+  ],
+  "collision_point": [
+   "real",
+   "real",
+   "int",
+   "bool",
+   "bool"
+  ],
+  "collision_rectangle": [
+   "int",
+   "int",
+   "int",
+   "int",
+   "int",
+   "bool",
+   "bool"
+  ],
+  "collision_circle": [
+   "real",
+   "real",
+   "real",
+   "int",
+   "bool",
+   "bool"
+  ],
+  "collision_ellipse": [
+   "real",
+   "real",
+   "real",
+   "real",
+   "int",
+   "bool",
+   "bool"
+  ],
+  "collision_line": [
+   "real",
+   "real",
+   "real",
+   "real",
+   "int",
+   "bool",
+   "bool"
+  ],
+  "instance_find": [
+   "int",
+   "int"
+  ],
+  "instance_exists": [
+   "int"
+  ],
+  "instance_number": [
+   "int"
+  ],
+  "instance_position": [
+   "real",
+   "real",
+   "int"
+  ],
+  "instance_nearest": [
+   "real",
+   "real",
+   "int"
+  ],
+  "instance_furthest": [
+   "real",
+   "real",
+   "int"
+  ],
+  "instance_place": [
+   "real",
+   "real",
+   "int"
+  ],
+  "instance_create": [
+   "real",
+   "real",
+   "int"
+  ],
+  "instance_copy": [
+   "bool"
+  ],
+  "instance_change": [
+   "int",
+   "bool"
+  ],
+  "instance_destroy": [],
+  "instance_sprite": [
+   "int"
+  ],
+  "position_empty": [
+   "any",
+   "any"
+  ],
+  "position_meeting": [
+   "real",
+   "real",
+   "int"
+  ],
+  "position_destroy": [
+   "real",
+   "real"
+  ],
+  "instance_deactivate_all": [
+   "bool"
+  ],
+  "instance_deactivate_object": [
+   "int"
+  ],
+  "instance_deactivate_region": [
+   "real",
+   "real",
+   "real",
+   "real",
+   "bool",
+   "bool"
+  ],
+  "instance_activate_all": [],
+  "instance_activate_object": [
+   "int"
+  ],
+  "instance_activate_region": [
+   "real",
+   "real",
+   "real",
+   "real",
+   "bool"
+  ],
+  "room_goto": [
+   "int"
+  ],
+  "room_goto_previous": [],
+  "room_goto_next": [],
+  "room_previous": [
+   "int"
+  ],
+  "room_next": [
+   "int"
+  ],
+  "room_restart": [],
+  "game_end": [],
+  "game_restart": [],
+  "game_load": [
+   "string"
+  ],
+  "game_save": [
+   "string"
+  ],
+  "transition_define": [
+   "int",
+   "bytes"
+  ],
+  "transition_exists": [
+   "int"
+  ],
+  "sleep": [
+   "int"
+  ],
+  "YoYo_GetPlatform": [],
+  "YoYo_GetDevice": [],
+  "YoYo_OpenURL": [
+   "any"
+  ],
+  "YoYo_OpenURL_ext": [
+   "any",
+   "any"
+  ],
+  "YoYo_OpenURL_full": [
+   "any",
+   "any",
+   "any"
+  ],
+  "YoYo_GetDomain": [],
+  "YoYo_GetTimer": [],
+  "YoYo_AddVirtualKey": [
+   "any",
+   "any",
+   "any",
+   "any",
+   "any"
+  ],
+  "YoYo_DeleteVirtualKey": [
+   "any"
+  ],
+  "YoYo_ShowVirtualKey": [
+   "any"
+  ],
+  "YoYo_HideVirtualKey": [
+   "any"
+  ],
+  "YoYo_EnableAlphaBlend": [
+   "bool"
+  ],
+  "file_bin_open": [
+   "string",
+   "int"
+  ],
+  "file_bin_rewrite": [
+   "int"
+  ],
+  "file_bin_close": [
+   "int"
+  ],
+  "file_bin_position": [
+   "int"
+  ],
+  "file_bin_size": [
+   "int"
+  ],
+  "file_bin_seek": [
+   "int",
+   "int"
+  ],
+  "file_bin_read_byte": [
+   "int"
+  ],
+  "file_bin_write_byte": [
+   "int",
+   "int"
+  ],
+  "file_text_open_read": [
+   "string"
+  ],
+  "file_text_open_write": [
+   "string"
+  ],
+  "file_text_open_append": [
+   "string"
+  ],
+  "file_text_close": [
+   "int"
+  ],
+  "file_text_read_string": [
+   "int"
+  ],
+  "file_text_read_real": [
+   "int"
+  ],
+  "file_text_readln": [
+   "int"
+  ],
+  "file_text_eof": [
+   "int"
+  ],
+  "file_text_eoln": [
+   "int"
+  ],
+  "file_text_write_string": [
+   "int",
+   "bytes"
+  ],
+  "file_text_write_real": [
+   "int",
+   "real"
+  ],
+  "file_text_writeln": [
+   "int"
+  ],
+  "file_open_read": [
+   "string"
+  ],
+  "file_open_write": [
+   "string"
+  ],
+  "file_open_append": [
+   "string"
+  ],
+  "file_close": [],
+  "file_read_string": [],
+  "file_read_real": [],
+  "file_readln": [],
+  "file_eof": [],
+  "file_eoln": [],
+  "file_write_string": [
+   "bytes"
+  ],
+  "file_write_real": [
+   "real"
+  ],
+  "file_writeln": [],
+  "file_exists": [
+   "any"
+  ],
+  "file_delete": [
+   "string"
+  ],
+  "file_rename": [
+   "string",
+   "string"
+  ],
+  "file_copy": [
+   "string",
+   "string"
+  ],
+  "directory_exists": [
+   "any"
+  ],
+  "directory_create": [
+   "string"
+  ],
+  "file_find_first": [
+   "string",
+   "int"
+  ],
+  "file_find_next": [],
+  "file_find_close": [],
+  "filename_name": [
+   "string"
+  ],
+  "filename_path": [
+   "string"
+  ],
+  "filename_dir": [
+   "string"
+  ],
+  "filename_drive": [
+   "string"
+  ],
+  "filename_ext": [
+   "string"
+  ],
+  "filename_change_ext": [
+   "string",
+   "string"
+  ],
+  "export_include_file": [
+   "bytes"
+  ],
+  "export_include_file_location": [
+   "bytes",
+   "string"
+  ],
+  "discard_include_file": [
+   "bytes"
+  ],
+  "execute_program": [
+   "string",
+   "string",
+   "bool"
+  ],
+  "parameter_count": [],
+  "parameter_string": [
+   "int"
+  ],
+  "environment_get_variable": [
+   "bytes"
+  ],
+  "ini_open": [
+   "bytes"
+  ],
+  "ini_close": [],
+  "ini_read_string": [
+   "string",
+   "string",
+   "string"
+  ],
+  "ini_read_real": [
+   "string",
+   "string",
+   "real"
+  ],
+  "ini_write_string": [
+   "string",
+   "string",
+   "string"
+  ],
+  "ini_write_real": [
+   "string",
+   "string",
+   "real"
+  ],
+  "ini_key_exists": [
+   "string",
+   "string"
+  ],
+  "ini_section_exists": [
+   "string"
+  ],
+  "ini_key_delete": [
+   "string",
+   "string"
+  ],
+  "ini_section_delete": [
+   "string"
+  ],
+  "show_error": [
+   "string",
+   "bool"
+  ],
+  "keyboard_get_numlock": [],
+  "keyboard_set_numlock": [
+   "bool"
+  ],
+  "keyboard_key_press": [
+   "int"
+  ],
+  "keyboard_key_release": [
+   "int"
+  ],
+  "keyboard_set_map": [
+   "int",
+   "int"
+  ],
+  "keyboard_get_map": [
+   "int"
+  ],
+  "keyboard_unset_map": [],
+  "keyboard_check": [
+   "int"
+  ],
+  "keyboard_check_pressed": [
+   "int"
+  ],
+  "keyboard_check_released": [
+   "int"
+  ],
+  "keyboard_check_direct": [
+   "int"
+  ],
+  "mouse_check_button": [
+   "int"
+  ],
+  "mouse_check_button_pressed": [
+   "int"
+  ],
+  "mouse_check_button_released": [
+   "int"
+  ],
+  "mouse_wheel_up": [],
+  "mouse_wheel_down": [],
+  "keyboard_clear": [
+   "int"
+  ],
+  "mouse_clear": [
+   "int"
+  ],
+  "io_clear": [],
+  "io_handle": [],
+  "keyboard_wait": [],
+  "mplay_ipaddress": [],
+  "event_inherited": [],
+  "event_perform": [
+   "int",
+   "int"
+  ],
+  "event_user": [
+   "int"
+  ],
+  "event_perform_object": [
+   "int",
+   "int",
+   "int"
+  ],
+  "external_free": [
+   "bytes"
+  ],
+  "get_function_address": [
+   "any"
+  ],
+  "window_handle": [],
+  "show_debug_message": [
+   "any"
+  ],
+  "set_program_priority": [
+   "int"
+  ],
+  "set_application_title": [
+   "any"
+  ],
+  "variable_global_exists": [
+   "bytes"
+  ],
+  "variable_global_get": [
+   "any"
+  ],
+  "variable_global_array_get": [
+   "bytes",
+   "int"
+  ],
+  "variable_global_array2_get": [
+   "any",
+   "int",
+   "int"
+  ],
+  "variable_global_set": [
+   "any",
+   "any"
+  ],
+  "variable_global_array_set": [
+   "bytes",
+   "int",
+   "any"
+  ],
+  "variable_global_array2_set": [
+   "any",
+   "int",
+   "int",
+   "any"
+  ],
+  "variable_local_exists": [
+   "bytes"
+  ],
+  "variable_local_get": [
+   "any"
+  ],
+  "variable_local_array_get": [
+   "bytes",
+   "int"
+  ],
+  "variable_local_array2_get": [
+   "any",
+   "int",
+   "int"
+  ],
+  "variable_local_set": [
+   "any",
+   "any"
+  ],
+  "variable_local_array_set": [
+   "bytes",
+   "int",
+   "any"
+  ],
+  "variable_local_array2_set": [
+   "any",
+   "int",
+   "int",
+   "any"
+  ],
+  "date_current_datetime": [],
+  "date_current_date": [],
+  "date_current_time": [],
+  "date_create_datetime": [
+   "int",
+   "int",
+   "int",
+   "int",
+   "int",
+   "int"
+  ],
+  "date_create_date": [
+   "int",
+   "int",
+   "int"
+  ],
+  "date_create_time": [
+   "int",
+   "int",
+   "int"
+  ],
+  "date_valid_datetime": [
+   "int",
+   "int",
+   "int",
+   "int",
+   "int",
+   "int"
+  ],
+  "date_valid_date": [
+   "int",
+   "int",
+   "int"
+  ],
+  "date_valid_time": [
+   "int",
+   "int",
+   "int"
+  ],
+  "date_inc_week": [
+   "real",
+   "int"
+  ],
+  "date_inc_day": [
+   "real",
+   "int"
+  ],
+  "date_inc_hour": [
+   "real",
+   "int"
+  ],
+  "date_inc_minute": [
+   "real",
+   "int"
+  ],
+  "date_inc_second": [
+   "real",
+   "int"
+  ],
+  "date_get_year": [
+   "real"
+  ],
+  "date_get_month": [
+   "real"
+  ],
+  "date_get_week": [
+   "real"
+  ],
+  "date_get_day": [
+   "real"
+  ],
+  "date_get_hour": [
+   "real"
+  ],
+  "date_get_minute": [
+   "real"
+  ],
+  "date_get_second": [
+   "real"
+  ],
+  "date_get_weekday": [
+   "real"
+  ],
+  "date_get_day_of_year": [
+   "real"
+  ],
+  "date_get_hour_of_year": [
+   "real"
+  ],
+  "date_get_minute_of_year": [
+   "real"
+  ],
+  "date_get_second_of_year": [
+   "real"
+  ],
+  "sprite_name": [
+   "int"
+  ],
+  "sprite_exists": [
+   "int"
+  ],
+  "sprite_get_name": [
+   "int"
+  ],
+  "sprite_get_number": [
+   "int"
+  ],
+  "sprite_get_width": [
+   "int"
+  ],
+  "sprite_get_height": [
+   "int"
+  ],
+  "sprite_get_xoffset": [
+   "int"
+  ],
+  "sprite_get_yoffset": [
+   "int"
+  ],
+  "sprite_get_bbox_left": [
+   "int"
+  ],
+  "sprite_get_bbox_right": [
+   "int"
+  ],
+  "sprite_get_bbox_top": [
+   "int"
+  ],
+  "sprite_get_bbox_bottom": [
+   "int"
+  ],
+  "sprite_set_offset": [
+   "int",
+   "int",
+   "int"
+  ],
+  "sprite_set_alpha_from_sprite": [
+   "int",
+   "int"
+  ],
+  "sprite_create_from_screen": [
+   "int",
+   "int",
+   "int",
+   "int",
+   "int",
+   "bool",
+   "int",
+   "int"
+  ],
+  "sprite_add_from_screen": [
+   "int",
+   "int",
+   "int",
+   "int",
+   "int",
+   "bool",
+   "bool"
+  ],
+  "sprite_create_from_surface": [
+   "int",
+   "int",
+   "int",
+   "int",
+   "int",
+   "int",
+   "bool",
+   "int",
+   "int"
+  ],
+  "sprite_add_from_surface": [
+   "int",
+   "int",
+   "int",
+   "int",
+   "int",
+   "int",
+   "bool",
+   "bool"
+  ],
+  "sprite_add": [
+   "string",
+   "int",
+   "bool",
+   "bool",
+   "int",
+   "int"
+  ],
+  "sprite_replace": [
+   "int",
+   "string",
+   "int",
+   "bool",
+   "bool",
+   "int",
+   "int"
+  ],
+  "sprite_delete": [
+   "int"
+  ],
+  "sprite_assign": [
+   "int",
+   "int"
+  ],
+  "sprite_save": [
+   "int",
+   "int",
+   "string"
+  ],
+  "sprite_collision_mask": [
+   "int",
+   "bool",
+   "int",
+   "int",
+   "int",
+   "int",
+   "int",
+   "int",
+   "int"
+  ],
+  "sprite_set_cache_size": [
+   "any",
+   "any"
+  ],
+  "sprite_set_cache_size_ext": [
+   "any",
+   "any",
+   "any"
+  ],
+  "background_name": [
+   "int"
+  ],
+  "background_exists": [
+   "int"
+  ],
+  "background_get_name": [
+   "int"
+  ],
+  "background_get_width": [
+   "int"
+  ],
+  "background_get_height": [
+   "int"
+  ],
+  "background_set_alpha_from_background": [
+   "int",
+   "int"
+  ],
+  "background_create_from_screen": [
+   "int",
+   "int",
+   "int",
+   "int",
+   "bool",
+   "bool"
+  ],
+  "background_create_from_surface": [
+   "int",
+   "int",
+   "int",
+   "int",
+   "int",
+   "bool",
+   "bool"
+  ],
+  "background_create_color": [
+   "int",
+   "int",
+   "int"
+  ],
+  "background_add": [
+   "string",
+   "bool",
+   "bool"
+  ],
+  "background_replace": [
+   "int",
+   "string",
+   "bool",
+   "bool"
+  ],
+  "background_delete": [
+   "int"
+  ],
+  "background_duplicate": [
+   "int"
+  ],
+  "background_assign": [
+   "int",
+   "int"
+  ],
+  "background_save": [
+   "int",
+   "string"
+  ],
+  "sound_name": [
+   "int"
+  ],
+  "sound_exists": [
+   "int"
+  ],
+  "sound_get_name": [
+   "int"
+  ],
+  "sound_get_kind": [
+   "int"
+  ],
+  "sound_get_preload": [
+   "int"
+  ],
+  "sound_restore": [
+   "int"
+  ],
+  "sound_add": [
+   "string",
+   "int",
+   "bool"
+  ],
+  "sound_replace": [
+   "int",
+   "string",
+   "int",
+   "bool"
+  ],
+  "sound_delete": [
+   "int"
+  ],
+  "font_name": [
+   "int"
+  ],
+  "font_exists": [
+   "int"
+  ],
+  "font_get_name": [
+   "int"
+  ],
+  "font_get_fontname": [
+   "int"
+  ],
+  "font_get_size": [
+   "int"
+  ],
+  "font_get_bold": [
+   "int"
+  ],
+  "font_get_italic": [
+   "int"
+  ],
+  "font_get_first": [
+   "int"
+  ],
+  "font_get_last": [
+   "int"
+  ],
+  "font_add_sprite": [
+   "int",
+   "int",
+   "bool",
+   "int"
+  ],
+  "font_replace_sprite": [
+   "int",
+   "int",
+   "int",
+   "bool",
+   "int"
+  ],
+  "font_delete": [
+   "int"
+  ],
+  "script_name": [
+   "int"
+  ],
+  "script_exists": [
+   "int"
+  ],
+  "script_get_name": [
+   "int"
+  ],
+  "script_get_text": [
+   "int"
+  ],
+  "path_name": [
+   "int"
+  ],
+  "path_exists": [
+   "int"
+  ],
+  "path_get_name": [
+   "int"
+  ],
+  "path_get_length": [
+   "int"
+  ],
+  "path_get_kind": [
+   "int"
+  ],
+  "path_get_closed": [
+   "int"
+  ],
+  "path_get_precision": [
+   "int"
+  ],
+  "path_get_number": [
+   "int"
+  ],
+  "path_get_point_x": [
+   "int",
+   "int"
+  ],
+  "path_get_point_y": [
+   "int",
+   "int"
+  ],
+  "path_get_point_speed": [
+   "int",
+   "int"
+  ],
+  "path_get_x": [
+   "int",
+   "real"
+  ],
+  "path_get_y": [
+   "int",
+   "real"
+  ],
+  "path_get_speed": [
+   "int",
+   "real"
+  ],
+  "path_set_kind": [
+   "int",
+   "int"
+  ],
+  "path_set_closed": [
+   "int",
+   "int"
+  ],
+  "path_set_precision": [
+   "int",
+   "int"
+  ],
+  "path_add": [],
+  "path_duplicate": [
+   "int"
+  ],
+  "path_assign": [
+   "int",
+   "int"
+  ],
+  "path_delete": [
+   "int"
+  ],
+  "path_add_point": [
+   "int",
+   "real",
+   "real",
+   "real"
+  ],
+  "path_change_point": [
+   "int",
+   "int",
+   "real",
+   "real",
+   "real"
+  ],
+  "path_reverse": [
+   "int"
+  ],
+  "path_mirror": [
+   "int"
+  ],
+  "path_flip": [
+   "int"
+  ],
+  "path_rotate": [
+   "int",
+   "real"
+  ],
+  "path_scale": [
+   "int",
+   "real",
+   "real"
+  ],
+  "path_shift": [
+   "int",
+   "real",
+   "real"
+  ],
+  "timeline_name": [
+   "int"
+  ],
+  "timeline_exists": [
+   "int"
+  ],
+  "timeline_get_name": [
+   "int"
+  ],
+  "timeline_add": [],
+  "timeline_delete": [
+   "int"
+  ],
+  "timeline_clear": [
+   "int"
+  ],
+  "timeline_moment_clear": [
+   "int",
+   "int"
+  ],
+  "timeline_moment_add": [
+   "int",
+   "int",
+   "bytes"
+  ],
+  "object_name": [
+   "int"
+  ],
+  "object_exists": [
+   "int"
+  ],
+  "object_get_name": [
+   "int"
+  ],
+  "object_get_sprite": [
+   "int"
+  ],
+  "object_get_solid": [
+   "int"
+  ],
+  "object_get_visible": [
+   "int"
+  ],
+  "object_get_depth": [
+   "int"
+  ],
+  "object_get_persistent": [
+   "int"
+  ],
+  "object_get_mask": [
+   "int"
+  ],
+  "object_get_parent": [
+   "int"
+  ],
+  "object_is_ancestor": [
+   "int",
+   "int"
+  ],
+  "object_set_sprite": [
+   "int",
+   "int"
+  ],
+  "object_set_solid": [
+   "int",
+   "bool"
+  ],
+  "object_set_visible": [
+   "int",
+   "bool"
+  ],
+  "object_set_depth": [
+   "int",
+   "int"
+  ],
+  "object_set_persistent": [
+   "int",
+   "bool"
+  ],
+  "object_set_mask": [
+   "int",
+   "int"
+  ],
+  "object_set_parent": [
+   "int",
+   "int"
+  ],
+  "object_add": [],
+  "object_event_clear": [
+   "int",
+   "int",
+   "int"
+  ],
+  "object_event_add": [
+   "int",
+   "int",
+   "int",
+   "bytes"
+  ],
+  "room_name": [
+   "int"
+  ],
+  "room_exists": [
+   "int"
+  ],
+  "room_get_name": [
+   "int"
+  ],
+  "room_set_width": [
+   "int",
+   "int"
+  ],
+  "room_set_height": [
+   "int",
+   "int"
+  ],
+  "room_set_caption": [
+   "int",
+   "bytes"
+  ],
+  "room_set_persistent": [
+   "int",
+   "bool"
+  ],
+  "room_set_background_color": [
+   "int",
+   "int",
+   "bool"
+  ],
+  "room_set_background": [
+   "int",
+   "int",
+   "bool",
+   "bool",
+   "int",
+   "real",
+   "real",
+   "bool",
+   "bool",
+   "real",
+   "real",
+   "real"
+  ],
+  "room_set_view": [
+   "int",
+   "int",
+   "bool",
+   "int",
+   "int",
+   "int",
+   "int",
+   "int",
+   "int",
+   "int",
+   "int",
+   "int",
+   "int",
+   "int",
+   "int",
+   "int"
+  ],
+  "room_set_view_enabled": [
+   "int",
+   "bool"
+  ],
+  "room_add": [],
+  "room_duplicate": [
+   "int"
+  ],
+  "room_assign": [
+   "int",
+   "int"
+  ],
+  "room_instance_add": [
+   "int",
+   "int",
+   "int",
+   "int"
+  ],
+  "room_instance_clear": [
+   "int"
+  ],
+  "part_type_create": [],
+  "part_type_destroy": [
+   "int"
+  ],
+  "part_type_exists": [
+   "int"
+  ],
+  "part_type_clear": [
+   "int"
+  ],
+  "part_type_shape": [
+   "int",
+   "int"
+  ],
+  "part_type_sprite": [
+   "int",
+   "int",
+   "bool",
+   "bool",
+   "bool"
+  ],
+  "part_type_size": [
+   "int",
+   "real",
+   "real",
+   "real",
+   "real"
+  ],
+  "part_type_scale": [
+   "int",
+   "real",
+   "real"
+  ],
+  "part_type_life": [
+   "int",
+   "int",
+   "int"
+  ],
+  "part_type_step": [
+   "int",
+   "int",
+   "int"
+  ],
+  "part_type_death": [
+   "int",
+   "int",
+   "int"
+  ],
+  "part_type_speed": [
+   "int",
+   "real",
+   "real",
+   "real",
+   "real"
+  ],
+  "part_type_direction": [
+   "int",
+   "real",
+   "real",
+   "real",
+   "real"
+  ],
+  "part_type_orientation": [
+   "int",
+   "real",
+   "real",
+   "real",
+   "real",
+   "bool"
+  ],
+  "part_type_gravity": [
+   "int",
+   "real",
+   "real"
+  ],
+  "part_type_color_mix": [
+   "int",
+   "int",
+   "int"
+  ],
+  "part_type_color_rgb": [
+   "int",
+   "int",
+   "int",
+   "int",
+   "int",
+   "int",
+   "int"
+  ],
+  "part_type_color_hsv": [
+   "int",
+   "int",
+   "int",
+   "int",
+   "int",
+   "int",
+   "int"
+  ],
+  "part_type_color1": [
+   "int",
+   "int"
+  ],
+  "part_type_color2": [
+   "int",
+   "int",
+   "int"
+  ],
+  "part_type_color3": [
+   "int",
+   "int",
+   "int",
+   "int"
+  ],
+  "part_type_color": [
+   "int",
+   "int",
+   "int",
+   "int"
+  ],
+  "part_type_alpha1": [
+   "int",
+   "real"
+  ],
+  "part_type_alpha2": [
+   "int",
+   "real",
+   "real"
+  ],
+  "part_type_alpha3": [
+   "int",
+   "real",
+   "real",
+   "real"
+  ],
+  "part_type_alpha": [
+   "int",
+   "real",
+   "real",
+   "real"
+  ],
+  "part_type_blend": [
+   "int",
+   "bool"
+  ],
+  "part_system_create": [],
+  "part_system_destroy": [
+   "int"
+  ],
+  "part_system_exists": [
+   "int"
+  ],
+  "part_system_clear": [
+   "int"
+  ],
+  "part_system_draw_order": [
+   "int",
+   "bool"
+  ],
+  "part_system_depth": [
+   "int",
+   "real"
+  ],
+  "part_system_position": [
+   "int",
+   "real",
+   "real"
+  ],
+  "part_system_automatic_update": [
+   "int",
+   "bool"
+  ],
+  "part_system_automatic_draw": [
+   "int",
+   "bool"
+  ],
+  "part_system_update": [
+   "int"
+  ],
+  "part_system_drawit": [
+   "int"
+  ],
+  "part_particles_create": [
+   "int",
+   "real",
+   "real",
+   "int",
+   "int"
+  ],
+  "part_particles_create_color": [
+   "int",
+   "real",
+   "real",
+   "int",
+   "int",
+   "int"
+  ],
+  "part_particles_clear": [
+   "int"
+  ],
+  "part_particles_count": [
+   "int"
+  ],
+  "part_emitter_create": [
+   "int"
+  ],
+  "part_emitter_destroy": [
+   "int",
+   "int"
+  ],
+  "part_emitter_destroy_all": [
+   "int"
+  ],
+  "part_emitter_exists": [
+   "int",
+   "int"
+  ],
+  "part_emitter_clear": [
+   "int",
+   "int"
+  ],
+  "part_emitter_region": [
+   "int",
+   "int",
+   "real",
+   "real",
+   "real",
+   "real",
+   "int",
+   "int"
+  ],
+  "part_emitter_burst": [
+   "int",
+   "int",
+   "int",
+   "int"
+  ],
+  "part_emitter_stream": [
+   "int",
+   "int",
+   "int",
+   "int"
+  ],
+  "part_attractor_create": [
+   "int"
+  ],
+  "part_attractor_destroy": [
+   "int",
+   "int"
+  ],
+  "part_attractor_destroy_all": [
+   "int"
+  ],
+  "part_attractor_exists": [
+   "int",
+   "int"
+  ],
+  "part_attractor_clear": [
+   "int",
+   "int"
+  ],
+  "part_attractor_position": [
+   "int",
+   "int",
+   "real",
+   "real"
+  ],
+  "part_attractor_force": [
+   "int",
+   "int",
+   "real",
+   "real",
+   "int",
+   "bool"
+  ],
+  "part_destroyer_create": [
+   "int"
+  ],
+  "part_destroyer_destroy": [
+   "int",
+   "int"
+  ],
+  "part_destroyer_destroy_all": [
+   "int"
+  ],
+  "part_destroyer_exists": [
+   "int",
+   "int"
+  ],
+  "part_destroyer_clear": [
+   "int",
+   "int"
+  ],
+  "part_destroyer_region": [
+   "int",
+   "int",
+   "real",
+   "real",
+   "real",
+   "real",
+   "int"
+  ],
+  "part_deflector_create": [
+   "int"
+  ],
+  "part_deflector_destroy": [
+   "int",
+   "int"
+  ],
+  "part_deflector_destroy_all": [
+   "int"
+  ],
+  "part_deflector_exists": [
+   "int",
+   "int"
+  ],
+  "part_deflector_clear": [
+   "int",
+   "int"
+  ],
+  "part_deflector_region": [
+   "int",
+   "int",
+   "real",
+   "real",
+   "real",
+   "real"
+  ],
+  "part_deflector_kind": [
+   "int",
+   "int",
+   "int"
+  ],
+  "part_deflector_friction": [
+   "int",
+   "int",
+   "real"
+  ],
+  "part_changer_create": [
+   "int"
+  ],
+  "part_changer_destroy": [
+   "int",
+   "int"
+  ],
+  "part_changer_destroy_all": [
+   "int"
+  ],
+  "part_changer_exists": [
+   "int",
+   "int"
+  ],
+  "part_changer_clear": [
+   "int",
+   "int"
+  ],
+  "part_changer_region": [
+   "int",
+   "int",
+   "real",
+   "real",
+   "real",
+   "real",
+   "int"
+  ],
+  "part_changer_kind": [
+   "int",
+   "int",
+   "int"
+  ],
+  "part_changer_types": [
+   "int",
+   "int",
+   "int",
+   "int"
+  ],
+  "effect_create_below": [
+   "int",
+   "real",
+   "real",
+   "int",
+   "int"
+  ],
+  "effect_create_above": [
+   "int",
+   "real",
+   "real",
+   "int",
+   "int"
+  ],
+  "effect_clear": [],
+  "ds_set_precision": [
+   "real"
+  ],
+  "ds_stack_create": [],
+  "ds_stack_destroy": [
+   "int"
+  ],
+  "ds_stack_clear": [
+   "int"
+  ],
+  "ds_stack_copy": [
+   "int",
+   "int"
+  ],
+  "ds_stack_size": [
+   "int"
+  ],
+  "ds_stack_empty": [
+   "int"
+  ],
+  "ds_stack_push": [
+   "int",
+   "any"
+  ],
+  "ds_stack_pop": [
+   "int"
+  ],
+  "ds_stack_top": [
+   "int"
+  ],
+  "ds_stack_write": [
+   "int"
+  ],
+  "ds_stack_read": [
+   "int",
+   "string"
+  ],
+  "ds_queue_create": [],
+  "ds_queue_destroy": [
+   "int"
+  ],
+  "ds_queue_clear": [
+   "int"
+  ],
+  "ds_queue_copy": [
+   "int",
+   "int"
+  ],
+  "ds_queue_size": [
+   "int"
+  ],
+  "ds_queue_empty": [
+   "int"
+  ],
+  "ds_queue_enqueue": [
+   "int",
+   "any"
+  ],
+  "ds_queue_dequeue": [
+   "int"
+  ],
+  "ds_queue_head": [
+   "int"
+  ],
+  "ds_queue_tail": [
+   "int"
+  ],
+  "ds_list_create": [],
+  "ds_list_destroy": [
+   "int"
+  ],
+  "ds_list_clear": [
+   "int"
+  ],
+  "ds_list_copy": [
+   "int",
+   "int"
+  ],
+  "ds_list_size": [
+   "int"
+  ],
+  "ds_list_empty": [
+   "int"
+  ],
+  "ds_list_add": [
+   "int",
+   "any"
+  ],
+  "ds_list_insert": [
+   "int",
+   "int",
+   "any"
+  ],
+  "ds_list_replace": [
+   "int",
+   "int",
+   "any"
+  ],
+  "ds_list_delete": [
+   "int",
+   "int"
+  ],
+  "ds_list_find_index": [
+   "int",
+   "any"
+  ],
+  "ds_list_find_value": [
+   "int",
+   "int"
+  ],
+  "ds_list_sort": [
+   "int",
+   "bool"
+  ],
+  "ds_list_shuffle": [
+   "int"
+  ],
+  "ds_list_write": [
+   "int"
+  ],
+  "ds_list_read": [
+   "int",
+   "string"
+  ],
+  "ds_map_create": [],
+  "ds_map_destroy": [
+   "int"
+  ],
+  "ds_map_clear": [
+   "int"
+  ],
+  "ds_map_copy": [
+   "int",
+   "int"
+  ],
+  "ds_map_size": [
+   "int"
+  ],
+  "ds_map_empty": [
+   "int"
+  ],
+  "ds_map_add": [
+   "int",
+   "any",
+   "any"
+  ],
+  "ds_map_replace": [
+   "int",
+   "any",
+   "any"
+  ],
+  "ds_map_delete": [
+   "int",
+   "any"
+  ],
+  "ds_map_exists": [
+   "int",
+   "any"
+  ],
+  "ds_map_find_value": [
+   "int",
+   "any"
+  ],
+  "ds_map_find_previous": [
+   "int",
+   "any"
+  ],
+  "ds_map_find_next": [
+   "int",
+   "any"
+  ],
+  "ds_map_find_first": [
+   "int"
+  ],
+  "ds_map_find_last": [
+   "int"
+  ],
+  "ds_map_write": [
+   "int"
+  ],
+  "ds_map_read": [
+   "int",
+   "string"
+  ],
+  "ds_priority_create": [],
+  "ds_priority_destroy": [
+   "int"
+  ],
+  "ds_priority_clear": [
+   "int"
+  ],
+  "ds_priority_copy": [
+   "int",
+   "int"
+  ],
+  "ds_priority_size": [
+   "int"
+  ],
+  "ds_priority_empty": [
+   "int"
+  ],
+  "ds_priority_add": [
+   "int",
+   "any",
+   "any"
+  ],
+  "ds_priority_change_priority": [
+   "int",
+   "any",
+   "any"
+  ],
+  "ds_priority_find_priority": [
+   "int",
+   "any"
+  ],
+  "ds_priority_delete_value": [
+   "int",
+   "any"
+  ],
+  "ds_priority_delete_min": [
+   "int"
+  ],
+  "ds_priority_find_min": [
+   "int"
+  ],
+  "ds_priority_delete_max": [
+   "int"
+  ],
+  "ds_priority_find_max": [
+   "int"
+  ],
+  "ds_priority_write": [
+   "int"
+  ],
+  "ds_priority_read": [
+   "int",
+   "string"
+  ],
+  "ds_grid_create": [
+   "int",
+   "int"
+  ],
+  "ds_grid_destroy": [
+   "int"
+  ],
+  "ds_grid_copy": [
+   "int",
+   "int"
+  ],
+  "ds_grid_resize": [
+   "int",
+   "int",
+   "int"
+  ],
+  "ds_grid_width": [
+   "int"
+  ],
+  "ds_grid_height": [
+   "int"
+  ],
+  "ds_grid_clear": [
+   "int",
+   "any"
+  ],
+  "ds_grid_set": [
+   "int",
+   "int",
+   "int",
+   "any"
+  ],
+  "ds_grid_add": [
+   "int",
+   "int",
+   "int",
+   "any"
+  ],
+  "ds_grid_multiply": [
+   "int",
+   "int",
+   "int",
+   "any"
+  ],
+  "ds_grid_set_region": [
+   "int",
+   "int",
+   "int",
+   "int",
+   "int",
+   "any"
+  ],
+  "ds_grid_set_disk": [
+   "int",
+   "real",
+   "real",
+   "real",
+   "any"
+  ],
+  "ds_grid_get": [
+   "int",
+   "int",
+   "int"
+  ],
+  "ds_grid_get_sum": [
+   "int",
+   "int",
+   "int",
+   "int",
+   "int"
+  ],
+  "ds_grid_get_max": [
+   "int",
+   "int",
+   "int",
+   "int",
+   "int"
+  ],
+  "ds_grid_get_min": [
+   "int",
+   "int",
+   "int",
+   "int",
+   "int"
+  ],
+  "ds_grid_get_mean": [
+   "int",
+   "int",
+   "int",
+   "int",
+   "int"
+  ],
+  "ds_grid_value_exists": [
+   "int",
+   "int",
+   "int",
+   "int",
+   "int",
+   "any"
+  ],
+  "ds_grid_value_x": [
+   "int",
+   "int",
+   "int",
+   "int",
+   "int",
+   "any"
+  ],
+  "ds_grid_value_y": [
+   "int",
+   "int",
+   "int",
+   "int",
+   "int",
+   "any"
+  ],
+  "ds_grid_value_disk_exists": [
+   "int",
+   "real",
+   "real",
+   "real",
+   "any"
+  ],
+  "ds_grid_value_disk_x": [
+   "int",
+   "real",
+   "real",
+   "real",
+   "any"
+  ],
+  "ds_grid_value_disk_y": [
+   "int",
+   "real",
+   "real",
+   "real",
+   "any"
+  ],
+  "ds_grid_write": [
+   "int"
+  ],
+  "ds_grid_read": [
+   "int",
+   "string"
+  ],
+  "sound_play": [
+   "int"
+  ],
+  "sound_loop": [
+   "int"
+  ],
+  "sound_stop": [
+   "int"
+  ],
+  "sound_isplaying": [
+   "int"
+  ],
+  "sound_volume": [
+   "int",
+   "real"
+  ],
+  "sound_global_volume": [
+   "real"
+  ],
+  "d3d_start": [],
+  "d3d_end": [],
+  "d3d_set_perspective": [
+   "bool"
+  ],
+  "d3d_set_hidden": [
+   "bool"
+  ],
+  "d3d_set_depth": [
+   "real"
+  ],
+  "d3d_set_zwriteenable": [
+   "bool"
+  ],
+  "d3d_set_lighting": [
+   "bool"
+  ],
+  "d3d_set_shading": [
+   "bool"
+  ],
+  "d3d_set_fog": [
+   "bool",
+   "int",
+   "real",
+   "real"
+  ],
+  "d3d_set_culling": [
+   "bool"
+  ],
+  "d3d_primitive_begin": [
+   "int"
+  ],
+  "d3d_primitive_begin_texture": [
+   "int",
+   "int"
+  ],
+  "d3d_primitive_end": [],
+  "d3d_vertex": [
+   "real",
+   "real",
+   "real"
+  ],
+  "d3d_vertex_color": [
+   "real",
+   "real",
+   "real",
+   "int",
+   "real"
+  ],
+  "d3d_vertex_texture": [
+   "real",
+   "real",
+   "real",
+   "real",
+   "real"
+  ],
+  "d3d_vertex_texture_color": [
+   "real",
+   "real",
+   "real",
+   "real",
+   "real",
+   "int",
+   "real"
+  ],
+  "d3d_vertex_normal": [
+   "real",
+   "real",
+   "real",
+   "real",
+   "real",
+   "real"
+  ],
+  "d3d_vertex_normal_color": [
+   "real",
+   "real",
+   "real",
+   "real",
+   "real",
+   "real",
+   "int",
+   "real"
+  ],
+  "d3d_vertex_normal_texture": [
+   "real",
+   "real",
+   "real",
+   "real",
+   "real",
+   "real",
+   "real",
+   "real"
+  ],
+  "d3d_vertex_normal_texture_color": [
+   "real",
+   "real",
+   "real",
+   "real",
+   "real",
+   "real",
+   "real",
+   "real",
+   "int",
+   "real"
+  ],
+  "d3d_draw_block": [
+   "real",
+   "real",
+   "real",
+   "real",
+   "real",
+   "real",
+   "int",
+   "real",
+   "real"
+  ],
+  "d3d_draw_cylinder": [
+   "real",
+   "real",
+   "real",
+   "real",
+   "real",
+   "real",
+   "int",
+   "real",
+   "real",
+   "bool",
+   "int"
+  ],
+  "d3d_draw_cone": [
+   "real",
+   "real",
+   "real",
+   "real",
+   "real",
+   "real",
+   "int",
+   "real",
+   "real",
+   "bool",
+   "int"
+  ],
+  "d3d_draw_ellipsoid": [
+   "real",
+   "real",
+   "real",
+   "real",
+   "real",
+   "real",
+   "int",
+   "real",
+   "real",
+   "int"
+  ],
+  "d3d_draw_wall": [
+   "real",
+   "real",
+   "real",
+   "real",
+   "real",
+   "real",
+   "int",
+   "real",
+   "real"
+  ],
+  "d3d_draw_floor": [
+   "real",
+   "real",
+   "real",
+   "real",
+   "real",
+   "real",
+   "int",
+   "real",
+   "real"
+  ],
+  "d3d_set_projection": [
+   "real",
+   "real",
+   "real",
+   "real",
+   "real",
+   "real",
+   "real",
+   "real",
+   "real"
+  ],
+  "d3d_set_projection_ext": [
+   "real",
+   "real",
+   "real",
+   "real",
+   "real",
+   "real",
+   "real",
+   "real",
+   "real",
+   "real",
+   "real",
+   "real",
+   "real"
+  ],
+  "d3d_set_projection_ortho": [
+   "real",
+   "real",
+   "real",
+   "real",
+   "real"
+  ],
+  "d3d_set_projection_perspective": [
+   "real",
+   "real",
+   "real",
+   "real",
+   "real"
+  ],
+  "d3d_transform_set_identity": [],
+  "d3d_transform_set_translation": [
+   "real",
+   "real",
+   "real"
+  ],
+  "d3d_transform_set_scaling": [
+   "real",
+   "real",
+   "real"
+  ],
+  "d3d_transform_set_rotation_x": [
+   "real"
+  ],
+  "d3d_transform_set_rotation_y": [
+   "real"
+  ],
+  "d3d_transform_set_rotation_z": [
+   "real"
+  ],
+  "d3d_transform_set_rotation_axis": [
+   "real",
+   "real",
+   "real",
+   "real"
+  ],
+  "d3d_transform_add_translation": [
+   "real",
+   "real",
+   "real"
+  ],
+  "d3d_transform_add_scaling": [
+   "real",
+   "real",
+   "real"
+  ],
+  "d3d_transform_add_rotation_x": [
+   "real"
+  ],
+  "d3d_transform_add_rotation_y": [
+   "real"
+  ],
+  "d3d_transform_add_rotation_z": [
+   "real"
+  ],
+  "d3d_transform_add_rotation_axis": [
+   "real",
+   "real",
+   "real",
+   "real"
+  ],
+  "d3d_transform_stack_clear": [],
+  "d3d_transform_stack_empty": [],
+  "d3d_transform_stack_push": [],
+  "d3d_transform_stack_pop": [],
+  "d3d_transform_stack_top": [],
+  "d3d_transform_stack_discard": [],
+  "d3d_light_define_ambient": [
+   "int"
+  ],
+  "d3d_light_define_direction": [
+   "int",
+   "real",
+   "real",
+   "real",
+   "int"
+  ],
+  "d3d_light_define_point": [
+   "int",
+   "real",
+   "real",
+   "real",
+   "real",
+   "int"
+  ],
+  "d3d_light_enable": [
+   "int",
+   "bool"
+  ],
+  "d3d_model_create": [],
+  "d3d_model_destroy": [
+   "int"
+  ],
+  "d3d_model_clear": [
+   "int"
+  ],
+  "d3d_model_load": [
+   "int",
+   "string"
+  ],
+  "d3d_model_save": [
+   "int",
+   "string"
+  ],
+  "d3d_model_draw": [
+   "int",
+   "real",
+   "real",
+   "real",
+   "int"
+  ],
+  "d3d_model_primitive_begin": [
+   "int",
+   "int"
+  ],
+  "d3d_model_primitive_end": [
+   "int"
+  ],
+  "d3d_model_vertex": [
+   "int",
+   "real",
+   "real",
+   "real"
+  ],
+  "d3d_model_vertex_color": [
+   "int",
+   "real",
+   "real",
+   "real",
+   "int",
+   "real"
+  ],
+  "d3d_model_vertex_texture": [
+   "int",
+   "real",
+   "real",
+   "real",
+   "real",
+   "real"
+  ],
+  "d3d_model_vertex_texture_color": [
+   "int",
+   "real",
+   "real",
+   "real",
+   "real",
+   "real",
+   "int",
+   "real"
+  ],
+  "d3d_model_vertex_normal": [
+   "int",
+   "real",
+   "real",
+   "real",
+   "real",
+   "real",
+   "real"
+  ],
+  "d3d_model_vertex_normal_color": [
+   "int",
+   "real",
+   "real",
+   "real",
+   "real",
+   "real",
+   "real",
+   "int",
+   "real"
+  ],
+  "d3d_model_vertex_normal_texture": [
+   "int",
+   "real",
+   "real",
+   "real",
+   "real",
+   "real",
+   "real",
+   "real",
+   "real"
+  ],
+  "d3d_model_vertex_normal_texture_color": [
+   "int",
+   "real",
+   "real",
+   "real",
+   "real",
+   "real",
+   "real",
+   "real",
+   "real",
+   "int",
+   "real"
+  ],
+  "d3d_model_block": [
+   "int",
+   "real",
+   "real",
+   "real",
+   "real",
+   "real",
+   "real",
+   "real",
+   "real"
+  ],
+  "d3d_model_cylinder": [
+   "int",
+   "real",
+   "real",
+   "real",
+   "real",
+   "real",
+   "real",
+   "real",
+   "real",
+   "bool",
+   "int"
+  ],
+  "d3d_model_cone": [
+   "int",
+   "real",
+   "real",
+   "real",
+   "real",
+   "real",
+   "real",
+   "real",
+   "real",
+   "bool",
+   "int"
+  ],
+  "d3d_model_ellipsoid": [
+   "int",
+   "real",
+   "real",
+   "real",
+   "real",
+   "real",
+   "real",
+   "real",
+   "real",
+   "int"
+  ],
+  "d3d_model_wall": [
+   "int",
+   "real",
+   "real",
+   "real",
+   "real",
+   "real",
+   "real",
+   "real",
+   "real"
+  ],
+  "d3d_model_floor": [
+   "int",
+   "real",
+   "real",
+   "real",
+   "real",
+   "real",
+   "real",
+   "real",
+   "real"
+  ]
+ }
 }

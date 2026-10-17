@@ -133,6 +133,127 @@ static func check_collision_line(inst: GMInstance, x1: float, y1: float, x2: flo
 				return true
 	return false
 
+# ------------------------------------------------------------------ collision grids
+# Geometric queries against an object would test every instance of it (a city has 700+ water
+# tiles, and obj_pared has 900 descendant objects): each queried object gets a grid of its
+# instances' bounding boxes instead. Instances that move, appear or disappear are marked dirty
+# (GMCore.inst_changed) and re-placed on the next query. Results are unchanged; candidates come
+# back in identity (insertion) order.
+
+const GRID_CELL := 64
+
+class Grid:
+	var cells: Dictionary = {} # Vector2i -> Array[GMInstance]
+	var big: Array = []        # instances spanning too many cells
+	var where: Dictionary = {} # GMInstance -> Array of cell keys, or [] when in `big`
+	var dirty: Dictionary = {} # GMInstance -> true
+
+static var _grids: Dictionary = {} # object index -> Grid
+
+static func _grid_insert(g: Grid, i: GMInstance) -> void:
+	i.update_bbox()
+	var bb: Array = i._bbox
+	if bb[0] == -100000:
+		return # no sprite or mask: never collides
+	var cx0: int = floori(bb[0] / float(GRID_CELL))
+	var cy0: int = floori(bb[1] / float(GRID_CELL))
+	var cx1: int = floori(bb[2] / float(GRID_CELL))
+	var cy1: int = floori(bb[3] / float(GRID_CELL))
+	if (cx1 - cx0 + 1) * (cy1 - cy0 + 1) > 16:
+		g.big.append(i)
+		g.where[i] = []
+		return
+	var keys := []
+	for cy in range(cy0, cy1 + 1):
+		for cx in range(cx0, cx1 + 1):
+			var key := Vector2i(cx, cy)
+			keys.append(key)
+			if g.cells.has(key):
+				g.cells[key].append(i)
+			else:
+				g.cells[key] = [i]
+	g.where[i] = keys
+
+static func _grid_remove(g: Grid, i: GMInstance) -> void:
+	var keys = g.where.get(i)
+	if keys == null:
+		return
+	g.where.erase(i)
+	if keys.is_empty():
+		g.big.erase(i)
+	for key in keys:
+		g.cells[key].erase(i)
+
+static func _grid(k: int) -> Grid:
+	var g: Grid = _grids.get(k)
+	var t0 := Time.get_ticks_usec()
+	suspend_changes += 1 # update_bbox here isn't a change
+	if g == null:
+		g = Grid.new()
+		_grids[k] = g
+		for i: GMInstance in identity_list(k):
+			_grid_insert(g, i)
+	elif not g.dirty.is_empty():
+		for i: GMInstance in g.dirty:
+			_grid_remove(g, i)
+			if not i.gone and i.obj and i.obj.ancestors.has(k):
+				_grid_insert(g, i)
+		g.dirty.clear()
+	suspend_changes -= 1
+	if GMPerf.enabled:
+		GMPerf.add_obj("grid", k, Time.get_ticks_usec() - t0)
+	return g
+
+## Instances of object `k` whose bbox may touch the rectangle, in identity order.
+static func _grid_candidates(k: int, l: float, t: float, r: float, b: float) -> Array:
+	var g := _grid(k)
+	var cx0 := floori(minf(l, r) / GRID_CELL)
+	var cx1 := floori(maxf(l, r) / GRID_CELL)
+	var cy0 := floori(minf(t, b) / GRID_CELL)
+	var cy1 := floori(maxf(t, b) / GRID_CELL)
+	if (cx1 - cx0 + 1) * (cy1 - cy0 + 1) > 256:
+		return identity_list(k) # huge area: just test everything
+	var out: Array = g.big.duplicate()
+	for cy in range(cy0, cy1 + 1):
+		for cx in range(cx0, cx1 + 1):
+			var c = g.cells.get(Vector2i(cx, cy))
+			if c != null:
+				out.append_array(c)
+	if out.size() > 1:
+		out.sort_custom(func(x, y): return x.seq < y.seq)
+		var uniq := [out[0]]
+		for n in range(1, out.size()):
+			if out[n] != out[n - 1]:
+				uniq.append(out[n])
+		return uniq
+	return out
+
+## Instances of `obj` (all / object / instance id) that may touch the rectangle, in identity order.
+static func _area_list(obj: Variant, l: float, t: float, r: float, b: float) -> Array:
+	var k := ri(obj)
+	if k == -3:
+		return _active_snapshot()
+	if k < 0:
+		return []
+	if k < 100000:
+		return _grid_candidates(k, l, t, r, b)
+	var i = by_id.get(k)
+	return [i] if i and not i.gone else []
+
+## The caller's bbox as if it stood at x, y (it is moved there and back, without counting as a change).
+static func _bbox_at(s: GMInstance, x: float, y: float) -> Array:
+	var ox := s.x
+	var oy := s.y
+	suspend_changes += 1
+	s.x = x
+	s.y = y
+	s.update_bbox()
+	var bb: Array = s._bbox.duplicate()
+	s.x = ox
+	s.y = oy
+	suspend_changes -= 1
+	return bb
+
 ## First instance of `obj` (all / object / instance id) satisfying `pred`.
 static func find_instance_with(obj: Variant, pred: Callable) -> GMInstance:
 	var k := ri(obj)
@@ -154,22 +275,42 @@ static func find_instance_with(obj: Variant, pred: Callable) -> GMInstance:
 static func _moved_check(s: GMInstance, x: float, y: float, f: Callable) -> Variant:
 	var ox := s.x
 	var oy := s.y
+	suspend_changes += 1 # a temporary move, undone below
 	s.x = x
 	s.y = y
 	var r = f.call()
 	s.x = ox
 	s.y = oy
+	suspend_changes -= 1
 	return r
 
 # ------------------------------------------------------------------ collision functions
 
 static func f_place_meeting(s: GMInstance, x: Variant, y: Variant, obj: Variant) -> float:
-	var k := ri(obj)
-	var hit = _moved_check(s, x, y, func():
-		if k == -1:
-			return false
-		return find_instance_with(obj, func(i): return check_collision(s, i)) != null)
-	return 1.0 if hit else 0.0
+	if ri(obj) == -1:
+		return 0.0
+	return 1.0 if _place_find(s, float(x), float(y), obj, false) else 0.0
+
+## First instance of `obj` colliding with `s` placed at x, y.
+static func _place_find(s: GMInstance, x: float, y: float, obj: Variant, not_self: bool) -> GMInstance:
+	var bb := _bbox_at(s, x, y)
+	var cands := _area_list(obj, bb[0], bb[1], bb[2], bb[3])
+	if cands.is_empty():
+		return null
+	var ox := s.x
+	var oy := s.y
+	suspend_changes += 1
+	s.x = x
+	s.y = y
+	var found: GMInstance = null
+	for i: GMInstance in cands:
+		if not i.gone and (not not_self or i != s) and check_collision(s, i):
+			found = i
+			break
+	s.x = ox
+	s.y = oy
+	suspend_changes -= 1
+	return found
 
 static func f_place_free(s: GMInstance, x: Variant, y: Variant) -> float:
 	var hit = _moved_check(s, x, y, func():
@@ -188,24 +329,32 @@ static func f_place_empty(s: GMInstance, x: Variant, y: Variant) -> float:
 	return 0.0 if hit else 1.0
 
 static func f_instance_place(s: GMInstance, x: Variant, y: Variant, obj: Variant) -> float:
-	var found = _moved_check(s, x, y, func():
-		return find_instance_with(obj, func(i): return i != s and check_collision(s, i)))
+	var found := _place_find(s, float(x), float(y), obj, true)
 	return found.id if found else -4.0
 
 static func f_position_meeting(s: GMInstance, x: Variant, y: Variant, obj: Variant) -> float:
 	var k := ri(obj)
 	if k == -1:
 		return 1.0 if check_collision_point(s, x, y, true) else 0.0
-	return 1.0 if find_instance_with(obj, func(i): return check_collision_point(i, x, y, true)) else 0.0
+	return 1.0 if _point_find(float(x), float(y), obj) else 0.0
+
+static func _point_find(x: float, y: float, obj: Variant) -> GMInstance:
+	for i: GMInstance in _area_list(obj, x, y, x, y):
+		if not i.gone and check_collision_point(i, x, y, true):
+			return i
+	return null
 
 static func f_instance_position(s: GMInstance, x: Variant, y: Variant, obj: Variant) -> float:
-	var found := find_instance_with(obj, func(i): return check_collision_point(i, x, y, true))
+	var found := _point_find(float(x), float(y), obj)
 	return found.id if found else -4.0
 
 static func f_collision_line(s: GMInstance, x1: Variant, y1: Variant, x2: Variant, y2: Variant, obj: Variant, prec: Variant, notme: Variant) -> float:
 	var excl := t(notme)
-	var found := find_instance_with(obj, func(i): return (not excl or i != s) and check_collision_line(i, x1, y1, x2, y2, t(prec)))
-	return found.id if found else -4.0
+	var precise := t(prec)
+	for i: GMInstance in _area_list(obj, float(x1), float(y1), float(x2), float(y2)):
+		if not i.gone and (not excl or i != s) and check_collision_line(i, x1, y1, x2, y2, precise):
+			return i.id
+	return -4.0
 
 static func _inst_distance(a: GMInstance, b: GMInstance) -> float:
 	a.update_bbox()
@@ -265,7 +414,14 @@ static func f_instance_exists(s: GMInstance, obj: Variant) -> float:
 	if k < 0:
 		return 0.0
 	if k <= 100000:
-		return 1.0 if not identity_list(k).is_empty() else 0.0
+		var o := GMAssets.object(k)
+		if o == null:
+			return 0.0
+		for c in o.children:
+			for i: GMInstance in by_object.get(c, []):
+				if not i.gone:
+					return 1.0
+		return 0.0
 	var i = by_id.get(k)
 	return 1.0 if i and not i.gone else 0.0
 
@@ -363,7 +519,9 @@ static func f_instance_activate_object(s: GMInstance, obj: Variant) -> float:
 # ------------------------------------------------------------------ motion
 
 static func process_speeds() -> void:
-	for inst: GMInstance in _active_snapshot():
+	for inst: GMInstance in instances: # no events run here, so no snapshot is needed
+		if inst.gone:
+			continue
 		var fr := inst.friction
 		if fr != 0.0:
 			var sp := inst.speed
@@ -392,39 +550,109 @@ static func f_move_towards_point(s: GMInstance, x: Variant, y: Variant, sp: Vari
 	s.set_speed_direction(sp, rad_to_deg(atan2(s.y - float(y), float(x) - s.x)))
 	return 0.0
 
+static func _collides(s: GMInstance, solids_only: bool) -> bool:
+	for i: GMInstance in _active_snapshot():
+		if (not solids_only or i.solid) and check_collision(s, i):
+			return true
+	return false
+
+## GM8 bouncing (OpenGMK's movement.rs: bounce and bounce_advanced).
+static func _bounce(s: GMInstance, solids_only: bool, advanced: bool) -> void:
+	var hit := false
+	if _collides(s, solids_only):
+		s.x = s.xprevious
+		s.y = s.yprevious
+		hit = true
+	var ox := s.x
+	var oy := s.y
+	if advanced:
+		var start := float(roundi(s.direction / 10.0) * 10)
+		var sides := []
+		for step in [-10.0, 10.0]:
+			var side := start
+			for i in 36:
+				side += step
+				s.x = ox + s.speed * cos(deg_to_rad(side))
+				s.y = oy - s.speed * sin(deg_to_rad(side))
+				if not _collides(s, solids_only):
+					break
+				hit = true
+			sides.append(side)
+		if hit:
+			s.direction = sides[0] + sides[1] + 180.0 - start
+	else:
+		s.x = ox + s.hspeed
+		var bx := _collides(s, solids_only)
+		s.x = ox
+		s.y = oy + s.vspeed
+		var by := _collides(s, solids_only)
+		if bx:
+			s.hspeed = -s.hspeed
+		if by:
+			s.vspeed = -s.vspeed
+		if not bx and not by:
+			s.x = ox + s.hspeed
+			if _collides(s, solids_only):
+				var h := -s.hspeed
+				var v := -s.vspeed
+				s.hspeed = h
+				s.vspeed = v
+	s.x = ox
+	s.y = oy
+
 static func f_move_bounce_all(s: GMInstance, adv: Variant) -> float:
-	# Port simplification: reverse the axis that collides with any instance.
-	var hit_x = _moved_check(s, s.x + s.hspeed, s.y, func():
-		for i in _active_snapshot():
-			if check_collision(s, i): return true
-		return false)
-	var hit_y = _moved_check(s, s.x, s.y + s.vspeed, func():
-		for i in _active_snapshot():
-			if check_collision(s, i): return true
-		return false)
-	if hit_x:
-		s.hspeed = -s.hspeed
-	if hit_y:
-		s.vspeed = -s.vspeed
+	_bounce(s, false, t(adv))
 	return 0.0
 
+static func f_move_bounce_solid(s: GMInstance, adv: Variant) -> float:
+	_bounce(s, true, t(adv))
+	return 0.0
+
+## OpenGMK's pathfinding::potential_step with GM8's default mp_potential_settings (30, 10, 3, true).
 static func f_mp_potential_step_object(s: GMInstance, gx: Variant, gy: Variant, sp: Variant, obj: Variant) -> float:
-	# Simple version of GM's potential-field step: head to the goal, try +-angles if blocked.
-	var dist := Vector2(gx - s.x, gy - s.y).length()
-	if dist <= sp:
-		s.x = gx
-		s.y = gy
+	var x := float(gx)
+	var y := float(gy)
+	var step := float(sp)
+	var ox := s.x
+	var oy := s.y
+	if ox == x and oy == y:
 		return 1.0
-	var base := rad_to_deg(atan2(s.y - float(gy), float(gx) - s.x))
-	for off in [0, 10, -10, 20, -20, 30, -30, 45, -45, 60, -60, 75, -75, 90, -90]:
-		var d := deg_to_rad(base + off)
-		var nx: float = s.x + cos(d) * sp
-		var ny: float = s.y - sin(d) * sp
-		if f_place_meeting(s, nx, ny, obj) == 0.0:
-			s.x = nx
-			s.y = ny
-			s.direction = base + off
-			return 0.0
+	var coll := func() -> bool: return f_place_meeting(s, s.x, s.y, obj) != 0.0
+	var try_move := func(tx: float, ty: float) -> bool:
+		s.x = tx
+		s.y = ty
+		if coll.call():
+			s.x = ox
+			s.y = oy
+			return false
+		return true
+	var direction := fposmod(rad_to_deg(atan2(oy - y, x - ox)), 360.0)
+	if Vector2(ox - x, oy - y).length() <= step:
+		if try_move.call(x, y):
+			s._direction = direction
+			return 1.0
+		return 0.0
+	var diff := 0.0
+	while true:
+		var dir := fposmod(direction - diff, 360.0)
+		var change := fposmod(dir - s.direction, 360.0)
+		if change <= 30.0 or change >= 330.0:
+			var xs := step * cos(deg_to_rad(dir))
+			var ys := -step * sin(deg_to_rad(dir))
+			if try_move.call(ox + xs * 3.0, oy + ys * 3.0):
+				if try_move.call(ox + xs, oy + ys):
+					s._direction = dir
+					return 0.0
+				s.x = ox
+				s.y = oy
+		# 0, 10, -10, 20, -20, ... up to 170
+		if diff <= 0.0:
+			diff = -diff + 10.0
+			if diff >= 180.0:
+				break
+		else:
+			diff = -diff
+	s._direction = s.direction + 30.0
 	return 0.0
 
 static func run_bound_events() -> void:
@@ -453,10 +681,15 @@ static func run_collisions() -> void:
 		if tobj == null:
 			continue
 		for oi in event_holders[ev]:
+			if GMDev.noclip and oi == 14 and target == 1: # dev `atravesar`: obj_Prota vs obj_pared
+				continue
+			var _pt0 := Time.get_ticks_usec()
 			for a: GMInstance in object_list(oi):
 				if a.gone:
 					continue
-				for b: GMInstance in identity_list(target):
+				a.update_bbox()
+				var ab: Array = a._bbox
+				for b: GMInstance in _grid_candidates(target, ab[0], ab[1], ab[2], ab[3]):
 					if a.gone:
 						break
 					if b.gone or not check_collision(a, b):
@@ -476,6 +709,8 @@ static func run_collisions() -> void:
 							for i in [a, b]:
 								i.x = i.xprevious
 								i.y = i.yprevious
+			if GMPerf.enabled:
+				GMPerf.add_obj(ev, oi, Time.get_ticks_usec() - _pt0)
 
 # ------------------------------------------------------------------ rooms
 

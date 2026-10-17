@@ -33,6 +33,7 @@ python3 -m venv tools/.venv && tools/.venv/bin/pip install cmake pillow
 PATH="$PWD/tools/.venv/bin:$PATH" cargo build --release --manifest-path tools/OpenGMK/Cargo.toml -p gm8decompiler
 cargo build --release --manifest-path tools/gm8dump/Cargo.toml
 cargo build --release --manifest-path tools/gml2gd/Cargo.toml
+cargo build --release --manifest-path tools/midi2ogg/Cargo.toml
 
 # 2. Extraer el .exe
 EXE="original/Proyecto Reloaded The Last Beta 1.9.2.2 Full.exe"
@@ -45,13 +46,26 @@ python3 -I tools/gmspr2png.py original/data/pkmnbattle extracted/pkmnbattle
 tools/gml2gd/target/release/gml2gd gen extracted godot
 python3 -I tools/gen_gm_stubs.py godot
 tools/.venv/bin/python -I tools/prepare_gamedata.py extracted original/data gamedata
+# Música: los MIDI se pre-renderizan a OGG con el SoundFont libre GeneralUser GS (~5 min, requiere ffmpeg)
+tools/midi2ogg/target/release/midi2ogg tools/soundfont/GeneralUser-GS.sf2 gamedata/data/audio
 
 # 4. Revisar y correr
 tools/godot_check.sh
 tools/Godot_v4.7.2-stable_linux.x86_64 --path godot
 ```
 Depuración: `GM_SNAPSHOTS="dir:segundos:cantidad"` guarda capturas y cierra;
-`GM_INPUT="t:vk,..."` presiona teclas (códigos VK de Windows, p. ej. 90 = Z, 13 = Enter) en el segundo t.
+`GM_INPUT="t:vk,..."` presiona teclas (códigos VK de Windows, p. ej. 90 = Z, 13 = Enter) en el segundo t;
+`GM_INPUT_UNTIL=Mapa` descarta las teclas pendientes al llegar a ese mapa;
+`GM_DEV_CMDS="t:comando;@Mapa+s:comando"` manda comandos de developer (requiere modo developer).
+
+## Modo developer
+```sh
+tools/dev.sh        # o: GM_DEV=1 tools/Godot_v4.7.2-stable_linux.x86_64 --path godot
+tools/dev.sh 1      # arranca directo en la partida del slot 1 (sin intro)
+```
+**F1** o **º** abre una consola dentro del juego (`tp`, `guardar`, `curar`, `dinero`, `objeto`, `atravesar`…);
+mantener **Tab** = velocidad x4. Lista completa de comandos: [COMANDOS.md](COMANDOS.md).
+`GM_ROOT=<carpeta>` usa otra carpeta del juego (para pruebas sin tocar tus partidas).
 
 ## Arquitectura del port (`godot/`)
 - `gen/` — **generado, no editar**: `scripts/S_*.gd` (5,075 scripts), `objects/O_*.gd` (eventos de 1,991
@@ -66,9 +80,18 @@ Depuración: `GM_SNAPSHOTS="dir:segundos:cantidad"` guarda capturas y cierra;
 
 ## Estado
 - ✅ Arranca, título, opciones, nueva partida, selección de personaje, ingreso de nombre.
-- ⏳ Pendiente: partículas/efectos (`part_*`, `effect_*`, hoy no dibujan), música MIDI (requiere
-  `fluidsynth` + soundfont para pre-renderizar a OGG), revisar contra el original eventos de colisión,
-  `move_bounce_all`, `mp_potential_step_object`, rutas suaves y el texto "fantasma" en los diálogos.
+- ✅ Primer mapa (Home_2), guardar con F5 y cargar partida.
+- ✅ Música MIDI (pre-renderizada a OGG), partículas y efectos (`part_*`, `effect_*`, port de OpenGMK),
+  caminos suaves, `move_bounce_*`, `mp_potential_step_object`.
+- ✅ Argumentos de funciones con el tipo de GM8: texto donde se espera número = 0, número donde se espera
+  texto = "" (el transpilador usa las firmas de OpenGMK, `tools/gml2gd/gm_builtins.json`).
+- ℹ️ El "texto fantasma" en los diálogos es fiel al original: el cuadro de diálogo es 95 % opaco.
+- ✅ Batallas: salvajes, captura y contra entrenador, de principio a fin (probadas con la consola dev).
+- ✅ Rendimiento: rejilla de colisiones incremental, orden de dibujo en caché, recorte de lo que queda
+  fuera de la vista y reloj del juego sincronizado con el refresco (30 fps parejos en mapas normales).
+- ⏳ Pendiente: revisar contra el original batallas, eventos de colisión y el resto de mapas;
+  `part_type_blend` (mezcla aditiva) se guarda pero se dibuja con mezcla normal; los mapas gigantes
+  (IslaAlma, MontePiscis_3: 3–4 mil instancias) van a 18–20 fps por el costo de GDScript.
 
 ## Lo que hay dentro del juego
 - **5,075 scripts** (~14 MB de GML), **1,991 objetos**, **717 mapas**, 3,857 sprites internos,

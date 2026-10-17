@@ -39,23 +39,78 @@ void fragment() {
 """
 	_setup_snapshots()
 	_setup_input_script()
+	_setup_dev()
 	_audio = preload("res://runtime/gm_audio.gd").new()
 	add_child(_audio)
-	var root := game_root
+	var root := OS.get_environment("GM_ROOT") if game_root == "" else game_root
 	if root == "":
 		if OS.has_feature("editor"):
 			root = ProjectSettings.globalize_path("res://").path_join("../gamedata").simplify_path()
 		else:
 			root = OS.get_executable_path().get_base_dir()
+	if GMDev.enabled:
+		# GM_DEV_LOAD=n or `-- --dev --load=n`: start straight into save slot n.
+		var slot := OS.get_environment("GM_DEV_LOAD")
+		for arg in OS.get_cmdline_user_args():
+			if arg.begins_with("--load="):
+				slot = arg.trim_prefix("--load=")
+		if slot.is_valid_int():
+			GMDev.request_load(root, int(slot))
+	GM.external_clock = OS.get_environment("GM_FREE_CLOCK") == ""
 	_thread = Thread.new()
 	_thread.start(GM.run.bind(root))
 
 func _exit_tree() -> void:
 	GM.running = false
+	GM.tick_sem.post() # wake the game thread if it waits for a frame tick
 	if _thread and _thread.is_started():
 		_thread.wait_to_finish()
 	if GM._preloader and GM._preloader.is_started():
 		GM._preloader.wait_to_finish()
+
+## Developer mode: GM_DEV=1, `-- --dev`, or an export with the "dev" feature tag.
+## F1 or º opens the in-game console; holding Tab runs the game at x4. The dev window only opens
+## with the `ventana` command.
+var _console: Node2D
+var _dev_ui: Window
+var _turbo_before := 1.0
+
+func _setup_dev() -> void:
+	GMPerf.enabled = OS.get_environment("GM_PERF") not in ["", "0"]
+	GMDev.enabled = OS.get_environment("GM_DEV") not in ["", "0"] or "--dev" in OS.get_cmdline_user_args() \
+		or OS.has_feature("dev")
+	if not GMDev.enabled:
+		return
+	get_window().title += " [DEV]"
+	var layer := CanvasLayer.new()
+	layer.layer = 10
+	add_child(layer)
+	_console = preload("res://runtime/gm_console.gd").new()
+	layer.add_child(_console)
+	GMDev.toggle_window = _toggle_dev_window
+
+func _toggle_dev_window() -> void:
+	if _dev_ui == null:
+		get_viewport().gui_embed_subwindows = false
+		_dev_ui = preload("res://runtime/gm_dev_ui.gd").new()
+		add_child(_dev_ui)
+	else:
+		_dev_ui.visible = not _dev_ui.visible
+
+## Handles the dev hotkeys; returns true when the event must not reach the game.
+func _dev_key(e: InputEventKey) -> bool:
+	if not GMDev.enabled:
+		return false
+	if _console.handle_key(e):
+		return true
+	if e.keycode == KEY_TAB:
+		if e.pressed and not e.echo:
+			_turbo_before = GMDev.turbo
+			GMDev.turbo = maxf(4.0, GMDev.turbo)
+		elif not e.pressed:
+			GMDev.turbo = _turbo_before
+		return true
+	return false
 
 ## Debug: GM_SNAPSHOTS="dir:interval_s:count" saves numbered screenshots, then quits.
 var _snap_dir := ""
@@ -77,14 +132,39 @@ func _setup_snapshots() -> void:
 ## Debug: GM_INPUT="t:vk,t:vk,..." taps virtual key vk at t seconds (held 0.15 s).
 var _script_keys: Array = []
 var _script_t := 0.0
+var _script_dev: Array = []
+var _script_until := ""
+var _room_seen: Dictionary = {} # room name -> _script_t when first entered
 
 func _setup_input_script() -> void:
 	for item in OS.get_environment("GM_INPUT").split(",", false):
 		var kv := item.split(":")
 		_script_keys.append([float(kv[0]), int(kv[1]), false])
+	# GM_DEV_CMDS="t:command;@Room+s:command" sends developer commands at t seconds, or s seconds
+	# after first entering Room. GM_INPUT_UNTIL=Room drops the remaining GM_INPUT keys there.
+	for item in OS.get_environment("GM_DEV_CMDS").split(";", false):
+		var kv := item.split(":", true, 1)
+		var when := kv[0].trim_prefix("@").split("+")
+		var room := when[0] if kv[0].begins_with("@") else ""
+		_script_dev.append([float(when[-1]) if room == "" or when.size() > 1 else 0.0, kv[1], room])
+	_script_until = OS.get_environment("GM_INPUT_UNTIL")
 
 func _input_script(delta: float) -> void:
 	_script_t += delta
+	if not _script_dev.is_empty() or _script_until != "":
+		var rn: String = GMDev.info().get("room_name", "")
+		if rn != "" and not _room_seen.has(rn):
+			_room_seen[rn] = _script_t
+			if rn == _script_until:
+				_script_keys = _script_keys.filter(func(k): return k[2] and k[0] >= 0.0)
+		for c in _script_dev.duplicate():
+			var base: float = 0.0 if c[2] == "" else _room_seen.get(c[2], INF)
+			if _script_t >= base + c[0]:
+				if c[1] == "!consola": # test hook: toggle the console as F1 would
+					_console.is_open = not _console.is_open
+				else:
+					GMDev.push(c[1])
+				_script_dev.erase(c)
 	for k in _script_keys:
 		if not k[2] and _script_t >= k[0]:
 			GM.push_input(["down", k[1]])
@@ -105,14 +185,65 @@ func _snapshots(delta: float) -> void:
 		if _snap_left <= 0:
 			get_tree().quit()
 
+## Game frames owed to the game thread (fractional), advanced every displayed frame.
+var _clock := 0.0
+
+## Ticks the game at room_speed in step with the display: with a steady refresh each displayed frame
+## counts exactly 1/refresh seconds (30 fps on a 60 Hz screen = every 2nd refresh, never 1-then-3);
+## when frames are late or vsync is off, real time is used instead.
+func _clock_tick(delta: float) -> bool:
+	if not GM.external_clock:
+		return true
+	var hz := DisplayServer.screen_get_refresh_rate()
+	if hz > 0.0 and absf(delta * hz - 1.0) < 0.35:
+		delta = 1.0 / hz
+	_clock = minf(_clock + delta * maxf(GM.room_speed, 1.0) * GMDev.turbo, 4.0)
+	var n := int(_clock + 0.001)
+	if n > 0:
+		_clock -= n
+		GM.post_ticks(n)
+	return n > 0
+
+## Newest finished game frame, shown at the next tick (see _process).
+var _held_frame: Variant = null
+## A tick came and the game had no frame ready: it's running slower than room_speed, so frames
+## are shown as soon as they arrive instead (waiting for the next tick would alternate 2 and 3 ticks).
+var _late := false
+var _last_tick := 0
+
 func _process(_delta: float) -> void:
+	# A frame is shown when the next one is started, not as soon as it is finished: frames take
+	# close to a full tick to compute, so showing them on arrival alternates between 1 and 3
+	# refreshes. One tick of latency buys an even cadence.
+	var ticked := _clock_tick(_delta)
+	if GMDev.enabled:
+		GMDev.release_keys()
 	_snapshots(_delta)
 	_input_script(_delta)
 	for cmd in GM.take_commands():
 		_system_command(cmd)
 	var f = GM.take_frame()
 	if f != null:
+		_held_frame = f
+	var now := Time.get_ticks_usec()
+	if ticked:
+		_late = _held_frame == null
+		_last_tick = now
+	elif f != null and _late and now - _last_tick < 500000.0 / maxf(GM.room_speed * GMDev.turbo, 1.0):
+		_late = false # the frame came early in the tick: back to showing frames on ticks
+	if (ticked or _late) and _held_frame != null:
+		f = _held_frame
+		_held_frame = null
+		var t0 := Time.get_ticks_usec()
 		_render(f)
+		GMPerf.add("render", Time.get_ticks_usec() - t0)
+		GMPerf.mark("shown_interval")
+	GMPerf.mark("vsync_interval")
+	var rep := GMPerf.report()
+	if rep != "":
+		print(rep)
+		if GMDev.enabled and GMPerf.enabled:
+			GMDev.log_line(rep)
 	var win := get_window()
 	GM.window_state.fullscreen = win.mode == Window.MODE_FULLSCREEN or win.mode == Window.MODE_EXCLUSIVE_FULLSCREEN
 	GM.window_state.w = win.size.x
@@ -196,6 +327,8 @@ func _render(f: Dictionary) -> void:
 
 func _unhandled_input(event: InputEvent) -> void:
 	if event is InputEventKey:
+		if _dev_key(event):
+			return
 		if event.echo:
 			if event.pressed and event.unicode > 0:
 				GM.push_input(["char", String.chr(event.unicode)])

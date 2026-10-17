@@ -17,3 +17,6 @@
 /tools/.venv/
 /tools/Godot_*
 target/
+
+# SoundFont (31 MB, se descarga: ver tools/soundfont/README.md)
+/tools/soundfont/*.sf2

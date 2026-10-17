@@ -65,6 +65,8 @@ pub struct Ctx<'b> {
     pub array_names: HashSet<String>,
     pub object_index: HashMap<String, usize>,
     pub script_ids: HashMap<String, usize>,
+    /// Scripts that do nothing and return 0 (e.g. ScriptEmpty, used as a placeholder step event).
+    pub empty_scripts: HashSet<String>,
 }
 
 pub enum FnKind<'a> {
@@ -173,6 +175,25 @@ pub fn round_gm(f: f64) -> i64 {
 }
 
 /// Expression result: GDScript source plus whether it is a native bool.
+/// Built-ins that always return a real / a string (their results need no conversion).
+const NUMERIC_FUNCTIONS: &[&str] = &[
+    "floor", "ceil", "abs", "round", "real", "sqrt", "sqr", "power", "exp", "ln", "log2", "log10", "sin", "cos",
+    "tan", "arcsin", "arccos", "arctan", "arctan2", "degtorad", "radtodeg", "sign", "frac", "min", "max", "mean",
+    "median", "random", "irandom", "random_range", "irandom_range", "ord", "string_length", "string_pos",
+    "string_count", "point_direction", "point_distance", "lengthdir_x", "lengthdir_y", "instance_exists",
+    "instance_number", "instance_create", "instance_find", "instance_nearest", "place_meeting", "place_free",
+    "position_meeting", "collision_point", "collision_rectangle", "collision_line", "keyboard_check",
+    "keyboard_check_pressed", "keyboard_check_released", "ds_list_size", "ds_map_size", "ds_list_find_index",
+    "sprite_get_width", "sprite_get_height", "sprite_get_number", "file_exists", "file_text_open_read",
+    "file_text_open_write", "file_text_read_real", "make_color_rgb", "sound_isplaying", "variable_global_exists",
+];
+const STRING_FUNCTIONS: &[&str] = &[
+    "string", "chr", "ansi_char", "string_copy", "string_char_at", "string_delete", "string_insert",
+    "string_replace", "string_replace_all", "string_upper", "string_lower", "string_repeat", "string_letters",
+    "string_digits", "string_lettersdigits", "string_format", "file_text_read_string", "filename_name",
+    "filename_path", "filename_dir", "filename_drive", "filename_ext", "filename_change_ext",
+];
+
 struct Ex {
     code: String,
     is_bool: bool,
@@ -379,6 +400,38 @@ impl<'c, 'b> Gen<'c, 'b> {
     }
 
     /// Numeric value of a literal or a known constant identifier (true, c_white, resource names...).
+    /// A built-in's real argument: GM8 converts strings to 0 (`abs("")` is 0), so anything not
+    /// numeric by construction goes through G.rn.
+    fn real_arg(&mut self, e: &Expr) -> String {
+        use Operator::*;
+        let numeric = self.const_value(e).is_some()
+            || match e {
+                Expr::Group(g) if g.len() == 1 => return self.real_arg(&g[0]),
+                Expr::Unary(u) => matches!(u.op, Subtract | Complement),
+                Expr::Binary(b) => matches!(
+                    b.op,
+                    Subtract | Multiply | Divide | IntDivide | Modulo | BitwiseAnd | BitwiseOr | BitwiseXor
+                        | BinaryShiftLeft | BinaryShiftRight
+                ),
+                Expr::Function(f) => NUMERIC_FUNCTIONS.contains(&ident(f.name).as_str()),
+                _ => false,
+            };
+        let v = self.value(e);
+        if numeric { v } else { format!("G.rn({v})") }
+    }
+
+    /// A built-in's string argument: GM8 reads a real as "".
+    fn string_arg(&mut self, e: &Expr) -> String {
+        let string = match e {
+            Expr::Group(g) if g.len() == 1 => return self.string_arg(&g[0]),
+            Expr::LiteralString(_) => true,
+            Expr::Function(f) => STRING_FUNCTIONS.contains(&ident(f.name).as_str()),
+            _ => false,
+        };
+        let v = self.value(e);
+        if string { v } else { format!("G.rs({v})") }
+    }
+
     fn const_value(&self, e: &Expr) -> Option<f64> {
         match e {
             Expr::LiteralReal(f) => Some(*f),
@@ -462,6 +515,11 @@ impl<'c, 'b> Gen<'c, 'b> {
                 panic!("unresolved ex() call; run resolve_ex.py first");
             }
         }
+        if self.ctx.empty_scripts.contains(name) {
+            // Calling it would only cost time; arguments are still evaluated, as in GM.
+            let args: Vec<String> = params.iter().map(|p| self.value(p)).collect();
+            return if args.is_empty() { "0.0".into() } else { format!("G.first(0.0, [{}])", args.join(", ")) };
+        }
         if let Some(&arity) = self.ctx.script_arity.get(name) {
             let mut args = vec![self.self_v.clone(), self.other_v.clone()];
             for p in params.iter().take(arity) {
@@ -480,15 +538,22 @@ impl<'c, 'b> Gen<'c, 'b> {
                 }
                 return "0.0".into();
             },
-            "floor" => return format!("floorf({})", self.value(&params[0])),
-            "ceil" => return format!("ceilf({})", self.value(&params[0])),
-            "abs" => return format!("absf({})", self.value(&params[0])),
+            "floor" => return format!("floorf({})", self.real_arg(&params[0])),
+            "ceil" => return format!("ceilf({})", self.real_arg(&params[0])),
+            "abs" => return format!("absf({})", self.real_arg(&params[0])),
             _ => {},
         }
         assert!(self.ctx.builtins.functions.contains(name), "unknown function {name}");
         let mut args = vec![self.self_v.clone()];
-        for p in params {
-            args.push(self.value(p));
+        let sig = self.ctx.builtins.signatures.get(name);
+        for (i, p) in params.iter().enumerate() {
+            // GM8 reads a string passed as real/int as 0, and a real passed as string as "".
+            let v = match sig.and_then(|s| s.get(i)).map(String::as_str) {
+                Some("real" | "int") => self.real_arg(p),
+                Some("string" | "bytes") => self.string_arg(p),
+                _ => self.value(p),
+            };
+            args.push(v);
         }
         // Variadic built-ins take an array.
         if matches!(name, "choose" | "max" | "min" | "mean" | "median" | "script_execute") {

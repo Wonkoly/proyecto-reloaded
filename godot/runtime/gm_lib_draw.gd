@@ -78,7 +78,12 @@ static func screen_set_size() -> void:
 
 # ------------------------------------------------------------------ the draw pass
 
+static var last_draw_usec := 0
+
 static func draw_frame() -> void:
+	var t0 := Time.get_ticks_usec()
+	if GMDev.enabled:
+		GMDev.publish_info()
 	_cmds = []
 	_cmds.append([OP_STATE, fog_on, fog_color])
 	if t(view_enabled):
@@ -94,6 +99,10 @@ static func draw_frame() -> void:
 		_draw_view(0, 0, _room_width, _room_height, 0, 0, _room_width, _room_height, 0)
 	_view = Transform2D.IDENTITY
 	_publish(_cmds)
+	last_draw_usec = Time.get_ticks_usec() - t0
+	GMPerf.add("draw", last_draw_usec)
+	GMPerf.add("cmds", _cmds.size())
+	GMPerf.mark("frame_interval")
 
 static func _follow_views() -> void:
 	for k in 8:
@@ -155,28 +164,63 @@ static func _draw_view(sx: float, sy: float, sw: float, sh: float, px: float, py
 		if t(background_visible[k]) and not t(background_foreground[k]):
 			_draw_room_background(k, sx, sy, sw, sh)
 
-	# Instances and tiles merged by depth (higher depth first); particles systems interleave.
-	var insts := _active_snapshot()
-	insts.sort_custom(func(a, b): return a.depth > b.depth)
-	var tls := tiles.duplicate()
-	tls.sort_custom(func(a, b): return a.depth > b.depth)
+	# Instances and tiles merged by depth (higher depth first); particle systems interleave.
+	# GM8 keeps both draw orders between frames and sorts them stably, so equal depths keep
+	# their previous relative order (creation order for room tiles and instances).
+	var insts := draw_order()
+	if tiles_dirty:
+		tiles_dirty = false
+		_sorted_tiles = tiles.duplicate()
+		_sorted_tiles.sort_custom(func(a, b): return a.depth > b.depth or (a.depth == b.depth and a.ord < b.ord))
+		_tile_rects = PackedFloat64Array()
+		_tile_rects.resize(_sorted_tiles.size() * 5)
+		for n in _sorted_tiles.size():
+			var td: Dictionary = _sorted_tiles[n]
+			td.ord = n
+			var x0: float = td.x
+			var x1: float = td.x + td.w * td.xscale
+			var y0: float = td.y
+			var y1: float = td.y + td.h * td.yscale
+			_tile_rects[n * 5] = td.depth
+			_tile_rects[n * 5 + 1] = minf(x0, x1)
+			_tile_rects[n * 5 + 2] = minf(y0, y1)
+			_tile_rects[n * 5 + 3] = maxf(x0, x1)
+			_tile_rects[n * 5 + 4] = maxf(y0, y1)
+	var tls := _sorted_tiles
+	# Off-view tiles add nothing to the picture: skip them (unrotated views only).
+	_cull = Rect2(sx, sy, sw, sh) if angle == 0.0 else Rect2()
 	var systems: Array = GM.particle_systems_by_depth()
+	var ni := insts.size()
+	var nt := tls.size()
+	var np := systems.size()
 	var ii := 0
 	var ti := 0
 	var pi := 0
-	while ii < insts.size() or ti < tls.size() or pi < systems.size():
-		var di: float = insts[ii].depth if ii < insts.size() else -INF
-		var dt: float = tls[ti].depth if ti < tls.size() else -INF
-		var dp: float = systems[pi].depth if pi < systems.size() else -INF
-		if pi < systems.size() and dp >= di and dp >= dt:
+	var di: float = insts[0].depth if ni > 0 else -INF
+	var dt: float = _tile_rects[0] if nt > 0 else -INF
+	var dp: float = systems[0].depth if np > 0 else -INF
+	var cull := _cull.size.x > 0.0
+	var cl := _cull.position.x
+	var ct := _cull.position.y
+	var cr := _cull.end.x
+	var cb := _cull.end.y
+	while ii < ni or ti < nt or pi < np:
+		if pi < np and not (dp < di and dp < dt):
 			GM.particle_system_draw(systems[pi])
 			pi += 1
-		elif ti < tls.size() and dt > di:
-			_draw_tile(tls[ti])
+			dp = systems[pi].depth if pi < np else -INF
+		elif ti < nt and dt > di:
+			# _tile_rects holds depth, left, top, right, bottom per sorted tile.
+			var r := ti * 5
+			if not cull or not (_tile_rects[r + 1] > cr or _tile_rects[r + 3] < cl \
+					or _tile_rects[r + 2] > cb or _tile_rects[r + 4] < ct):
+				_draw_tile(tls[ti])
 			ti += 1
+			dt = _tile_rects[ti * 5] if ti < nt else -INF
 		else:
 			var inst: GMInstance = insts[ii]
 			ii += 1
+			di = insts[ii].depth if ii < ni else -INF
 			if inst.gone or not inst.visible:
 				continue
 			if inst.obj and inst.obj.events.has("draw"):
@@ -195,8 +239,32 @@ static func _draw_instance_default(inst: GMInstance) -> void:
 	var spr := GMAssets.sprite(inst.sprite_index)
 	if spr == null:
 		return
+	if _cull.size.x > 0.0 and inst.image_angle == 0.0:
+		var x0 := inst.x - spr.origin_x * inst.image_xscale
+		var y0 := inst.y - spr.origin_y * inst.image_yscale
+		var x1 := x0 + spr.width * inst.image_xscale
+		var y1 := y0 + spr.height * inst.image_yscale
+		if minf(x0, x1) > _cull.end.x or maxf(x0, x1) < _cull.position.x \
+				or minf(y0, y1) > _cull.end.y or maxf(y0, y1) < _cull.position.y:
+			return
 	_draw_sprite_raw(spr, int(floorf(inst.image_index)), inst.x, inst.y, inst.image_xscale, inst.image_yscale,
 		inst.image_angle, inst.image_blend, inst.image_alpha)
+
+static var _sorted_insts: Array = []
+
+## Instances in GM8's draw order (depth, then previous order), re-sorted only when it may change.
+static func draw_order() -> Array:
+	if draw_dirty:
+		draw_dirty = false
+		_sorted_insts = instances.filter(func(i): return not i.destroyed)
+		_sorted_insts.sort_custom(func(a, b): return a.depth > b.depth or (a.depth == b.depth and a.draw_pos < b.draw_pos))
+		for n in _sorted_insts.size():
+			_sorted_insts[n].draw_pos = n
+		next_draw_pos = _sorted_insts.size()
+	return _sorted_insts
+static var _sorted_tiles: Array = []
+static var _tile_rects := PackedFloat64Array() # per sorted tile: depth, left, top, right, bottom
+static var _cull := Rect2() # current view in room coordinates; empty = no culling
 
 static func _draw_tile(td: Dictionary) -> void:
 	if not td.visible:

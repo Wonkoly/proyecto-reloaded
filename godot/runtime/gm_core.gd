@@ -17,6 +17,15 @@ static var instances: Array = []            # all instances, insertion order
 static var by_object: Dictionary = {}       # object index -> Array of instances (insertion order)
 static var by_id: Dictionary = {}           # instance id -> instance
 static var next_instance_id := 100001
+static var next_draw_pos := 0               # draw_pos for the next created instance
+## The depth-sorted draw lists are kept between frames and only re-sorted when these are set
+## (a depth changed, an instance/tile appeared or went away). A stable re-sort of an unchanged
+## list gives the same order, so this is only a cache.
+static var draw_dirty := true
+static var tiles_dirty := true
+## While > 0, inst_changed does nothing: collision checks move the caller temporarily and put it back.
+static var suspend_changes := 0
+static var next_seq := 0 # GMInstance.seq: insertion order, used to keep grid results in identity order
 static var tiles: Array = []                # Dictionary per tile
 static var next_tile_id := 10000001
 static var event_holders: Dictionary = {}   # event name -> Array[int] of objects having it
@@ -163,8 +172,16 @@ static func ri(v: Variant) -> int:
 	return int(fl) if int(fl) % 2 == 0 else int(fl) + 1
 
 ## Banker's rounding as a float.
-static func rf(v: float) -> float:
+static func rf(v: Variant) -> float:
 	return float(ri(v))
+
+## A built-in's real argument: GM8 reads strings as 0.
+static func rn(v: Variant) -> float:
+	return 0.0 if v is String else v
+
+## A built-in's string argument: GM8 reads reals as "".
+static func rs(v: Variant) -> String:
+	return v if v is String else ""
 
 static func band(a: Variant, b: Variant) -> float:
 	return float(ri(a) & ri(b))
@@ -311,14 +328,42 @@ static func _targets(s: GMInstance, o: GMInstance, target: Variant, for_write: b
 static func _first_or_empty(a: Array) -> Array:
 	return [a[0]] if not a.is_empty() else []
 
+## The instance a field read refers to (the first one for an object), without building lists.
+static func _first_target(s: GMInstance, o: GMInstance, target: Variant) -> GMInstance:
+	var k := ri(target)
+	if k == -1:
+		return s
+	if k == -2:
+		return o
+	if k >= 100000:
+		var i = by_id.get(k)
+		return i if i and not i.gone else null
+	if k == -3:
+		for i: GMInstance in instances:
+			if not i.gone:
+				return i
+		return null
+	var ob := GMAssets.object(k)
+	if ob == null:
+		return null
+	if ob.children.size() == 1:
+		for i: GMInstance in by_object.get(k, []):
+			if not i.gone:
+				return i
+		return null
+	for i: GMInstance in instances:
+		if not i.gone and ob.children.has(int(i.object_index)):
+			return i
+	return null
+
 static func fget(s: GMInstance, o: GMInstance, target: Variant, field: String) -> Variant:
 	if ri(target) == -5:
 		return vget(g, field)
-	var ts := _targets(s, o, target, false)
-	if ts.is_empty():
+	var inst := _first_target(s, o, target)
+	if inst == null:
 		_error("Unknown variable %s (no instance %s)" % [field, target])
 		return 0.0
-	return inst_get(ts[0], field)
+	return inst_get(inst, field)
 
 static func fset(s: GMInstance, o: GMInstance, target: Variant, field: String, val: Variant) -> void:
 	if ri(target) == -5:
@@ -330,12 +375,12 @@ static func fset(s: GMInstance, o: GMInstance, target: Variant, field: String, v
 static func faget(s: GMInstance, o: GMInstance, target: Variant, field: String, i: int, j: int) -> Variant:
 	if ri(target) == -5:
 		return aget(g, field, i, j)
-	var ts := _targets(s, o, target, false)
-	if ts.is_empty():
+	var inst := _first_target(s, o, target)
+	if inst == null:
 		return 0.0
 	if field == "alarm":
-		return ts[0].alarm[i]
-	return aget(ts[0].v, field, i, j)
+		return inst.alarm[i]
+	return aget(inst.v, field, i, j)
 
 static func faset(s: GMInstance, o: GMInstance, target: Variant, field: String, i: int, j: int, val: Variant) -> void:
 	if ri(target) == -5:
@@ -362,6 +407,19 @@ static func with_iter(s: GMInstance, o: GMInstance, target: Variant) -> Array:
 	if k >= 0:
 		return identity_list(k)
 	return []
+
+## An instance moved, changed mask/sprite, appeared or went away: the collision grids of its
+## object (`oi`) and that object's ancestors must re-place it.
+static func inst_changed(inst: GMInstance, oi: int) -> void:
+	if suspend_changes > 0 or GM._grids.is_empty():
+		return
+	var o := GMAssets.object(oi)
+	if o == null:
+		return
+	for a in o.ancestors:
+		var g = GM._grids.get(a)
+		if g != null:
+			g.dirty[inst] = true
 
 static func _active_snapshot() -> Array:
 	var out := []
@@ -425,6 +483,12 @@ static func create_instance(x: float, y: float, obj_index: int, id := -1) -> GMI
 
 static func _insert(inst: GMInstance) -> void:
 	instances.append(inst)
+	inst.seq = next_seq
+	next_seq += 1
+	inst_changed(inst, int(inst.object_index))
+	draw_dirty = true
+	inst.draw_pos = next_draw_pos
+	next_draw_pos += 1
 	var k := int(inst.object_index)
 	if not by_object.has(k):
 		by_object[k] = []
@@ -443,6 +507,7 @@ static func purge_destroyed() -> void:
 			keep.append(i)
 	if not any:
 		return
+	draw_dirty = true
 	instances = keep
 	for k in by_object.keys():
 		var lst: Array = by_object[k]
@@ -488,6 +553,7 @@ static func run_event(inst: GMInstance, ev: String, other: GMInstance) -> void:
 		return
 	if c is int:
 		c = GMAssets.event_callable(c, ev)
+		o.events[ev] = c # resolved once
 	c.call(inst, other)
 
 ## Runs an event on every instance of every object that has it.
@@ -496,8 +562,26 @@ static func run_object_event(ev: String) -> void:
 	if holders == null:
 		return
 	for obj_index in holders:
-		for inst in object_list(obj_index):
-			run_event(inst, ev, inst)
+		var t0 := Time.get_ticks_usec() if GMPerf.enabled else 0
+		var lst := object_list(obj_index)
+		if not lst.is_empty():
+			# Resolve the event once for the object rather than once per instance.
+			var o: GMObject = GMAssets.objects[obj_index]
+			var c = o.events.get(ev)
+			if c is int:
+				c = GMAssets.event_callable(c, ev)
+				o.events[ev] = c
+			for inst: GMInstance in lst:
+				if scene_change != null:
+					return
+				if inst.gone:
+					continue
+				if inst.obj == o:
+					c.call(inst, inst)
+				else: # changed object (instance_change) during this event
+					run_event(inst, ev, inst)
+		if GMPerf.enabled:
+			GMPerf.add_obj(ev, obj_index, Time.get_ticks_usec() - t0)
 
 ## Runs an "other" event on all instances in draw (insertion) order.
 static func run_other_event(sub: int) -> void:
@@ -647,6 +731,9 @@ static func load_room(room_index: int) -> void:
 	by_object = {}
 	by_id = {}
 	tiles = []
+	tiles_dirty = true
+	draw_dirty = true
+	GM._grids.clear()
 	room = float(room_index)
 	GM.input_step()
 	GM.effects_clear()
@@ -703,7 +790,7 @@ static func load_room(room_index: int) -> void:
 			tiles.append({"id": int(td.id), "bg": bgi, "x": float(td.x), "y": float(td.y),
 				"tx": int(td.tx), "ty": int(td.ty), "w": int(td.w), "h": int(td.h), "depth": float(td.depth),
 				"xscale": float(td.xscale), "yscale": float(td.yscale), "blend": int(td.blend) & 0xFFFFFF,
-				"alpha": float(int(td.blend) >> 24) / 255.0, "visible": true})
+				"alpha": float(int(td.blend) >> 24) / 255.0, "visible": true, "ord": tiles.size()})
 		for idata in rd.instances:
 			var id := int(idata.id)
 			if by_id.has(id):
@@ -804,15 +891,46 @@ static func boot(game_root: String) -> void:
 	load_room(int(room))
 	handle_scene_change()
 
+## Frame clock. The main thread posts one tick per game frame, in step with the display's refresh
+## (gm_screen.gd), so frames come out at an even cadence; without it the game keeps its own time.
+static var tick_sem := Semaphore.new()
+static var external_clock := false
+static var _ticks_mutex := Mutex.new()
+static var _ticks_pending := 0
+
+## Main thread: queues up to `n` game frames, keeping at most one waiting so that a slow frame
+## (or a blocking dialog loop) isn't followed by a burst of catch-up frames.
+static func post_ticks(n: int) -> void:
+	_ticks_mutex.lock()
+	n = mini(n, 1 - _ticks_pending)
+	_ticks_pending += maxi(n, 0)
+	_ticks_mutex.unlock()
+	for i in n:
+		tick_sem.post()
+
+static func _wait_tick() -> void:
+	tick_sem.wait()
+	_ticks_mutex.lock()
+	_ticks_pending -= 1
+	_ticks_mutex.unlock()
+
 ## The game thread: runs frames at room_speed until the game ends.
 static func run(game_root: String) -> void:
 	boot(game_root)
 	var next_tick := Time.get_ticks_usec()
 	while running:
+		if external_clock:
+			_wait_tick()
 		GM.io_handle()
+		var t0 := Time.get_ticks_usec()
 		frame()
+		GMPerf.add("step", Time.get_ticks_usec() - t0 - GM.last_draw_usec)
+		if GMDev.enabled:
+			GMDev.step()
 		handle_scene_change()
-		next_tick += int(1000000.0 / maxf(1.0, room_speed))
+		if external_clock:
+			continue
+		next_tick += int(1000000.0 / maxf(1.0, room_speed * GMDev.turbo))
 		var now := Time.get_ticks_usec()
 		if next_tick > now:
 			OS.delay_usec(next_tick - now)
@@ -827,31 +945,59 @@ static func frame() -> void:
 			inst.yprevious = inst.y
 			inst.path_positionprevious = clampf(inst.path_position, 0.0, 1.0)
 
+	var _p_begin := Time.get_ticks_usec()
 	run_object_event("step_begin")
+	GMPerf.add("f_begin", Time.get_ticks_usec() - _p_begin)
 	if scene_change != null: return
 
+	var _p_alarms := Time.get_ticks_usec()
 	_run_alarms()
+	GMPerf.add("f_alarms", Time.get_ticks_usec() - _p_alarms)
 	if scene_change != null: return
+	var _p_input := Time.get_ticks_usec()
 	GM.run_input_events()
+	GMPerf.add("f_input", Time.get_ticks_usec() - _p_input)
 	if scene_change != null: return
 
+	var _p_step_ev := Time.get_ticks_usec()
 	run_object_event("step_normal")
+	GMPerf.add("f_step_ev", Time.get_ticks_usec() - _p_step_ev)
 	if scene_change != null: return
 
+	var _p_speeds := Time.get_ticks_usec()
 	GM.process_speeds()
-	for inst in _active_snapshot():
-		if GM.apply_motion(inst):
+	GMPerf.add("f_speeds", Time.get_ticks_usec() - _p_speeds)
+	var _p_motion := Time.get_ticks_usec()
+	# Instances created by a path-end event are appended and not moved this frame.
+	var lst := instances
+	for n in lst.size():
+		var inst: GMInstance = lst[n]
+		if inst.gone:
+			continue
+		if inst._hspeed != 0.0 or inst._vspeed != 0.0:
+			inst.x += inst._hspeed
+			inst.y += inst._vspeed
+		if inst.path_index >= 0.0 and GM.path_advance(inst):
 			run_event(inst, "other_8", inst)
+	GMPerf.add("f_motion", Time.get_ticks_usec() - _p_motion)
 
+	var _p_bounds := Time.get_ticks_usec()
 	GM.run_bound_events()
+	GMPerf.add("f_bounds", Time.get_ticks_usec() - _p_bounds)
 	if scene_change != null: return
+	var _p_collisions := Time.get_ticks_usec()
 	GM.run_collisions()
+	GMPerf.add("f_collisions", Time.get_ticks_usec() - _p_collisions)
 	if scene_change != null: return
 
+	var _p_end := Time.get_ticks_usec()
 	run_object_event("step_end")
+	GMPerf.add("f_end", Time.get_ticks_usec() - _p_end)
 	if scene_change != null: return
 
+	var _p_particles := Time.get_ticks_usec()
 	GM.particles_auto_update()
+	GMPerf.add("f_particles", Time.get_ticks_usec() - _p_particles)
 	purge_destroyed()
 
 	GM.draw_frame()
@@ -860,13 +1006,22 @@ static func frame() -> void:
 		background_x[k] += background_hspeed[k]
 		background_y[k] += background_vspeed[k]
 
-	for inst in _active_snapshot():
-		var spr := GMAssets.sprite(inst.sprite_index)
+	var _p_anim := Time.get_ticks_usec()
+	# Like GM8, animations advance in draw order.
+	var sprites: Array = GMAssets.sprites
+	for inst: GMInstance in GM.draw_order():
+		if inst.gone:
+			continue
+		var si := int(inst.sprite_index)
+		var spr: GMSprite = sprites[si] if si >= 0 and si < sprites.size() else null
 		var n := float(spr.frames) if spr else 0.0
-		inst.image_index += inst.image_speed
-		if inst.image_index >= n:
-			inst.image_index -= n
+		var idx := inst.image_index + inst.image_speed
+		if idx >= n:
+			inst.image_index = idx - n
 			run_event(inst, "other_7", inst)
+		else:
+			inst.image_index = idx
+	GMPerf.add("f_anim", Time.get_ticks_usec() - _p_anim)
 
 	GM.input_step()
 

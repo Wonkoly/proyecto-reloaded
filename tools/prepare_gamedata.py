@@ -42,6 +42,8 @@ def main():
         if d.exists():
             shutil.rmtree(d) if d.is_dir() else d.unlink()
         shutil.copytree(s, d) if s.is_dir() else shutil.copy2(s, d)
+    # GM8's built-in particle shapes (14 alpha masks of 64x64), as OpenGMK ships them.
+    shutil.copy2(Path(__file__).parent / "OpenGMK/gm8emulator/data/particles.dat", internal / "particles.dat")
     objs = internal / "objects"
     objs.mkdir(exist_ok=True)
     for f in (extracted / "objects").glob("*.json"):

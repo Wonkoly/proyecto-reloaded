@@ -19,6 +19,8 @@ pub struct Builtins {
     pub constants: HashMap<String, f64>,
     pub variables: HashSet<String>,
     pub functions: HashSet<String>,
+    /// GM8 argument types per function (int, real, string, bytes, bool, any), from OpenGMK.
+    pub signatures: HashMap<String, Vec<String>>,
 }
 
 impl Builtins {
@@ -28,6 +30,12 @@ impl Builtins {
             constants: v["constants"].as_object().unwrap().iter().map(|(k, v)| (k.clone(), v.as_f64().unwrap())).collect(),
             variables: v["variables"].as_array().unwrap().iter().map(|s| s.as_str().unwrap().to_string()).collect(),
             functions: v["functions"].as_array().unwrap().iter().map(|s| s.as_str().unwrap().to_string()).collect(),
+            signatures: v["signatures"]
+                .as_object()
+                .unwrap()
+                .iter()
+                .map(|(k, v)| (k.clone(), v.as_array().unwrap().iter().map(|t| t.as_str().unwrap().to_string()).collect()))
+                .collect(),
         }
     }
 }
@@ -254,7 +262,24 @@ fn gen(root: &Path, out: &Path) {
     }
     let script_ids: HashMap<String, usize> =
         res.iter().filter(|(_, (k, _))| k == "scripts").map(|(n, (_, i))| (n.clone(), *i)).collect();
-    let ctx = Ctx { builtins: &b, script_arity, constants, array_names, object_index: object_index.clone(), script_ids };
+    let empty_scripts: HashSet<String> = units
+        .iter()
+        .filter(|u| matches!(u.kind, units::UnitKind::Script))
+        .filter(|u| {
+            let body: String = u.source.chars().filter(|c| !c.is_whitespace() && *c != ';').collect();
+            matches!(body.as_str(), "" | "exit" | "return0" | "return(0)" | "returnfalse" | "return(false)")
+        })
+        .map(|u| u.name.clone())
+        .collect();
+    let ctx = Ctx {
+        builtins: &b,
+        script_arity,
+        constants,
+        array_names,
+        object_index: object_index.clone(),
+        script_ids,
+        empty_scripts,
+    };
     eprintln!("{} array names", ctx.array_names.len());
 
     for d in ["gen/scripts", "gen/objects"] {

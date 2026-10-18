@@ -3,3 +3,10 @@
 
 # El .gitignore raíz ignora *.import para el port; aquí sí se versionan
 !*.import
+
+# Salida de tools/extraer.py (material del juego original; se regenera)
+/assets/extraido/
+/data/extraido/
+
+# Caché de Python
+__pycache__/

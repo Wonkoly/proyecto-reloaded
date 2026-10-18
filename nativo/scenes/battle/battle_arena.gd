@@ -22,6 +22,12 @@ func _ready() -> void:
 	rival.add_child(ia)
 	jugador.objetivo = rival
 	rival.objetivo = jugador
+	var manager: BattleManager = $BattleManager
+	var hud: BattleHud = $BattleHud
+	hud.conectar(jugador, rival)
+	manager.batalla_terminada.connect(
+		func(ganador: BattlePokemon) -> void: hud.mostrar_resultado("¡Gana %s!" % ganador.pokemon.especie.nombre))
+	manager.iniciar(jugador, rival)
 
 
 func _crear_pokemon(nombre: String, id_especie: int, nivel: int, lado: int, posicion: Vector2) -> BattlePokemon:

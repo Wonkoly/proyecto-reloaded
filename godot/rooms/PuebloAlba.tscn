@@ -1,0 +1,2821 @@
+[gd_scene format=4]
+
+[ext_resource type="Script" path="res://rooms/editor/gm_room.gd" id="1_kku06"]
+[ext_resource type="Script" path="res://rooms/editor/gm_tile_depth.gd" id="2_e547g"]
+[ext_resource type="Texture2D" path="res://rooms/backgrounds/Tiles_W1.png" id="3_a1wll"]
+[ext_resource type="Texture2D" path="res://rooms/backgrounds/Tiles_W2.png" id="4_o5pj0"]
+[ext_resource type="Script" path="res://rooms/editor/gm_room_tile.gd" id="5_usw6o"]
+[ext_resource type="Script" path="res://rooms/editor/gm_room_instance.gd" id="6_ahuth"]
+
+[sub_resource type="TileSetAtlasSource" id="TileSetAtlasSource_d60hn"]
+resource_name = "Tiles_W1"
+texture = ExtResource("3_a1wll")
+0:0/0 = 0
+1:0/0 = 0
+2:0/0 = 0
+3:0/0 = 0
+4:0/0 = 0
+5:0/0 = 0
+6:0/0 = 0
+7:0/0 = 0
+8:0/0 = 0
+9:0/0 = 0
+10:0/0 = 0
+11:0/0 = 0
+12:0/0 = 0
+13:0/0 = 0
+14:0/0 = 0
+15:0/0 = 0
+16:0/0 = 0
+17:0/0 = 0
+18:0/0 = 0
+19:0/0 = 0
+20:0/0 = 0
+21:0/0 = 0
+22:0/0 = 0
+23:0/0 = 0
+24:0/0 = 0
+0:1/0 = 0
+1:1/0 = 0
+2:1/0 = 0
+3:1/0 = 0
+4:1/0 = 0
+5:1/0 = 0
+6:1/0 = 0
+7:1/0 = 0
+8:1/0 = 0
+9:1/0 = 0
+10:1/0 = 0
+11:1/0 = 0
+12:1/0 = 0
+13:1/0 = 0
+14:1/0 = 0
+15:1/0 = 0
+16:1/0 = 0
+17:1/0 = 0
+18:1/0 = 0
+19:1/0 = 0
+20:1/0 = 0
+21:1/0 = 0
+22:1/0 = 0
+23:1/0 = 0
+24:1/0 = 0
+0:2/0 = 0
+1:2/0 = 0
+2:2/0 = 0
+3:2/0 = 0
+4:2/0 = 0
+5:2/0 = 0
+6:2/0 = 0
+7:2/0 = 0
+8:2/0 = 0
+9:2/0 = 0
+10:2/0 = 0
+11:2/0 = 0
+12:2/0 = 0
+13:2/0 = 0
+14:2/0 = 0
+15:2/0 = 0
+16:2/0 = 0
+17:2/0 = 0
+18:2/0 = 0
+19:2/0 = 0
+20:2/0 = 0
+21:2/0 = 0
+22:2/0 = 0
+23:2/0 = 0
+24:2/0 = 0
+0:3/0 = 0
+1:3/0 = 0
+2:3/0 = 0
+3:3/0 = 0
+4:3/0 = 0
+5:3/0 = 0
+6:3/0 = 0
+7:3/0 = 0
+8:3/0 = 0
+9:3/0 = 0
+10:3/0 = 0
+11:3/0 = 0
+12:3/0 = 0
+13:3/0 = 0
+14:3/0 = 0
+15:3/0 = 0
+16:3/0 = 0
+17:3/0 = 0
+18:3/0 = 0
+19:3/0 = 0
+20:3/0 = 0
+21:3/0 = 0
+22:3/0 = 0
+23:3/0 = 0
+24:3/0 = 0
+0:4/0 = 0
+1:4/0 = 0
+2:4/0 = 0
+3:4/0 = 0
+4:4/0 = 0
+5:4/0 = 0
+6:4/0 = 0
+7:4/0 = 0
+8:4/0 = 0
+9:4/0 = 0
+10:4/0 = 0
+11:4/0 = 0
+12:4/0 = 0
+13:4/0 = 0
+14:4/0 = 0
+15:4/0 = 0
+16:4/0 = 0
+17:4/0 = 0
+18:4/0 = 0
+19:4/0 = 0
+20:4/0 = 0
+21:4/0 = 0
+22:4/0 = 0
+23:4/0 = 0
+24:4/0 = 0
+0:5/0 = 0
+1:5/0 = 0
+2:5/0 = 0
+3:5/0 = 0
+4:5/0 = 0
+5:5/0 = 0
+6:5/0 = 0
+7:5/0 = 0
+8:5/0 = 0
+9:5/0 = 0
+10:5/0 = 0
+11:5/0 = 0
+12:5/0 = 0
+13:5/0 = 0
+14:5/0 = 0
+15:5/0 = 0
+16:5/0 = 0
+17:5/0 = 0
+18:5/0 = 0
+19:5/0 = 0
+20:5/0 = 0
+21:5/0 = 0
+22:5/0 = 0
+23:5/0 = 0
+24:5/0 = 0
+0:6/0 = 0
+1:6/0 = 0
+2:6/0 = 0
+3:6/0 = 0
+4:6/0 = 0
+5:6/0 = 0
+6:6/0 = 0
+7:6/0 = 0
+8:6/0 = 0
+9:6/0 = 0
+10:6/0 = 0
+11:6/0 = 0
+12:6/0 = 0
+13:6/0 = 0
+14:6/0 = 0
+15:6/0 = 0
+16:6/0 = 0
+17:6/0 = 0
+18:6/0 = 0
+19:6/0 = 0
+20:6/0 = 0
+21:6/0 = 0
+22:6/0 = 0
+23:6/0 = 0
+24:6/0 = 0
+0:7/0 = 0
+1:7/0 = 0
+2:7/0 = 0
+3:7/0 = 0
+4:7/0 = 0
+5:7/0 = 0
+6:7/0 = 0
+7:7/0 = 0
+8:7/0 = 0
+9:7/0 = 0
+10:7/0 = 0
+11:7/0 = 0
+12:7/0 = 0
+13:7/0 = 0
+14:7/0 = 0
+15:7/0 = 0
+16:7/0 = 0
+17:7/0 = 0
+18:7/0 = 0
+19:7/0 = 0
+20:7/0 = 0
+21:7/0 = 0
+22:7/0 = 0
+23:7/0 = 0
+24:7/0 = 0
+0:8/0 = 0
+1:8/0 = 0
+2:8/0 = 0
+3:8/0 = 0
+4:8/0 = 0
+5:8/0 = 0
+6:8/0 = 0
+7:8/0 = 0
+8:8/0 = 0
+9:8/0 = 0
+10:8/0 = 0
+11:8/0 = 0
+12:8/0 = 0
+13:8/0 = 0
+14:8/0 = 0
+15:8/0 = 0
+16:8/0 = 0
+17:8/0 = 0
+18:8/0 = 0
+19:8/0 = 0
+20:8/0 = 0
+21:8/0 = 0
+22:8/0 = 0
+23:8/0 = 0
+24:8/0 = 0
+0:9/0 = 0
+1:9/0 = 0
+2:9/0 = 0
+3:9/0 = 0
+4:9/0 = 0
+5:9/0 = 0
+6:9/0 = 0
+7:9/0 = 0
+8:9/0 = 0
+9:9/0 = 0
+10:9/0 = 0
+11:9/0 = 0
+12:9/0 = 0
+13:9/0 = 0
+14:9/0 = 0
+15:9/0 = 0
+16:9/0 = 0
+17:9/0 = 0
+18:9/0 = 0
+19:9/0 = 0
+20:9/0 = 0
+21:9/0 = 0
+22:9/0 = 0
+23:9/0 = 0
+24:9/0 = 0
+0:10/0 = 0
+1:10/0 = 0
+2:10/0 = 0
+3:10/0 = 0
+4:10/0 = 0
+5:10/0 = 0
+6:10/0 = 0
+7:10/0 = 0
+8:10/0 = 0
+9:10/0 = 0
+10:10/0 = 0
+11:10/0 = 0
+12:10/0 = 0
+13:10/0 = 0
+14:10/0 = 0
+15:10/0 = 0
+16:10/0 = 0
+17:10/0 = 0
+18:10/0 = 0
+19:10/0 = 0
+20:10/0 = 0
+21:10/0 = 0
+22:10/0 = 0
+23:10/0 = 0
+24:10/0 = 0
+0:11/0 = 0
+1:11/0 = 0
+2:11/0 = 0
+3:11/0 = 0
+4:11/0 = 0
+5:11/0 = 0
+6:11/0 = 0
+7:11/0 = 0
+8:11/0 = 0
+9:11/0 = 0
+10:11/0 = 0
+11:11/0 = 0
+12:11/0 = 0
+13:11/0 = 0
+14:11/0 = 0
+15:11/0 = 0
+16:11/0 = 0
+17:11/0 = 0
+18:11/0 = 0
+19:11/0 = 0
+20:11/0 = 0
+21:11/0 = 0
+22:11/0 = 0
+23:11/0 = 0
+24:11/0 = 0
+0:12/0 = 0
+1:12/0 = 0
+2:12/0 = 0
+3:12/0 = 0
+4:12/0 = 0
+5:12/0 = 0
+6:12/0 = 0
+7:12/0 = 0
+8:12/0 = 0
+9:12/0 = 0
+10:12/0 = 0
+11:12/0 = 0
+12:12/0 = 0
+13:12/0 = 0
+14:12/0 = 0
+15:12/0 = 0
+16:12/0 = 0
+17:12/0 = 0
+18:12/0 = 0
+19:12/0 = 0
+20:12/0 = 0
+21:12/0 = 0
+22:12/0 = 0
+23:12/0 = 0
+24:12/0 = 0
+0:13/0 = 0
+1:13/0 = 0
+2:13/0 = 0
+3:13/0 = 0
+4:13/0 = 0
+5:13/0 = 0
+6:13/0 = 0
+7:13/0 = 0
+8:13/0 = 0
+9:13/0 = 0
+10:13/0 = 0
+11:13/0 = 0
+12:13/0 = 0
+13:13/0 = 0
+14:13/0 = 0
+15:13/0 = 0
+16:13/0 = 0
+17:13/0 = 0
+18:13/0 = 0
+19:13/0 = 0
+20:13/0 = 0
+21:13/0 = 0
+22:13/0 = 0
+23:13/0 = 0
+24:13/0 = 0
+0:14/0 = 0
+1:14/0 = 0
+2:14/0 = 0
+3:14/0 = 0
+4:14/0 = 0
+5:14/0 = 0
+6:14/0 = 0
+7:14/0 = 0
+8:14/0 = 0
+9:14/0 = 0
+10:14/0 = 0
+11:14/0 = 0
+12:14/0 = 0
+13:14/0 = 0
+14:14/0 = 0
+15:14/0 = 0
+16:14/0 = 0
+17:14/0 = 0
+18:14/0 = 0
+19:14/0 = 0
+20:14/0 = 0
+21:14/0 = 0
+22:14/0 = 0
+23:14/0 = 0
+24:14/0 = 0
+
+[sub_resource type="TileSetAtlasSource" id="TileSetAtlasSource_3lrbs"]
+resource_name = "Tiles_W2"
+texture = ExtResource("4_o5pj0")
+0:0/0 = 0
+1:0/0 = 0
+2:0/0 = 0
+3:0/0 = 0
+4:0/0 = 0
+5:0/0 = 0
+6:0/0 = 0
+7:0/0 = 0
+8:0/0 = 0
+9:0/0 = 0
+10:0/0 = 0
+11:0/0 = 0
+12:0/0 = 0
+13:0/0 = 0
+14:0/0 = 0
+0:1/0 = 0
+1:1/0 = 0
+2:1/0 = 0
+3:1/0 = 0
+4:1/0 = 0
+5:1/0 = 0
+6:1/0 = 0
+7:1/0 = 0
+8:1/0 = 0
+9:1/0 = 0
+10:1/0 = 0
+11:1/0 = 0
+12:1/0 = 0
+13:1/0 = 0
+14:1/0 = 0
+0:2/0 = 0
+1:2/0 = 0
+2:2/0 = 0
+3:2/0 = 0
+4:2/0 = 0
+5:2/0 = 0
+6:2/0 = 0
+7:2/0 = 0
+8:2/0 = 0
+9:2/0 = 0
+10:2/0 = 0
+11:2/0 = 0
+12:2/0 = 0
+13:2/0 = 0
+14:2/0 = 0
+0:3/0 = 0
+1:3/0 = 0
+2:3/0 = 0
+3:3/0 = 0
+4:3/0 = 0
+5:3/0 = 0
+6:3/0 = 0
+7:3/0 = 0
+8:3/0 = 0
+9:3/0 = 0
+10:3/0 = 0
+11:3/0 = 0
+12:3/0 = 0
+13:3/0 = 0
+14:3/0 = 0
+0:4/0 = 0
+1:4/0 = 0
+2:4/0 = 0
+3:4/0 = 0
+4:4/0 = 0
+5:4/0 = 0
+6:4/0 = 0
+7:4/0 = 0
+8:4/0 = 0
+9:4/0 = 0
+10:4/0 = 0
+11:4/0 = 0
+12:4/0 = 0
+13:4/0 = 0
+14:4/0 = 0
+0:5/0 = 0
+1:5/0 = 0
+2:5/0 = 0
+3:5/0 = 0
+4:5/0 = 0
+5:5/0 = 0
+6:5/0 = 0
+7:5/0 = 0
+8:5/0 = 0
+9:5/0 = 0
+10:5/0 = 0
+11:5/0 = 0
+12:5/0 = 0
+13:5/0 = 0
+14:5/0 = 0
+0:6/0 = 0
+1:6/0 = 0
+2:6/0 = 0
+3:6/0 = 0
+4:6/0 = 0
+5:6/0 = 0
+6:6/0 = 0
+7:6/0 = 0
+8:6/0 = 0
+9:6/0 = 0
+10:6/0 = 0
+11:6/0 = 0
+12:6/0 = 0
+13:6/0 = 0
+14:6/0 = 0
+0:7/0 = 0
+1:7/0 = 0
+2:7/0 = 0
+3:7/0 = 0
+4:7/0 = 0
+5:7/0 = 0
+6:7/0 = 0
+7:7/0 = 0
+8:7/0 = 0
+9:7/0 = 0
+10:7/0 = 0
+11:7/0 = 0
+12:7/0 = 0
+13:7/0 = 0
+14:7/0 = 0
+0:8/0 = 0
+1:8/0 = 0
+2:8/0 = 0
+3:8/0 = 0
+4:8/0 = 0
+5:8/0 = 0
+6:8/0 = 0
+7:8/0 = 0
+8:8/0 = 0
+9:8/0 = 0
+10:8/0 = 0
+11:8/0 = 0
+12:8/0 = 0
+13:8/0 = 0
+14:8/0 = 0
+0:9/0 = 0
+1:9/0 = 0
+2:9/0 = 0
+3:9/0 = 0
+4:9/0 = 0
+5:9/0 = 0
+6:9/0 = 0
+7:9/0 = 0
+8:9/0 = 0
+9:9/0 = 0
+10:9/0 = 0
+11:9/0 = 0
+12:9/0 = 0
+13:9/0 = 0
+14:9/0 = 0
+0:10/0 = 0
+1:10/0 = 0
+2:10/0 = 0
+3:10/0 = 0
+4:10/0 = 0
+5:10/0 = 0
+6:10/0 = 0
+7:10/0 = 0
+8:10/0 = 0
+9:10/0 = 0
+10:10/0 = 0
+11:10/0 = 0
+12:10/0 = 0
+13:10/0 = 0
+14:10/0 = 0
+0:11/0 = 0
+1:11/0 = 0
+2:11/0 = 0
+3:11/0 = 0
+4:11/0 = 0
+5:11/0 = 0
+6:11/0 = 0
+7:11/0 = 0
+8:11/0 = 0
+9:11/0 = 0
+10:11/0 = 0
+11:11/0 = 0
+12:11/0 = 0
+13:11/0 = 0
+14:11/0 = 0
+0:12/0 = 0
+1:12/0 = 0
+2:12/0 = 0
+3:12/0 = 0
+4:12/0 = 0
+5:12/0 = 0
+6:12/0 = 0
+7:12/0 = 0
+8:12/0 = 0
+9:12/0 = 0
+10:12/0 = 0
+11:12/0 = 0
+12:12/0 = 0
+13:12/0 = 0
+14:12/0 = 0
+0:13/0 = 0
+1:13/0 = 0
+2:13/0 = 0
+3:13/0 = 0
+4:13/0 = 0
+5:13/0 = 0
+6:13/0 = 0
+7:13/0 = 0
+8:13/0 = 0
+9:13/0 = 0
+10:13/0 = 0
+11:13/0 = 0
+12:13/0 = 0
+13:13/0 = 0
+14:13/0 = 0
+0:14/0 = 0
+1:14/0 = 0
+2:14/0 = 0
+3:14/0 = 0
+4:14/0 = 0
+5:14/0 = 0
+6:14/0 = 0
+7:14/0 = 0
+8:14/0 = 0
+9:14/0 = 0
+10:14/0 = 0
+11:14/0 = 0
+12:14/0 = 0
+13:14/0 = 0
+14:14/0 = 0
+0:15/0 = 0
+1:15/0 = 0
+2:15/0 = 0
+3:15/0 = 0
+4:15/0 = 0
+5:15/0 = 0
+6:15/0 = 0
+7:15/0 = 0
+8:15/0 = 0
+9:15/0 = 0
+10:15/0 = 0
+11:15/0 = 0
+12:15/0 = 0
+13:15/0 = 0
+14:15/0 = 0
+0:16/0 = 0
+1:16/0 = 0
+2:16/0 = 0
+3:16/0 = 0
+4:16/0 = 0
+5:16/0 = 0
+6:16/0 = 0
+7:16/0 = 0
+8:16/0 = 0
+9:16/0 = 0
+10:16/0 = 0
+11:16/0 = 0
+12:16/0 = 0
+13:16/0 = 0
+14:16/0 = 0
+0:17/0 = 0
+1:17/0 = 0
+2:17/0 = 0
+3:17/0 = 0
+4:17/0 = 0
+5:17/0 = 0
+6:17/0 = 0
+7:17/0 = 0
+8:17/0 = 0
+9:17/0 = 0
+10:17/0 = 0
+11:17/0 = 0
+12:17/0 = 0
+13:17/0 = 0
+14:17/0 = 0
+0:18/0 = 0
+1:18/0 = 0
+2:18/0 = 0
+3:18/0 = 0
+4:18/0 = 0
+5:18/0 = 0
+6:18/0 = 0
+7:18/0 = 0
+8:18/0 = 0
+9:18/0 = 0
+10:18/0 = 0
+11:18/0 = 0
+12:18/0 = 0
+13:18/0 = 0
+14:18/0 = 0
+0:19/0 = 0
+1:19/0 = 0
+2:19/0 = 0
+3:19/0 = 0
+4:19/0 = 0
+5:19/0 = 0
+6:19/0 = 0
+7:19/0 = 0
+8:19/0 = 0
+9:19/0 = 0
+10:19/0 = 0
+11:19/0 = 0
+12:19/0 = 0
+13:19/0 = 0
+14:19/0 = 0
+
+[sub_resource type="TileSet" id="TileSet_dos4n"]
+sources/10 = SubResource("TileSetAtlasSource_d60hn")
+sources/29 = SubResource("TileSetAtlasSource_3lrbs")
+
+[sub_resource type="TileSetAtlasSource" id="TileSetAtlasSource_3a51l"]
+resource_name = "Tiles_W1"
+texture = ExtResource("3_a1wll")
+texture_region_size = Vector2i(48, 48)
+0:0/0 = 0
+1:0/0 = 0
+2:0/0 = 0
+3:0/0 = 0
+4:0/0 = 0
+5:0/0 = 0
+6:0/0 = 0
+7:0/0 = 0
+0:1/0 = 0
+1:1/0 = 0
+2:1/0 = 0
+3:1/0 = 0
+4:1/0 = 0
+5:1/0 = 0
+6:1/0 = 0
+7:1/0 = 0
+0:2/0 = 0
+1:2/0 = 0
+2:2/0 = 0
+3:2/0 = 0
+4:2/0 = 0
+5:2/0 = 0
+6:2/0 = 0
+7:2/0 = 0
+0:3/0 = 0
+1:3/0 = 0
+2:3/0 = 0
+3:3/0 = 0
+4:3/0 = 0
+5:3/0 = 0
+6:3/0 = 0
+7:3/0 = 0
+0:4/0 = 0
+1:4/0 = 0
+2:4/0 = 0
+3:4/0 = 0
+4:4/0 = 0
+5:4/0 = 0
+6:4/0 = 0
+7:4/0 = 0
+
+[sub_resource type="TileSet" id="TileSet_rk2tt"]
+tile_size = Vector2i(48, 48)
+sources/10 = SubResource("TileSetAtlasSource_3a51l")
+
+[node name="PuebloAlba" type="Node2D" unique_id=677364055]
+script = ExtResource("1_kku06")
+width = 656
+height = 546
+bg_colour = Color(0.7529412, 0.7529412, 0.7529412, 1)
+backgrounds = Array[Dictionary]([{
+"bg": "bck_cesped",
+"foreground": false,
+"hspeed": 0.0,
+"stretch": false,
+"tile_h": true,
+"tile_v": true,
+"visible": true,
+"vspeed": 0.0,
+"x": 0.0,
+"y": 0.0
+}, {
+"bg": null,
+"foreground": false,
+"hspeed": 0.0,
+"stretch": false,
+"tile_h": true,
+"tile_v": true,
+"visible": false,
+"vspeed": 0.0,
+"x": 0.0,
+"y": 0.0
+}, {
+"bg": null,
+"foreground": false,
+"hspeed": 0.0,
+"stretch": false,
+"tile_h": true,
+"tile_v": true,
+"visible": false,
+"vspeed": 0.0,
+"x": 0.0,
+"y": 0.0
+}, {
+"bg": null,
+"foreground": false,
+"hspeed": 0.0,
+"stretch": false,
+"tile_h": true,
+"tile_v": true,
+"visible": false,
+"vspeed": 0.0,
+"x": 0.0,
+"y": 0.0
+}, {
+"bg": null,
+"foreground": false,
+"hspeed": 0.0,
+"stretch": false,
+"tile_h": true,
+"tile_v": true,
+"visible": false,
+"vspeed": 0.0,
+"x": 0.0,
+"y": 0.0
+}, {
+"bg": null,
+"foreground": false,
+"hspeed": 0.0,
+"stretch": false,
+"tile_h": true,
+"tile_v": true,
+"visible": false,
+"vspeed": 0.0,
+"x": 0.0,
+"y": 0.0
+}, {
+"bg": null,
+"foreground": false,
+"hspeed": 0.0,
+"stretch": false,
+"tile_h": true,
+"tile_v": true,
+"visible": false,
+"vspeed": 0.0,
+"x": 0.0,
+"y": 0.0
+}, {
+"bg": null,
+"foreground": false,
+"hspeed": 0.0,
+"stretch": false,
+"tile_h": true,
+"tile_v": true,
+"visible": false,
+"vspeed": 0.0,
+"x": 0.0,
+"y": 0.0
+}])
+views = Array[Dictionary]([{
+"follow": "obj_Prota",
+"h": 180.0,
+"hborder": 120.0,
+"hspeed": -1.0,
+"port_h": 180.0,
+"port_w": 320.0,
+"port_x": 0.0,
+"port_y": 0.0,
+"vborder": 90.0,
+"visible": true,
+"vspeed": -1.0,
+"w": 320.0,
+"x": 0.0,
+"y": 0.0
+}, {
+"follow": null,
+"h": 480.0,
+"hborder": 32.0,
+"hspeed": -1.0,
+"port_h": 480.0,
+"port_w": 640.0,
+"port_x": 0.0,
+"port_y": 0.0,
+"vborder": 32.0,
+"visible": false,
+"vspeed": -1.0,
+"w": 640.0,
+"x": 0.0,
+"y": 0.0
+}, {
+"follow": null,
+"h": 480.0,
+"hborder": 32.0,
+"hspeed": -1.0,
+"port_h": 480.0,
+"port_w": 640.0,
+"port_x": 0.0,
+"port_y": 0.0,
+"vborder": 32.0,
+"visible": false,
+"vspeed": -1.0,
+"w": 640.0,
+"x": 0.0,
+"y": 0.0
+}, {
+"follow": null,
+"h": 480.0,
+"hborder": 32.0,
+"hspeed": -1.0,
+"port_h": 480.0,
+"port_w": 640.0,
+"port_x": 0.0,
+"port_y": 0.0,
+"vborder": 32.0,
+"visible": false,
+"vspeed": -1.0,
+"w": 640.0,
+"x": 0.0,
+"y": 0.0
+}, {
+"follow": null,
+"h": 480.0,
+"hborder": 32.0,
+"hspeed": -1.0,
+"port_h": 480.0,
+"port_w": 640.0,
+"port_x": 0.0,
+"port_y": 0.0,
+"vborder": 32.0,
+"visible": false,
+"vspeed": -1.0,
+"w": 640.0,
+"x": 0.0,
+"y": 0.0
+}, {
+"follow": null,
+"h": 480.0,
+"hborder": 32.0,
+"hspeed": -1.0,
+"port_h": 480.0,
+"port_w": 640.0,
+"port_x": 0.0,
+"port_y": 0.0,
+"vborder": 32.0,
+"visible": false,
+"vspeed": -1.0,
+"w": 640.0,
+"x": 0.0,
+"y": 0.0
+}, {
+"follow": null,
+"h": 480.0,
+"hborder": 32.0,
+"hspeed": -1.0,
+"port_h": 480.0,
+"port_w": 640.0,
+"port_x": 0.0,
+"port_y": 0.0,
+"vborder": 32.0,
+"visible": false,
+"vspeed": -1.0,
+"w": 640.0,
+"x": 0.0,
+"y": 0.0
+}, {
+"follow": null,
+"h": 480.0,
+"hborder": 32.0,
+"hspeed": -1.0,
+"port_h": 480.0,
+"port_w": 640.0,
+"port_x": 0.0,
+"port_y": 0.0,
+"vborder": 32.0,
+"visible": false,
+"vspeed": -1.0,
+"w": 640.0,
+"x": 0.0,
+"y": 0.0
+}])
+
+[node name="Tiles" type="Node2D" parent="." unique_id=265564719]
+
+[node name="Depth 1000000" type="Node2D" parent="Tiles" unique_id=1222803213]
+z_index = -1993
+script = ExtResource("2_e547g")
+
+[node name="Tiles 16px +8+8" type="TileMapLayer" parent="Tiles/Depth 1000000" unique_id=1212140214]
+position = Vector2(8, 8)
+tile_map_data = PackedByteArray("AAAMAA4ACgADAAEAAAAMAA0ACgADAAAAAAAMAA8ACgADAAEAAAAMABAACgADAAEAAAAMABEACgADAAEAAAAMABIACgADAAIAAAANABIACgAEAAIAAAAOABIACgAEAAIAAAAPABIACgAEAAIAAAAQABIACgAFAAIAAAARABEACgAEAAIAAAASABEACgAEAAIAAAATABEACgAEAAIAAAAUABEACgAFAAIAAAAUABAACgAFAAEAAAAUAA8ACgAFAAEAAAAUAA4ACgAFAAEAAAAUAA0ACgAFAAAAAAANAA0ACgAEAAAAAAAOAA0ACgAEAAAAAAAPAA0ACgAEAAAAAAAQAA0ACgAEAAAAAAARAA0ACgAEAAAAAAASAA0ACgAEAAAAAAATAA0ACgAEAAAAAAANAA4ACgAEAAEAAAAOAA4ACgAEAAEAAAAPAA4ACgAEAAEAAAAQAA4ACgAEAAEAAAARAA4ACgAEAAEAAAASAA4ACgAEAAEAAAATAA4ACgAEAAEAAAATAA8ACgAEAAEAAAATABAACgAEAAEAAAANAA8ACgAEAAEAAAAOAA8ACgAEAAEAAAAPAA8ACgAEAAEAAAAQAA8ACgAEAAEAAAARAA8ACgAEAAEAAAASAA8ACgAEAAEAAAASABAACgAEAAEAAAANABAACgAEAAEAAAAOABAACgAEAAEAAAAPABAACgAEAAEAAAAQABAACgAEAAEAAAARABAACgAEAAEAAAANABEACgAEAAEAAAAOABEACgAEAAEAAAAPABEACgAEAAEAAAAHAAsAHQAHABAAAAAGAAsAHQAGABAAAAAIAAsAHQAGABAAAAAEABIAHQAHAA8AAAAEABMAHQAHAA8AAAAiABUAHQAHAA8AAAAiABYAHQAHAA8AAAAZAA0AHQAHABAAAAAQABEACgAMAAoAAAA=")
+tile_set = SubResource("TileSet_dos4n")
+
+[node name="Tiles 48px +8+0" type="TileMapLayer" parent="Tiles/Depth 1000000" unique_id=1190029368]
+position = Vector2(8, 0)
+tile_map_data = PackedByteArray("AAABAAQACgABAAAAAAA=")
+tile_set = SubResource("TileSet_rk2tt")
+
+[node name="Tiles 48px +24+8" type="TileMapLayer" parent="Tiles/Depth 1000000" unique_id=897890692]
+position = Vector2(24, 8)
+tile_map_data = PackedByteArray("AAAIAAgACgABAAAAAAA=")
+tile_set = SubResource("TileSet_rk2tt")
+
+[node name="Tile 10000772" type="Sprite2D" parent="Tiles/Depth 1000000" unique_id=1859933619]
+position = Vector2(448, 112)
+texture = ExtResource("3_a1wll")
+centered = false
+region_enabled = true
+region_rect = Rect2(48, 0, 32, 48)
+script = ExtResource("5_usw6o")
+background = "Tiles_W1"
+gm_id = 10000772
+
+[node name="Tile 10000773" type="Sprite2D" parent="Tiles/Depth 1000000" unique_id=1106802061]
+position = Vector2(480, 112)
+texture = ExtResource("3_a1wll")
+centered = false
+region_enabled = true
+region_rect = Rect2(56, 0, 32, 48)
+script = ExtResource("5_usw6o")
+background = "Tiles_W1"
+gm_id = 10000773
+
+[node name="Tile 10000774" type="Sprite2D" parent="Tiles/Depth 1000000" unique_id=366584594]
+position = Vector2(512, 112)
+texture = ExtResource("3_a1wll")
+centered = false
+region_enabled = true
+region_rect = Rect2(56, 0, 32, 48)
+script = ExtResource("5_usw6o")
+background = "Tiles_W1"
+gm_id = 10000774
+
+[node name="Tile 10000775" type="Sprite2D" parent="Tiles/Depth 1000000" unique_id=336759148]
+position = Vector2(544, 112)
+texture = ExtResource("3_a1wll")
+centered = false
+region_enabled = true
+region_rect = Rect2(56, 0, 40, 48)
+script = ExtResource("5_usw6o")
+background = "Tiles_W1"
+gm_id = 10000775
+
+[node name="Tile 10000776" type="Sprite2D" parent="Tiles/Depth 1000000" unique_id=1849758334]
+position = Vector2(168, 336)
+texture = ExtResource("3_a1wll")
+centered = false
+region_enabled = true
+region_rect = Rect2(48, 0, 48, 24)
+script = ExtResource("5_usw6o")
+background = "Tiles_W1"
+gm_id = 10000776
+
+[node name="Tile 10000777" type="Sprite2D" parent="Tiles/Depth 1000000" unique_id=820480362]
+position = Vector2(168, 360)
+texture = ExtResource("3_a1wll")
+centered = false
+region_enabled = true
+region_rect = Rect2(48, 24, 48, 24)
+script = ExtResource("5_usw6o")
+background = "Tiles_W1"
+gm_id = 10000777
+
+[node name="Tiles 16px +0+8" type="TileMapLayer" parent="Tiles/Depth 1000000" unique_id=1360562546]
+position = Vector2(0, 8)
+tile_map_data = PackedByteArray("AAALAAMACgASAAIAAAAOAAMACgASAAIAAAAOAAQAHQAGABAAAAAEAAYAHQAGABAAAAAQAAgAHQAGABAAAAAVAAYAHQAGABAAAAAIABQAHQAGAA8AAAAJABQAHQAGAA8AAAAIABUAHQAGAA8AAAAJABUAHQAGAA8AAAAGABQAHQAGABAAAAAhABcAHQAGABAAAAAfABcAHQAHABAAAAAHABQAHQAHABAAAAATAAoAHQAGABAAAAAKAAQAHQAGABAAAAA=")
+tile_set = SubResource("TileSet_dos4n")
+
+[node name="Tiles 16px" type="TileMapLayer" parent="Tiles/Depth 1000000" unique_id=273034181]
+tile_map_data = PackedByteArray("AAADABcAHQAGABAAAAAiABsAHQAGAA8AAAAiABoAHQAGAA8AAAAiABkAHQAGAA8AAAAjABkAHQAGAA8AAAAkABkAHQAGAA8AAAAhABsAHQAGAA8AAAAgABsAHQAGAA8AAAAhABoAHQAGAA8AAAAfABsAHQAGAA8AAAAkABAAHQAGAA8AAAAkABEAHQAGAA8AAAAfAA4AHQAGAA8AAAAPABUAHQAGAA8AAAAOABUAHQAGAA8AAAAUABcAHQAGAA8AAAAUABYAHQAGAA8AAAAUABUAHQAGAA8AAAAUABQAHQAGAA8AAAAVABcAHQAGAA8AAAAWABcAHQAGAA8AAAAVABYAHQAGAA8AAAASAB0AHQAGABAAAAASAB8AHQAGABAAAAASACEAHQAGABAAAAA=")
+tile_set = SubResource("TileSet_dos4n")
+
+[node name="Tiles 16px +8+0" type="TileMapLayer" parent="Tiles/Depth 1000000" unique_id=2141185961]
+position = Vector2(8, 0)
+tile_map_data = PackedByteArray("AAAYABYAHQAHABAAAAAhABAAHQAHABAAAAA=")
+tile_set = SubResource("TileSet_dos4n")
+
+[node name="Instances" type="Node2D" parent="." unique_id=1246029596]
+
+[node name="obj_hierba" type="Node2D" parent="Instances" unique_id=1850393871]
+position = Vector2(600, 112)
+script = ExtResource("6_ahuth")
+object = "obj_hierba"
+gm_id = 101274
+
+[node name="obj_hierba2" type="Node2D" parent="Instances" unique_id=1381516910]
+position = Vector2(616, 112)
+script = ExtResource("6_ahuth")
+object = "obj_hierba"
+gm_id = 101275
+
+[node name="obj_hierba3" type="Node2D" parent="Instances" unique_id=1079851876]
+position = Vector2(632, 112)
+script = ExtResource("6_ahuth")
+object = "obj_hierba"
+gm_id = 101276
+
+[node name="obj_hierba4" type="Node2D" parent="Instances" unique_id=1708880096]
+position = Vector2(600, 128)
+script = ExtResource("6_ahuth")
+object = "obj_hierba"
+gm_id = 101277
+
+[node name="obj_hierba5" type="Node2D" parent="Instances" unique_id=1153724207]
+position = Vector2(616, 128)
+script = ExtResource("6_ahuth")
+object = "obj_hierba"
+gm_id = 101278
+
+[node name="obj_hierba6" type="Node2D" parent="Instances" unique_id=955066037]
+position = Vector2(632, 128)
+script = ExtResource("6_ahuth")
+object = "obj_hierba"
+gm_id = 101279
+
+[node name="obj_hierba7" type="Node2D" parent="Instances" unique_id=1635802895]
+position = Vector2(600, 144)
+script = ExtResource("6_ahuth")
+object = "obj_hierba"
+gm_id = 101280
+
+[node name="obj_hierba8" type="Node2D" parent="Instances" unique_id=1382622513]
+position = Vector2(600, 160)
+script = ExtResource("6_ahuth")
+object = "obj_hierba"
+gm_id = 101281
+
+[node name="obj_hierba9" type="Node2D" parent="Instances" unique_id=1259056892]
+position = Vector2(616, 160)
+script = ExtResource("6_ahuth")
+object = "obj_hierba"
+gm_id = 101282
+
+[node name="obj_hierba10" type="Node2D" parent="Instances" unique_id=1542295676]
+position = Vector2(632, 160)
+script = ExtResource("6_ahuth")
+object = "obj_hierba"
+gm_id = 101283
+
+[node name="obj_hierba11" type="Node2D" parent="Instances" unique_id=582997463]
+position = Vector2(632, 144)
+script = ExtResource("6_ahuth")
+object = "obj_hierba"
+gm_id = 101284
+
+[node name="obj_hierba12" type="Node2D" parent="Instances" unique_id=1099664309]
+position = Vector2(616, 144)
+script = ExtResource("6_ahuth")
+object = "obj_hierba"
+gm_id = 101285
+
+[node name="obj_hierba13" type="Node2D" parent="Instances" unique_id=448290163]
+position = Vector2(600, 144)
+script = ExtResource("6_ahuth")
+object = "obj_hierba"
+gm_id = 101286
+
+[node name="obj_hierba14" type="Node2D" parent="Instances" unique_id=57838422]
+position = Vector2(648, 112)
+script = ExtResource("6_ahuth")
+object = "obj_hierba"
+gm_id = 101287
+
+[node name="obj_hierba15" type="Node2D" parent="Instances" unique_id=1234153507]
+position = Vector2(648, 128)
+script = ExtResource("6_ahuth")
+object = "obj_hierba"
+gm_id = 101288
+
+[node name="obj_hierba16" type="Node2D" parent="Instances" unique_id=1343032620]
+position = Vector2(648, 144)
+script = ExtResource("6_ahuth")
+object = "obj_hierba"
+gm_id = 101289
+
+[node name="obj_hierba17" type="Node2D" parent="Instances" unique_id=1240473651]
+position = Vector2(648, 160)
+script = ExtResource("6_ahuth")
+object = "obj_hierba"
+gm_id = 101290
+
+[node name="obj_arbol" type="Node2D" parent="Instances" unique_id=53358590]
+position = Vector2(128, 400)
+script = ExtResource("6_ahuth")
+object = "obj_arbol"
+gm_id = 101291
+
+[node name="obj_arbol2" type="Node2D" parent="Instances" unique_id=1469133273]
+position = Vector2(96, 400)
+script = ExtResource("6_ahuth")
+object = "obj_arbol"
+gm_id = 101292
+
+[node name="obj_arbol3" type="Node2D" parent="Instances" unique_id=1142458293]
+position = Vector2(0, 432)
+script = ExtResource("6_ahuth")
+object = "obj_arbol"
+gm_id = 101293
+
+[node name="obj_arbol4" type="Node2D" parent="Instances" unique_id=751243250]
+position = Vector2(32, 432)
+script = ExtResource("6_ahuth")
+object = "obj_arbol"
+gm_id = 101294
+
+[node name="obj_arbol5" type="Node2D" parent="Instances" unique_id=1138387861]
+position = Vector2(64, 432)
+script = ExtResource("6_ahuth")
+object = "obj_arbol"
+gm_id = 101295
+
+[node name="obj_arbol6" type="Node2D" parent="Instances" unique_id=415316733]
+position = Vector2(96, 432)
+script = ExtResource("6_ahuth")
+object = "obj_arbol"
+gm_id = 101296
+
+[node name="obj_arbol7" type="Node2D" parent="Instances" unique_id=1170050283]
+position = Vector2(144, 464)
+script = ExtResource("6_ahuth")
+object = "obj_arbol"
+gm_id = 101297
+
+[node name="obj_arbol8" type="Node2D" parent="Instances" unique_id=252213861]
+position = Vector2(0, -16)
+script = ExtResource("6_ahuth")
+object = "obj_arbol"
+gm_id = 101298
+
+[node name="obj_arbol9" type="Node2D" parent="Instances" unique_id=1256880530]
+position = Vector2(32, -16)
+script = ExtResource("6_ahuth")
+object = "obj_arbol"
+gm_id = 101299
+
+[node name="obj_arbol10" type="Node2D" parent="Instances" unique_id=1385325627]
+position = Vector2(64, -16)
+script = ExtResource("6_ahuth")
+object = "obj_arbol"
+gm_id = 101300
+
+[node name="obj_arbol11" type="Node2D" parent="Instances" unique_id=1927646880]
+position = Vector2(96, -16)
+script = ExtResource("6_ahuth")
+object = "obj_arbol"
+gm_id = 101301
+
+[node name="obj_arbol12" type="Node2D" parent="Instances" unique_id=1274529164]
+position = Vector2(128, -24)
+script = ExtResource("6_ahuth")
+object = "obj_arbol"
+gm_id = 101302
+
+[node name="obj_arbol13" type="Node2D" parent="Instances" unique_id=1672666271]
+position = Vector2(160, -16)
+script = ExtResource("6_ahuth")
+object = "obj_arbol"
+gm_id = 101303
+
+[node name="obj_arbol14" type="Node2D" parent="Instances" unique_id=960229270]
+position = Vector2(256, -16)
+script = ExtResource("6_ahuth")
+object = "obj_arbol"
+gm_id = 101304
+
+[node name="obj_arbol15" type="Node2D" parent="Instances" unique_id=1071188682]
+position = Vector2(288, -16)
+script = ExtResource("6_ahuth")
+object = "obj_arbol"
+gm_id = 101305
+
+[node name="obj_arbol16" type="Node2D" parent="Instances" unique_id=308236754]
+position = Vector2(320, -16)
+script = ExtResource("6_ahuth")
+object = "obj_arbol"
+gm_id = 101306
+
+[node name="obj_arbol17" type="Node2D" parent="Instances" unique_id=210549467]
+position = Vector2(352, -16)
+script = ExtResource("6_ahuth")
+object = "obj_arbol"
+gm_id = 101307
+
+[node name="obj_arbol18" type="Node2D" parent="Instances" unique_id=14798884]
+position = Vector2(384, -16)
+script = ExtResource("6_ahuth")
+object = "obj_arbol"
+gm_id = 101308
+
+[node name="obj_arbol19" type="Node2D" parent="Instances" unique_id=1812939865]
+position = Vector2(416, -16)
+script = ExtResource("6_ahuth")
+object = "obj_arbol"
+gm_id = 101309
+
+[node name="obj_arbol20" type="Node2D" parent="Instances" unique_id=499181299]
+position = Vector2(448, -16)
+script = ExtResource("6_ahuth")
+object = "obj_arbol"
+gm_id = 101310
+
+[node name="obj_arbol21" type="Node2D" parent="Instances" unique_id=20462262]
+position = Vector2(640, -16)
+script = ExtResource("6_ahuth")
+object = "obj_arbol"
+gm_id = 101311
+
+[node name="obj_arbol22" type="Node2D" parent="Instances" unique_id=1001554688]
+position = Vector2(640, 16)
+script = ExtResource("6_ahuth")
+object = "obj_arbol"
+gm_id = 101312
+
+[node name="obj_arbol23" type="Node2D" parent="Instances" unique_id=1256568993]
+position = Vector2(480, -16)
+script = ExtResource("6_ahuth")
+object = "obj_arbol"
+gm_id = 101313
+
+[node name="obj_arbol24" type="Node2D" parent="Instances" unique_id=869066109]
+position = Vector2(512, -16)
+script = ExtResource("6_ahuth")
+object = "obj_arbol"
+gm_id = 101314
+
+[node name="obj_arbol25" type="Node2D" parent="Instances" unique_id=1303713811]
+position = Vector2(544, -16)
+script = ExtResource("6_ahuth")
+object = "obj_arbol"
+gm_id = 101315
+
+[node name="obj_arbol26" type="Node2D" parent="Instances" unique_id=56102175]
+position = Vector2(576, -16)
+script = ExtResource("6_ahuth")
+object = "obj_arbol"
+gm_id = 101316
+
+[node name="obj_arbol27" type="Node2D" parent="Instances" unique_id=193529104]
+position = Vector2(608, -16)
+script = ExtResource("6_ahuth")
+object = "obj_arbol"
+gm_id = 101317
+
+[node name="obj_arbol28" type="Node2D" parent="Instances" unique_id=2007852987]
+position = Vector2(0, 16)
+script = ExtResource("6_ahuth")
+object = "obj_arbol"
+gm_id = 101318
+
+[node name="obj_arbol29" type="Node2D" parent="Instances" unique_id=371583361]
+position = Vector2(32, 16)
+script = ExtResource("6_ahuth")
+object = "obj_arbol"
+gm_id = 101319
+
+[node name="obj_arbol30" type="Node2D" parent="Instances" unique_id=823172611]
+position = Vector2(64, 16)
+script = ExtResource("6_ahuth")
+object = "obj_arbol"
+gm_id = 101320
+
+[node name="obj_arbol31" type="Node2D" parent="Instances" unique_id=1057224587]
+position = Vector2(96, 16)
+script = ExtResource("6_ahuth")
+object = "obj_arbol"
+gm_id = 101321
+
+[node name="obj_arbol32" type="Node2D" parent="Instances" unique_id=2124143207]
+position = Vector2(128, 16)
+script = ExtResource("6_ahuth")
+object = "obj_arbol"
+gm_id = 101322
+
+[node name="obj_arbol33" type="Node2D" parent="Instances" unique_id=914513246]
+position = Vector2(160, 16)
+script = ExtResource("6_ahuth")
+object = "obj_arbol"
+gm_id = 101323
+
+[node name="obj_arbol34" type="Node2D" parent="Instances" unique_id=1699150873]
+position = Vector2(256, 16)
+script = ExtResource("6_ahuth")
+object = "obj_arbol"
+gm_id = 101324
+
+[node name="obj_arbol35" type="Node2D" parent="Instances" unique_id=1854501306]
+position = Vector2(288, 16)
+script = ExtResource("6_ahuth")
+object = "obj_arbol"
+gm_id = 101325
+
+[node name="obj_arbol36" type="Node2D" parent="Instances" unique_id=320060248]
+position = Vector2(320, 16)
+script = ExtResource("6_ahuth")
+object = "obj_arbol"
+gm_id = 101326
+
+[node name="obj_arbol37" type="Node2D" parent="Instances" unique_id=732133311]
+position = Vector2(352, 16)
+script = ExtResource("6_ahuth")
+object = "obj_arbol"
+gm_id = 101327
+
+[node name="obj_arbol38" type="Node2D" parent="Instances" unique_id=1948764816]
+position = Vector2(384, 16)
+script = ExtResource("6_ahuth")
+object = "obj_arbol"
+gm_id = 101328
+
+[node name="obj_arbol39" type="Node2D" parent="Instances" unique_id=1632110172]
+position = Vector2(416, 16)
+script = ExtResource("6_ahuth")
+object = "obj_arbol"
+gm_id = 101329
+
+[node name="obj_arbol40" type="Node2D" parent="Instances" unique_id=1136730342]
+position = Vector2(448, 16)
+script = ExtResource("6_ahuth")
+object = "obj_arbol"
+gm_id = 101330
+
+[node name="obj_arbol41" type="Node2D" parent="Instances" unique_id=1385252620]
+position = Vector2(480, 16)
+script = ExtResource("6_ahuth")
+object = "obj_arbol"
+gm_id = 101331
+
+[node name="obj_arbol42" type="Node2D" parent="Instances" unique_id=109930383]
+position = Vector2(512, 16)
+script = ExtResource("6_ahuth")
+object = "obj_arbol"
+gm_id = 101332
+
+[node name="obj_arbol43" type="Node2D" parent="Instances" unique_id=1134988877]
+position = Vector2(544, 16)
+script = ExtResource("6_ahuth")
+object = "obj_arbol"
+gm_id = 101333
+
+[node name="obj_arbol44" type="Node2D" parent="Instances" unique_id=1793808954]
+position = Vector2(576, 16)
+script = ExtResource("6_ahuth")
+object = "obj_arbol"
+gm_id = 101334
+
+[node name="obj_arbol45" type="Node2D" parent="Instances" unique_id=535398711]
+position = Vector2(608, 16)
+script = ExtResource("6_ahuth")
+object = "obj_arbol"
+gm_id = 101335
+
+[node name="obj_arbol46" type="Node2D" parent="Instances" unique_id=215898985]
+position = Vector2(0, 48)
+script = ExtResource("6_ahuth")
+object = "obj_arbol"
+gm_id = 101336
+
+[node name="obj_arbol47" type="Node2D" parent="Instances" unique_id=1879229671]
+position = Vector2(0, 80)
+script = ExtResource("6_ahuth")
+object = "obj_arbol"
+gm_id = 101337
+
+[node name="obj_arbol48" type="Node2D" parent="Instances" unique_id=1057768378]
+position = Vector2(0, 112)
+script = ExtResource("6_ahuth")
+object = "obj_arbol"
+gm_id = 101338
+
+[node name="obj_arbol49" type="Node2D" parent="Instances" unique_id=1112844376]
+position = Vector2(0, 144)
+script = ExtResource("6_ahuth")
+object = "obj_arbol"
+gm_id = 101339
+
+[node name="obj_arbol50" type="Node2D" parent="Instances" unique_id=858066587]
+position = Vector2(0, 176)
+script = ExtResource("6_ahuth")
+object = "obj_arbol"
+gm_id = 101340
+
+[node name="obj_arbol51" type="Node2D" parent="Instances" unique_id=1027029649]
+position = Vector2(0, 208)
+script = ExtResource("6_ahuth")
+object = "obj_arbol"
+gm_id = 101341
+
+[node name="obj_arbol52" type="Node2D" parent="Instances" unique_id=1457455853]
+position = Vector2(0, 240)
+script = ExtResource("6_ahuth")
+object = "obj_arbol"
+gm_id = 101342
+
+[node name="obj_arbol53" type="Node2D" parent="Instances" unique_id=1145294894]
+position = Vector2(0, 272)
+script = ExtResource("6_ahuth")
+object = "obj_arbol"
+gm_id = 101343
+
+[node name="obj_arbol54" type="Node2D" parent="Instances" unique_id=1505444140]
+position = Vector2(0, 304)
+script = ExtResource("6_ahuth")
+object = "obj_arbol"
+gm_id = 101344
+
+[node name="obj_arbol55" type="Node2D" parent="Instances" unique_id=20964685]
+position = Vector2(0, 336)
+script = ExtResource("6_ahuth")
+object = "obj_arbol"
+gm_id = 101345
+
+[node name="obj_arbol56" type="Node2D" parent="Instances" unique_id=1406842637]
+position = Vector2(0, 368)
+script = ExtResource("6_ahuth")
+object = "obj_arbol"
+gm_id = 101346
+
+[node name="obj_arbol57" type="Node2D" parent="Instances" unique_id=468651338]
+position = Vector2(0, 400)
+script = ExtResource("6_ahuth")
+object = "obj_arbol"
+gm_id = 101347
+
+[node name="obj_arbol58" type="Node2D" parent="Instances" unique_id=179942393]
+position = Vector2(16, 464)
+script = ExtResource("6_ahuth")
+object = "obj_arbol"
+gm_id = 101348
+
+[node name="obj_arbol59" type="Node2D" parent="Instances" unique_id=667750755]
+position = Vector2(176, 464)
+script = ExtResource("6_ahuth")
+object = "obj_arbol"
+gm_id = 101349
+
+[node name="obj_arbol60" type="Node2D" parent="Instances" unique_id=1895755193]
+position = Vector2(208, 464)
+script = ExtResource("6_ahuth")
+object = "obj_arbol"
+gm_id = 101350
+
+[node name="obj_arbol61" type="Node2D" parent="Instances" unique_id=1195136742]
+position = Vector2(240, 464)
+script = ExtResource("6_ahuth")
+object = "obj_arbol"
+gm_id = 101351
+
+[node name="obj_arbol62" type="Node2D" parent="Instances" unique_id=1803867965]
+position = Vector2(272, 464)
+script = ExtResource("6_ahuth")
+object = "obj_arbol"
+gm_id = 101352
+
+[node name="obj_arbol63" type="Node2D" parent="Instances" unique_id=1910070876]
+position = Vector2(320, 464)
+script = ExtResource("6_ahuth")
+object = "obj_arbol"
+gm_id = 101353
+
+[node name="obj_arbol64" type="Node2D" parent="Instances" unique_id=147276632]
+position = Vector2(352, 464)
+script = ExtResource("6_ahuth")
+object = "obj_arbol"
+gm_id = 101354
+
+[node name="obj_arbol65" type="Node2D" parent="Instances" unique_id=1589787192]
+position = Vector2(384, 464)
+script = ExtResource("6_ahuth")
+object = "obj_arbol"
+gm_id = 101355
+
+[node name="obj_arbol66" type="Node2D" parent="Instances" unique_id=419521769]
+position = Vector2(416, 464)
+script = ExtResource("6_ahuth")
+object = "obj_arbol"
+gm_id = 101356
+
+[node name="obj_arbol67" type="Node2D" parent="Instances" unique_id=1668246264]
+position = Vector2(448, 464)
+script = ExtResource("6_ahuth")
+object = "obj_arbol"
+gm_id = 101357
+
+[node name="obj_arbol68" type="Node2D" parent="Instances" unique_id=1188203232]
+position = Vector2(480, 464)
+script = ExtResource("6_ahuth")
+object = "obj_arbol"
+gm_id = 101358
+
+[node name="obj_arbol69" type="Node2D" parent="Instances" unique_id=1618128530]
+position = Vector2(512, 464)
+script = ExtResource("6_ahuth")
+object = "obj_arbol"
+gm_id = 101359
+
+[node name="obj_arbol70" type="Node2D" parent="Instances" unique_id=666658248]
+position = Vector2(544, 464)
+script = ExtResource("6_ahuth")
+object = "obj_arbol"
+gm_id = 101360
+
+[node name="obj_arbol71" type="Node2D" parent="Instances" unique_id=825216274]
+position = Vector2(640, 48)
+script = ExtResource("6_ahuth")
+object = "obj_arbol"
+gm_id = 101361
+
+[node name="obj_arbol72" type="Node2D" parent="Instances" unique_id=1104900298]
+position = Vector2(640, 80)
+script = ExtResource("6_ahuth")
+object = "obj_arbol"
+gm_id = 101362
+
+[node name="obj_arbol73" type="Node2D" parent="Instances" unique_id=1510452181]
+position = Vector2(640, 176)
+script = ExtResource("6_ahuth")
+object = "obj_arbol"
+gm_id = 101363
+
+[node name="obj_arbol74" type="Node2D" parent="Instances" unique_id=595643131]
+position = Vector2(640, 208)
+script = ExtResource("6_ahuth")
+object = "obj_arbol"
+gm_id = 101364
+
+[node name="obj_arbol75" type="Node2D" parent="Instances" unique_id=1976784192]
+position = Vector2(640, 240)
+script = ExtResource("6_ahuth")
+object = "obj_arbol"
+gm_id = 101365
+
+[node name="obj_arbol76" type="Node2D" parent="Instances" unique_id=231422258]
+position = Vector2(640, 272)
+script = ExtResource("6_ahuth")
+object = "obj_arbol"
+gm_id = 101366
+
+[node name="obj_arbol77" type="Node2D" parent="Instances" unique_id=1115729834]
+position = Vector2(640, 304)
+script = ExtResource("6_ahuth")
+object = "obj_arbol"
+gm_id = 101367
+
+[node name="obj_arbol78" type="Node2D" parent="Instances" unique_id=1420005158]
+position = Vector2(32, 48)
+script = ExtResource("6_ahuth")
+object = "obj_arbol"
+gm_id = 101368
+
+[node name="obj_arbol79" type="Node2D" parent="Instances" unique_id=1557176862]
+position = Vector2(64, 48)
+script = ExtResource("6_ahuth")
+object = "obj_arbol"
+gm_id = 101369
+
+[node name="obj_arbol80" type="Node2D" parent="Instances" unique_id=1205631259]
+position = Vector2(608, 48)
+script = ExtResource("6_ahuth")
+object = "obj_arbol"
+gm_id = 101370
+
+[node name="obj_arbol81" type="Node2D" parent="Instances" unique_id=670654102]
+position = Vector2(576, 48)
+script = ExtResource("6_ahuth")
+object = "obj_arbol"
+gm_id = 101371
+
+[node name="obj_arbol82" type="Node2D" parent="Instances" unique_id=792322040]
+position = Vector2(544, 48)
+script = ExtResource("6_ahuth")
+object = "obj_arbol"
+gm_id = 101372
+
+[node name="obj_arbol83" type="Node2D" parent="Instances" unique_id=59795189]
+position = Vector2(96, 48)
+script = ExtResource("6_ahuth")
+object = "obj_arbol"
+gm_id = 101373
+
+[node name="obj_arbol84" type="Node2D" parent="Instances" unique_id=1656814415]
+position = Vector2(128, 48)
+script = ExtResource("6_ahuth")
+object = "obj_arbol"
+gm_id = 101374
+
+[node name="obj_arbol85" type="Node2D" parent="Instances" unique_id=583241955]
+position = Vector2(160, 48)
+script = ExtResource("6_ahuth")
+object = "obj_arbol"
+gm_id = 101375
+
+[node name="obj_arbol86" type="Node2D" parent="Instances" unique_id=323959518]
+position = Vector2(256, 48)
+script = ExtResource("6_ahuth")
+object = "obj_arbol"
+gm_id = 101376
+
+[node name="obj_arbol87" type="Node2D" parent="Instances" unique_id=640588470]
+position = Vector2(288, 48)
+script = ExtResource("6_ahuth")
+object = "obj_arbol"
+gm_id = 101377
+
+[node name="obj_arbol88" type="Node2D" parent="Instances" unique_id=1100604117]
+position = Vector2(320, 48)
+script = ExtResource("6_ahuth")
+object = "obj_arbol"
+gm_id = 101378
+
+[node name="obj_arbol89" type="Node2D" parent="Instances" unique_id=260855324]
+position = Vector2(352, 48)
+script = ExtResource("6_ahuth")
+object = "obj_arbol"
+gm_id = 101379
+
+[node name="obj_arbol90" type="Node2D" parent="Instances" unique_id=1910350403]
+position = Vector2(384, 48)
+script = ExtResource("6_ahuth")
+object = "obj_arbol"
+gm_id = 101380
+
+[node name="obj_arbol91" type="Node2D" parent="Instances" unique_id=66657026]
+position = Vector2(416, 48)
+script = ExtResource("6_ahuth")
+object = "obj_arbol"
+gm_id = 101381
+
+[node name="obj_arbol92" type="Node2D" parent="Instances" unique_id=1724666492]
+position = Vector2(448, 48)
+script = ExtResource("6_ahuth")
+object = "obj_arbol"
+gm_id = 101382
+
+[node name="obj_arbol93" type="Node2D" parent="Instances" unique_id=1775442325]
+position = Vector2(480, 48)
+script = ExtResource("6_ahuth")
+object = "obj_arbol"
+gm_id = 101383
+
+[node name="obj_arbol94" type="Node2D" parent="Instances" unique_id=958882408]
+position = Vector2(512, 48)
+script = ExtResource("6_ahuth")
+object = "obj_arbol"
+gm_id = 101384
+
+[node name="obj_arbol95" type="Node2D" parent="Instances" unique_id=1336262132]
+position = Vector2(288, 80)
+script = ExtResource("6_ahuth")
+object = "obj_arbol"
+gm_id = 101385
+
+[node name="obj_arbol96" type="Node2D" parent="Instances" unique_id=58928536]
+position = Vector2(288, 112)
+script = ExtResource("6_ahuth")
+object = "obj_arbol"
+gm_id = 101386
+
+[node name="obj_arbol97" type="Node2D" parent="Instances" unique_id=1477495551]
+position = Vector2(320, 80)
+script = ExtResource("6_ahuth")
+object = "obj_arbol"
+gm_id = 101387
+
+[node name="obj_arbol98" type="Node2D" parent="Instances" unique_id=1506242213]
+position = Vector2(320, 112)
+script = ExtResource("6_ahuth")
+object = "obj_arbol"
+gm_id = 101388
+
+[node name="obj_arbol99" type="Node2D" parent="Instances" unique_id=2105868094]
+position = Vector2(288, 144)
+script = ExtResource("6_ahuth")
+object = "obj_arbol"
+gm_id = 101389
+
+[node name="obj_arbol100" type="Node2D" parent="Instances" unique_id=1938535359]
+position = Vector2(320, 144)
+script = ExtResource("6_ahuth")
+object = "obj_arbol"
+gm_id = 101390
+
+[node name="obj_arbol101" type="Node2D" parent="Instances" unique_id=219791489]
+position = Vector2(288, 176)
+script = ExtResource("6_ahuth")
+object = "obj_arbol"
+gm_id = 101391
+
+[node name="obj_arbol102" type="Node2D" parent="Instances" unique_id=1569101453]
+position = Vector2(352, 80)
+script = ExtResource("6_ahuth")
+object = "obj_arbol"
+gm_id = 101392
+
+[node name="obj_arbol103" type="Node2D" parent="Instances" unique_id=412726276]
+position = Vector2(384, 80)
+script = ExtResource("6_ahuth")
+object = "obj_arbol"
+gm_id = 101393
+
+[node name="obj_arbol104" type="Node2D" parent="Instances" unique_id=1488559679]
+position = Vector2(512, 80)
+script = ExtResource("6_ahuth")
+object = "obj_arbol"
+gm_id = 101394
+
+[node name="obj_arbol105" type="Node2D" parent="Instances" unique_id=1779787289]
+position = Vector2(544, 80)
+script = ExtResource("6_ahuth")
+object = "obj_arbol"
+gm_id = 101395
+
+[node name="obj_arbol106" type="Node2D" parent="Instances" unique_id=1423931008]
+position = Vector2(576, 80)
+script = ExtResource("6_ahuth")
+object = "obj_arbol"
+gm_id = 101396
+
+[node name="obj_arbol107" type="Node2D" parent="Instances" unique_id=544963177]
+position = Vector2(608, 80)
+script = ExtResource("6_ahuth")
+object = "obj_arbol"
+gm_id = 101397
+
+[node name="obj_arbol108" type="Node2D" parent="Instances" unique_id=1948299442]
+position = Vector2(480, 80)
+script = ExtResource("6_ahuth")
+object = "obj_arbol"
+gm_id = 101398
+
+[node name="obj_arbol109" type="Node2D" parent="Instances" unique_id=2036510199]
+position = Vector2(176, 400)
+script = ExtResource("6_ahuth")
+object = "obj_arbol"
+gm_id = 101399
+
+[node name="obj_arbol110" type="Node2D" parent="Instances" unique_id=1512053918]
+position = Vector2(208, 400)
+script = ExtResource("6_ahuth")
+object = "obj_arbol"
+gm_id = 101400
+
+[node name="obj_arbol111" type="Node2D" parent="Instances" unique_id=157179859]
+position = Vector2(32, 80)
+script = ExtResource("6_ahuth")
+object = "obj_arbol"
+gm_id = 101401
+
+[node name="obj_arbol112" type="Node2D" parent="Instances" unique_id=442448005]
+position = Vector2(32, 112)
+script = ExtResource("6_ahuth")
+object = "obj_arbol"
+gm_id = 101402
+
+[node name="obj_arbol113" type="Node2D" parent="Instances" unique_id=1209414317]
+position = Vector2(32, 144)
+script = ExtResource("6_ahuth")
+object = "obj_arbol"
+gm_id = 101403
+
+[node name="obj_arbol114" type="Node2D" parent="Instances" unique_id=247394885]
+position = Vector2(32, 176)
+script = ExtResource("6_ahuth")
+object = "obj_arbol"
+gm_id = 101404
+
+[node name="obj_arbol115" type="Node2D" parent="Instances" unique_id=277838263]
+position = Vector2(32, 208)
+script = ExtResource("6_ahuth")
+object = "obj_arbol"
+gm_id = 101405
+
+[node name="obj_arbol116" type="Node2D" parent="Instances" unique_id=501981353]
+position = Vector2(32, 240)
+script = ExtResource("6_ahuth")
+object = "obj_arbol"
+gm_id = 101406
+
+[node name="obj_arbol117" type="Node2D" parent="Instances" unique_id=810600549]
+position = Vector2(32, 272)
+script = ExtResource("6_ahuth")
+object = "obj_arbol"
+gm_id = 101407
+
+[node name="obj_arbol118" type="Node2D" parent="Instances" unique_id=335927421]
+position = Vector2(32, 304)
+script = ExtResource("6_ahuth")
+object = "obj_arbol"
+gm_id = 101408
+
+[node name="obj_arbol119" type="Node2D" parent="Instances" unique_id=28087861]
+position = Vector2(32, 336)
+script = ExtResource("6_ahuth")
+object = "obj_arbol"
+gm_id = 101409
+
+[node name="obj_arbol120" type="Node2D" parent="Instances" unique_id=1299232292]
+position = Vector2(32, 368)
+script = ExtResource("6_ahuth")
+object = "obj_arbol"
+gm_id = 101410
+
+[node name="obj_arbol121" type="Node2D" parent="Instances" unique_id=1245095548]
+position = Vector2(32, 400)
+script = ExtResource("6_ahuth")
+object = "obj_arbol"
+gm_id = 101411
+
+[node name="obj_arbol122" type="Node2D" parent="Instances" unique_id=893165489]
+position = Vector2(608, 176)
+script = ExtResource("6_ahuth")
+object = "obj_arbol"
+gm_id = 101412
+
+[node name="obj_arbol123" type="Node2D" parent="Instances" unique_id=1969481533]
+position = Vector2(608, 208)
+script = ExtResource("6_ahuth")
+object = "obj_arbol"
+gm_id = 101413
+
+[node name="obj_arbol124" type="Node2D" parent="Instances" unique_id=2077653422]
+position = Vector2(608, 240)
+script = ExtResource("6_ahuth")
+object = "obj_arbol"
+gm_id = 101414
+
+[node name="obj_arbol125" type="Node2D" parent="Instances" unique_id=1514007126]
+position = Vector2(640, 336)
+script = ExtResource("6_ahuth")
+object = "obj_arbol"
+gm_id = 101415
+
+[node name="obj_arbol126" type="Node2D" parent="Instances" unique_id=1568400735]
+position = Vector2(640, 368)
+script = ExtResource("6_ahuth")
+object = "obj_arbol"
+gm_id = 101416
+
+[node name="obj_arbol127" type="Node2D" parent="Instances" unique_id=627868383]
+position = Vector2(240, 368)
+script = ExtResource("6_ahuth")
+object = "obj_arbol"
+gm_id = 101417
+
+[node name="obj_arbol128" type="Node2D" parent="Instances" unique_id=1200996995]
+position = Vector2(272, 336)
+script = ExtResource("6_ahuth")
+object = "obj_arbol"
+gm_id = 101418
+
+[node name="obj_arbol129" type="Node2D" parent="Instances" unique_id=666535213]
+position = Vector2(304, 304)
+script = ExtResource("6_ahuth")
+object = "obj_arbol"
+gm_id = 101419
+
+[node name="obj_arbol130" type="Node2D" parent="Instances" unique_id=893844482]
+position = Vector2(336, 400)
+script = ExtResource("6_ahuth")
+object = "obj_arbol"
+gm_id = 101420
+
+[node name="obj_arbol131" type="Node2D" parent="Instances" unique_id=644814653]
+position = Vector2(368, 400)
+script = ExtResource("6_ahuth")
+object = "obj_arbol"
+gm_id = 101421
+
+[node name="obj_arbol132" type="Node2D" parent="Instances" unique_id=845526622]
+position = Vector2(576, 432)
+script = ExtResource("6_ahuth")
+object = "obj_arbol"
+gm_id = 101422
+
+[node name="obj_arbol133" type="Node2D" parent="Instances" unique_id=1373945096]
+position = Vector2(64, 80)
+script = ExtResource("6_ahuth")
+object = "obj_arbol"
+gm_id = 101423
+
+[node name="obj_arbol134" type="Node2D" parent="Instances" unique_id=299853658]
+position = Vector2(256, 80)
+script = ExtResource("6_ahuth")
+object = "obj_arbol"
+gm_id = 101424
+
+[node name="obj_arbol135" type="Node2D" parent="Instances" unique_id=1241458370]
+position = Vector2(608, 272)
+script = ExtResource("6_ahuth")
+object = "obj_arbol"
+gm_id = 101425
+
+[node name="obj_arbol136" type="Node2D" parent="Instances" unique_id=1062025259]
+position = Vector2(608, 304)
+script = ExtResource("6_ahuth")
+object = "obj_arbol"
+gm_id = 101426
+
+[node name="obj_arbol137" type="Node2D" parent="Instances" unique_id=2053883578]
+position = Vector2(608, 336)
+script = ExtResource("6_ahuth")
+object = "obj_arbol"
+gm_id = 101427
+
+[node name="obj_arbol138" type="Node2D" parent="Instances" unique_id=1627123407]
+position = Vector2(608, 368)
+script = ExtResource("6_ahuth")
+object = "obj_arbol"
+gm_id = 101428
+
+[node name="obj_arbol139" type="Node2D" parent="Instances" unique_id=1382387825]
+position = Vector2(608, 400)
+script = ExtResource("6_ahuth")
+object = "obj_arbol"
+gm_id = 101429
+
+[node name="obj_arbol140" type="Node2D" parent="Instances" unique_id=866442985]
+position = Vector2(608, 432)
+script = ExtResource("6_ahuth")
+object = "obj_arbol"
+gm_id = 101430
+
+[node name="obj_arbol141" type="Node2D" parent="Instances" unique_id=639742031]
+position = Vector2(608, 464)
+script = ExtResource("6_ahuth")
+object = "obj_arbol"
+gm_id = 101431
+
+[node name="obj_arbol142" type="Node2D" parent="Instances" unique_id=771199819]
+position = Vector2(576, 464)
+script = ExtResource("6_ahuth")
+object = "obj_arbol"
+gm_id = 101432
+
+[node name="obj_arbol143" type="Node2D" parent="Instances" unique_id=917942985]
+position = Vector2(304, 336)
+script = ExtResource("6_ahuth")
+object = "obj_arbol"
+gm_id = 101433
+
+[node name="obj_arbol144" type="Node2D" parent="Instances" unique_id=1234415448]
+position = Vector2(304, 368)
+script = ExtResource("6_ahuth")
+object = "obj_arbol"
+gm_id = 101434
+
+[node name="obj_arbol145" type="Node2D" parent="Instances" unique_id=651832176]
+position = Vector2(304, 400)
+script = ExtResource("6_ahuth")
+object = "obj_arbol"
+gm_id = 101435
+
+[node name="obj_arbol146" type="Node2D" parent="Instances" unique_id=550505591]
+position = Vector2(272, 368)
+script = ExtResource("6_ahuth")
+object = "obj_arbol"
+gm_id = 101436
+
+[node name="obj_arbol147" type="Node2D" parent="Instances" unique_id=758319]
+position = Vector2(272, 400)
+script = ExtResource("6_ahuth")
+object = "obj_arbol"
+gm_id = 101437
+
+[node name="obj_arbol148" type="Node2D" parent="Instances" unique_id=786567757]
+position = Vector2(240, 400)
+script = ExtResource("6_ahuth")
+object = "obj_arbol"
+gm_id = 101438
+
+[node name="obj_arbol149" type="Node2D" parent="Instances" unique_id=1398085399]
+position = Vector2(128, 432)
+script = ExtResource("6_ahuth")
+object = "obj_arbol"
+gm_id = 101439
+
+[node name="obj_arbol150" type="Node2D" parent="Instances" unique_id=1382911813]
+position = Vector2(112, 464)
+script = ExtResource("6_ahuth")
+object = "obj_arbol"
+gm_id = 101440
+
+[node name="obj_arbol151" type="Node2D" parent="Instances" unique_id=2146668158]
+position = Vector2(48, 464)
+script = ExtResource("6_ahuth")
+object = "obj_arbol"
+gm_id = 101441
+
+[node name="obj_arbol152" type="Node2D" parent="Instances" unique_id=291223782]
+position = Vector2(80, 464)
+script = ExtResource("6_ahuth")
+object = "obj_arbol"
+gm_id = 101442
+
+[node name="obj_arbol153" type="Node2D" parent="Instances" unique_id=473832703]
+position = Vector2(640, 400)
+script = ExtResource("6_ahuth")
+object = "obj_arbol"
+gm_id = 101443
+
+[node name="obj_arbol154" type="Node2D" parent="Instances" unique_id=1452112726]
+position = Vector2(640, 432)
+script = ExtResource("6_ahuth")
+object = "obj_arbol"
+gm_id = 101444
+
+[node name="obj_arbol155" type="Node2D" parent="Instances" unique_id=1942426713]
+position = Vector2(640, 464)
+script = ExtResource("6_ahuth")
+object = "obj_arbol"
+gm_id = 101445
+
+[node name="obj_arbol156" type="Node2D" parent="Instances" unique_id=693263290]
+position = Vector2(16, 496)
+script = ExtResource("6_ahuth")
+object = "obj_arbol"
+gm_id = 101446
+
+[node name="obj_arbol157" type="Node2D" parent="Instances" unique_id=1617341644]
+position = Vector2(16, 528)
+script = ExtResource("6_ahuth")
+object = "obj_arbol"
+gm_id = 101447
+
+[node name="obj_arbol158" type="Node2D" parent="Instances" unique_id=1796133562]
+position = Vector2(48, 496)
+script = ExtResource("6_ahuth")
+object = "obj_arbol"
+gm_id = 101448
+
+[node name="obj_arbol159" type="Node2D" parent="Instances" unique_id=1069999229]
+position = Vector2(48, 528)
+script = ExtResource("6_ahuth")
+object = "obj_arbol"
+gm_id = 101449
+
+[node name="obj_arbol160" type="Node2D" parent="Instances" unique_id=743755436]
+position = Vector2(80, 496)
+script = ExtResource("6_ahuth")
+object = "obj_arbol"
+gm_id = 101450
+
+[node name="obj_arbol161" type="Node2D" parent="Instances" unique_id=1286592778]
+position = Vector2(80, 528)
+script = ExtResource("6_ahuth")
+object = "obj_arbol"
+gm_id = 101451
+
+[node name="obj_arbol162" type="Node2D" parent="Instances" unique_id=1495856516]
+position = Vector2(640, 496)
+script = ExtResource("6_ahuth")
+object = "obj_arbol"
+gm_id = 101452
+
+[node name="obj_arbol163" type="Node2D" parent="Instances" unique_id=1864205499]
+position = Vector2(608, 496)
+script = ExtResource("6_ahuth")
+object = "obj_arbol"
+gm_id = 101453
+
+[node name="obj_arbol164" type="Node2D" parent="Instances" unique_id=95144975]
+position = Vector2(576, 496)
+script = ExtResource("6_ahuth")
+object = "obj_arbol"
+gm_id = 101454
+
+[node name="obj_arbol165" type="Node2D" parent="Instances" unique_id=991859819]
+position = Vector2(544, 496)
+script = ExtResource("6_ahuth")
+object = "obj_arbol"
+gm_id = 101455
+
+[node name="obj_arbol166" type="Node2D" parent="Instances" unique_id=1199702911]
+position = Vector2(512, 496)
+script = ExtResource("6_ahuth")
+object = "obj_arbol"
+gm_id = 101456
+
+[node name="obj_arbol167" type="Node2D" parent="Instances" unique_id=739249376]
+position = Vector2(480, 496)
+script = ExtResource("6_ahuth")
+object = "obj_arbol"
+gm_id = 101457
+
+[node name="obj_arbol168" type="Node2D" parent="Instances" unique_id=1173347836]
+position = Vector2(448, 496)
+script = ExtResource("6_ahuth")
+object = "obj_arbol"
+gm_id = 101458
+
+[node name="obj_arbol169" type="Node2D" parent="Instances" unique_id=776233883]
+position = Vector2(416, 496)
+script = ExtResource("6_ahuth")
+object = "obj_arbol"
+gm_id = 101459
+
+[node name="obj_arbol170" type="Node2D" parent="Instances" unique_id=1550739640]
+position = Vector2(384, 496)
+script = ExtResource("6_ahuth")
+object = "obj_arbol"
+gm_id = 101460
+
+[node name="obj_arbol171" type="Node2D" parent="Instances" unique_id=57722134]
+position = Vector2(352, 496)
+script = ExtResource("6_ahuth")
+object = "obj_arbol"
+gm_id = 101461
+
+[node name="obj_arbol172" type="Node2D" parent="Instances" unique_id=569880472]
+position = Vector2(320, 496)
+script = ExtResource("6_ahuth")
+object = "obj_arbol"
+gm_id = 101462
+
+[node name="obj_arbol173" type="Node2D" parent="Instances" unique_id=1908455003]
+position = Vector2(640, 528)
+script = ExtResource("6_ahuth")
+object = "obj_arbol"
+gm_id = 101463
+
+[node name="obj_arbol174" type="Node2D" parent="Instances" unique_id=1924667889]
+position = Vector2(608, 528)
+script = ExtResource("6_ahuth")
+object = "obj_arbol"
+gm_id = 101464
+
+[node name="obj_arbol175" type="Node2D" parent="Instances" unique_id=1776073219]
+position = Vector2(576, 528)
+script = ExtResource("6_ahuth")
+object = "obj_arbol"
+gm_id = 101465
+
+[node name="obj_arbol176" type="Node2D" parent="Instances" unique_id=1339657206]
+position = Vector2(544, 528)
+script = ExtResource("6_ahuth")
+object = "obj_arbol"
+gm_id = 101466
+
+[node name="obj_arbol177" type="Node2D" parent="Instances" unique_id=452048675]
+position = Vector2(512, 528)
+script = ExtResource("6_ahuth")
+object = "obj_arbol"
+gm_id = 101467
+
+[node name="obj_arbol178" type="Node2D" parent="Instances" unique_id=380007097]
+position = Vector2(480, 528)
+script = ExtResource("6_ahuth")
+object = "obj_arbol"
+gm_id = 101468
+
+[node name="obj_arbol179" type="Node2D" parent="Instances" unique_id=443394411]
+position = Vector2(448, 528)
+script = ExtResource("6_ahuth")
+object = "obj_arbol"
+gm_id = 101469
+
+[node name="obj_arbol180" type="Node2D" parent="Instances" unique_id=563687783]
+position = Vector2(416, 528)
+script = ExtResource("6_ahuth")
+object = "obj_arbol"
+gm_id = 101470
+
+[node name="obj_arbol181" type="Node2D" parent="Instances" unique_id=377235422]
+position = Vector2(384, 528)
+script = ExtResource("6_ahuth")
+object = "obj_arbol"
+gm_id = 101471
+
+[node name="obj_arbol182" type="Node2D" parent="Instances" unique_id=580873215]
+position = Vector2(352, 528)
+script = ExtResource("6_ahuth")
+object = "obj_arbol"
+gm_id = 101472
+
+[node name="obj_arbol183" type="Node2D" parent="Instances" unique_id=1383522668]
+position = Vector2(320, 528)
+script = ExtResource("6_ahuth")
+object = "obj_arbol"
+gm_id = 101473
+
+[node name="obj_arbol184" type="Node2D" parent="Instances" unique_id=730734472]
+position = Vector2(640, 560)
+script = ExtResource("6_ahuth")
+object = "obj_arbol"
+gm_id = 101474
+
+[node name="obj_arbol185" type="Node2D" parent="Instances" unique_id=1739116908]
+position = Vector2(608, 560)
+script = ExtResource("6_ahuth")
+object = "obj_arbol"
+gm_id = 101475
+
+[node name="obj_arbol186" type="Node2D" parent="Instances" unique_id=1229424]
+position = Vector2(576, 560)
+script = ExtResource("6_ahuth")
+object = "obj_arbol"
+gm_id = 101476
+
+[node name="obj_arbol187" type="Node2D" parent="Instances" unique_id=1306680610]
+position = Vector2(544, 560)
+script = ExtResource("6_ahuth")
+object = "obj_arbol"
+gm_id = 101477
+
+[node name="obj_arbol188" type="Node2D" parent="Instances" unique_id=1168831709]
+position = Vector2(512, 560)
+script = ExtResource("6_ahuth")
+object = "obj_arbol"
+gm_id = 101478
+
+[node name="obj_arbol189" type="Node2D" parent="Instances" unique_id=2045472482]
+position = Vector2(480, 560)
+script = ExtResource("6_ahuth")
+object = "obj_arbol"
+gm_id = 101479
+
+[node name="obj_arbol190" type="Node2D" parent="Instances" unique_id=1024253227]
+position = Vector2(448, 560)
+script = ExtResource("6_ahuth")
+object = "obj_arbol"
+gm_id = 101480
+
+[node name="obj_arbol191" type="Node2D" parent="Instances" unique_id=1001121799]
+position = Vector2(416, 560)
+script = ExtResource("6_ahuth")
+object = "obj_arbol"
+gm_id = 101481
+
+[node name="obj_arbol192" type="Node2D" parent="Instances" unique_id=1722921131]
+position = Vector2(384, 560)
+script = ExtResource("6_ahuth")
+object = "obj_arbol"
+gm_id = 101482
+
+[node name="obj_arbol193" type="Node2D" parent="Instances" unique_id=1551944839]
+position = Vector2(352, 560)
+script = ExtResource("6_ahuth")
+object = "obj_arbol"
+gm_id = 101483
+
+[node name="obj_arbol194" type="Node2D" parent="Instances" unique_id=2085465758]
+position = Vector2(320, 560)
+script = ExtResource("6_ahuth")
+object = "obj_arbol"
+gm_id = 101484
+
+[node name="obj_arbol195" type="Node2D" parent="Instances" unique_id=994711062]
+position = Vector2(272, 496)
+script = ExtResource("6_ahuth")
+object = "obj_arbol"
+gm_id = 101485
+
+[node name="obj_arbol196" type="Node2D" parent="Instances" unique_id=1473412994]
+position = Vector2(240, 496)
+script = ExtResource("6_ahuth")
+object = "obj_arbol"
+gm_id = 101486
+
+[node name="obj_arbol197" type="Node2D" parent="Instances" unique_id=462499861]
+position = Vector2(208, 496)
+script = ExtResource("6_ahuth")
+object = "obj_arbol"
+gm_id = 101487
+
+[node name="obj_arbol198" type="Node2D" parent="Instances" unique_id=255227614]
+position = Vector2(176, 496)
+script = ExtResource("6_ahuth")
+object = "obj_arbol"
+gm_id = 101488
+
+[node name="obj_arbol199" type="Node2D" parent="Instances" unique_id=922884760]
+position = Vector2(144, 496)
+script = ExtResource("6_ahuth")
+object = "obj_arbol"
+gm_id = 101489
+
+[node name="obj_arbol200" type="Node2D" parent="Instances" unique_id=366775790]
+position = Vector2(112, 496)
+script = ExtResource("6_ahuth")
+object = "obj_arbol"
+gm_id = 101490
+
+[node name="obj_arbol201" type="Node2D" parent="Instances" unique_id=2032303317]
+position = Vector2(272, 528)
+script = ExtResource("6_ahuth")
+object = "obj_arbol"
+gm_id = 101491
+
+[node name="obj_arbol202" type="Node2D" parent="Instances" unique_id=788603814]
+position = Vector2(240, 528)
+script = ExtResource("6_ahuth")
+object = "obj_arbol"
+gm_id = 101492
+
+[node name="obj_arbol203" type="Node2D" parent="Instances" unique_id=2135372994]
+position = Vector2(208, 528)
+script = ExtResource("6_ahuth")
+object = "obj_arbol"
+gm_id = 101493
+
+[node name="obj_arbol204" type="Node2D" parent="Instances" unique_id=1108690010]
+position = Vector2(176, 528)
+script = ExtResource("6_ahuth")
+object = "obj_arbol"
+gm_id = 101494
+
+[node name="obj_arbol205" type="Node2D" parent="Instances" unique_id=1112349821]
+position = Vector2(144, 528)
+script = ExtResource("6_ahuth")
+object = "obj_arbol"
+gm_id = 101495
+
+[node name="obj_arbol206" type="Node2D" parent="Instances" unique_id=1412597365]
+position = Vector2(112, 528)
+script = ExtResource("6_ahuth")
+object = "obj_arbol"
+gm_id = 101496
+
+[node name="obj_arbol207" type="Node2D" parent="Instances" unique_id=450571363]
+position = Vector2(272, 560)
+script = ExtResource("6_ahuth")
+object = "obj_arbol"
+gm_id = 101497
+
+[node name="obj_arbol208" type="Node2D" parent="Instances" unique_id=1976577945]
+position = Vector2(240, 560)
+script = ExtResource("6_ahuth")
+object = "obj_arbol"
+gm_id = 101498
+
+[node name="obj_arbol209" type="Node2D" parent="Instances" unique_id=2040111238]
+position = Vector2(208, 560)
+script = ExtResource("6_ahuth")
+object = "obj_arbol"
+gm_id = 101499
+
+[node name="obj_arbol210" type="Node2D" parent="Instances" unique_id=853295247]
+position = Vector2(176, 560)
+script = ExtResource("6_ahuth")
+object = "obj_arbol"
+gm_id = 101500
+
+[node name="obj_arbol211" type="Node2D" parent="Instances" unique_id=987916755]
+position = Vector2(144, 560)
+script = ExtResource("6_ahuth")
+object = "obj_arbol"
+gm_id = 101501
+
+[node name="obj_arbol212" type="Node2D" parent="Instances" unique_id=325431446]
+position = Vector2(112, 560)
+script = ExtResource("6_ahuth")
+object = "obj_arbol"
+gm_id = 101502
+
+[node name="obj_arbol213" type="Node2D" parent="Instances" unique_id=2035910527]
+position = Vector2(80, 560)
+script = ExtResource("6_ahuth")
+object = "obj_arbol"
+gm_id = 101503
+
+[node name="obj_arbol214" type="Node2D" parent="Instances" unique_id=775303612]
+position = Vector2(48, 560)
+script = ExtResource("6_ahuth")
+object = "obj_arbol"
+gm_id = 101504
+
+[node name="obj_arbol215" type="Node2D" parent="Instances" unique_id=166081259]
+position = Vector2(16, 560)
+script = ExtResource("6_ahuth")
+object = "obj_arbol"
+gm_id = 101505
+
+[node name="obj_flower1" type="Node2D" parent="Instances" unique_id=1415867037]
+position = Vector2(80, 72)
+script = ExtResource("6_ahuth")
+object = "obj_flower1"
+gm_id = 101506
+
+[node name="obj_flower2" type="Node2D" parent="Instances" unique_id=464668108]
+position = Vector2(96, 72)
+script = ExtResource("6_ahuth")
+object = "obj_flower1"
+gm_id = 101507
+
+[node name="obj_flower3" type="Node2D" parent="Instances" unique_id=21135402]
+position = Vector2(144, 72)
+script = ExtResource("6_ahuth")
+object = "obj_flower1"
+gm_id = 101508
+
+[node name="obj_flower4" type="Node2D" parent="Instances" unique_id=1053559384]
+position = Vector2(128, 72)
+script = ExtResource("6_ahuth")
+object = "obj_flower1"
+gm_id = 101509
+
+[node name="obj_flower5" type="Node2D" parent="Instances" unique_id=499378812]
+position = Vector2(112, 72)
+script = ExtResource("6_ahuth")
+object = "obj_flower1"
+gm_id = 101510
+
+[node name="obj_labAlba" type="Node2D" parent="Instances" unique_id=734834687]
+position = Vector2(160, 152)
+script = ExtResource("6_ahuth")
+object = "obj_labAlba"
+gm_id = 101511
+
+[node name="obj_flower6" type="Node2D" parent="Instances" unique_id=1656827563]
+position = Vector2(160, 184)
+script = ExtResource("6_ahuth")
+object = "obj_flower1"
+gm_id = 101512
+
+[node name="obj_flower7" type="Node2D" parent="Instances" unique_id=217457896]
+position = Vector2(176, 184)
+script = ExtResource("6_ahuth")
+object = "obj_flower1"
+gm_id = 101513
+
+[node name="obj_flower8" type="Node2D" parent="Instances" unique_id=115824025]
+position = Vector2(192, 184)
+script = ExtResource("6_ahuth")
+object = "obj_flower1"
+gm_id = 101514
+
+[node name="obj_flower9" type="Node2D" parent="Instances" unique_id=258207769]
+position = Vector2(208, 184)
+script = ExtResource("6_ahuth")
+object = "obj_flower1"
+gm_id = 101515
+
+[node name="obj_flower10" type="Node2D" parent="Instances" unique_id=1542327376]
+position = Vector2(48, 104)
+script = ExtResource("6_ahuth")
+object = "obj_flower1"
+gm_id = 101516
+
+[node name="obj_flower11" type="Node2D" parent="Instances" unique_id=209114831]
+position = Vector2(240, 104)
+script = ExtResource("6_ahuth")
+object = "obj_flower1"
+gm_id = 101517
+
+[node name="obj_flower12" type="Node2D" parent="Instances" unique_id=471506353]
+position = Vector2(256, 104)
+script = ExtResource("6_ahuth")
+object = "obj_flower1"
+gm_id = 101518
+
+[node name="obj_flower13" type="Node2D" parent="Instances" unique_id=396689235]
+position = Vector2(256, 120)
+script = ExtResource("6_ahuth")
+object = "obj_flower1"
+gm_id = 101519
+
+[node name="obj_flower14" type="Node2D" parent="Instances" unique_id=627595825]
+position = Vector2(48, 384)
+script = ExtResource("6_ahuth")
+object = "obj_flower1"
+gm_id = 101520
+
+[node name="obj_flower15" type="Node2D" parent="Instances" unique_id=184933302]
+position = Vector2(64, 384)
+script = ExtResource("6_ahuth")
+object = "obj_flower1"
+gm_id = 101521
+
+[node name="obj_flower16" type="Node2D" parent="Instances" unique_id=1850006843]
+position = Vector2(48, 400)
+script = ExtResource("6_ahuth")
+object = "obj_flower1"
+gm_id = 101522
+
+[node name="obj_flower17" type="Node2D" parent="Instances" unique_id=392174225]
+position = Vector2(64, 400)
+script = ExtResource("6_ahuth")
+object = "obj_flower1"
+gm_id = 101523
+
+[node name="obj_homeProta" type="Node2D" parent="Instances" unique_id=1080178858]
+position = Vector2(418, 162)
+script = ExtResource("6_ahuth")
+object = "obj_homeProta"
+gm_id = 101524
+
+[node name="obj_houseAlba" type="Node2D" parent="Instances" unique_id=46373625]
+position = Vector2(512, 332)
+script = ExtResource("6_ahuth")
+object = "obj_houseAlba"
+gm_id = 101525
+
+[node name="obj_houseAlba2" type="Node2D" parent="Instances" unique_id=842765664]
+position = Vector2(127, 284)
+script = ExtResource("6_ahuth")
+object = "obj_houseAlba"
+gm_id = 101526
+
+[node name="obj_houseAlba3" type="Node2D" parent="Instances" unique_id=1630068548]
+position = Vector2(551, 213)
+script = ExtResource("6_ahuth")
+object = "obj_houseAlba"
+gm_id = 101527
+
+[node name="obj_flower18" type="Node2D" parent="Instances" unique_id=1096949584]
+position = Vector2(408, 368)
+script = ExtResource("6_ahuth")
+object = "obj_flower1"
+gm_id = 101528
+
+[node name="obj_flower19" type="Node2D" parent="Instances" unique_id=408476040]
+position = Vector2(408, 352)
+script = ExtResource("6_ahuth")
+object = "obj_flower1"
+gm_id = 101529
+
+[node name="obj_flower20" type="Node2D" parent="Instances" unique_id=371501537]
+position = Vector2(424, 352)
+script = ExtResource("6_ahuth")
+object = "obj_flower1"
+gm_id = 101530
+
+[node name="obj_houseAlba4" type="Node2D" parent="Instances" unique_id=1307157747]
+position = Vector2(407, 308)
+script = ExtResource("6_ahuth")
+object = "obj_houseAlba"
+gm_id = 101531
+
+[node name="obj_flower21" type="Node2D" parent="Instances" unique_id=828220833]
+position = Vector2(424, 368)
+script = ExtResource("6_ahuth")
+object = "obj_flower1"
+gm_id = 101532
+
+[node name="obj_flower22" type="Node2D" parent="Instances" unique_id=660584098]
+position = Vector2(560, 256)
+script = ExtResource("6_ahuth")
+object = "obj_flower1"
+gm_id = 101533
+
+[node name="obj_flower23" type="Node2D" parent="Instances" unique_id=1419764390]
+position = Vector2(576, 288)
+script = ExtResource("6_ahuth")
+object = "obj_flower1"
+gm_id = 101534
+
+[node name="obj_flower24" type="Node2D" parent="Instances" unique_id=1199609861]
+position = Vector2(384, 216)
+script = ExtResource("6_ahuth")
+object = "obj_flower1"
+gm_id = 101535
+
+[node name="obj_flower25" type="Node2D" parent="Instances" unique_id=412843909]
+position = Vector2(368, 216)
+script = ExtResource("6_ahuth")
+object = "obj_flower1"
+gm_id = 101536
+
+[node name="obj_flower26" type="Node2D" parent="Instances" unique_id=1973247894]
+position = Vector2(432, 216)
+script = ExtResource("6_ahuth")
+object = "obj_flower1"
+gm_id = 101537
+
+[node name="obj_flower27" type="Node2D" parent="Instances" unique_id=586811267]
+position = Vector2(448, 216)
+script = ExtResource("6_ahuth")
+object = "obj_flower1"
+gm_id = 101538
+
+[node name="obj_flower28" type="Node2D" parent="Instances" unique_id=129093120]
+position = Vector2(464, 216)
+script = ExtResource("6_ahuth")
+object = "obj_flower1"
+gm_id = 101539
+
+[node name="obj_flower29" type="Node2D" parent="Instances" unique_id=1525492784]
+position = Vector2(352, 216)
+script = ExtResource("6_ahuth")
+object = "obj_flower1"
+gm_id = 101540
+
+[node name="obj_flower30" type="Node2D" parent="Instances" unique_id=8216675]
+position = Vector2(400, 72)
+script = ExtResource("6_ahuth")
+object = "obj_flower1"
+gm_id = 101541
+
+[node name="obj_flower31" type="Node2D" parent="Instances" unique_id=587961220]
+position = Vector2(416, 72)
+script = ExtResource("6_ahuth")
+object = "obj_flower1"
+gm_id = 101542
+
+[node name="obj_flower32" type="Node2D" parent="Instances" unique_id=1406852426]
+position = Vector2(432, 72)
+script = ExtResource("6_ahuth")
+object = "obj_flower1"
+gm_id = 101543
+
+[node name="obj_flower33" type="Node2D" parent="Instances" unique_id=388273503]
+position = Vector2(448, 72)
+script = ExtResource("6_ahuth")
+object = "obj_flower1"
+gm_id = 101544
+
+[node name="obj_flower34" type="Node2D" parent="Instances" unique_id=1653878574]
+position = Vector2(448, 88)
+script = ExtResource("6_ahuth")
+object = "obj_flower1"
+gm_id = 101545
+
+[node name="obj_flower35" type="Node2D" parent="Instances" unique_id=620762498]
+position = Vector2(432, 88)
+script = ExtResource("6_ahuth")
+object = "obj_flower1"
+gm_id = 101546
+
+[node name="obj_flower36" type="Node2D" parent="Instances" unique_id=1337232746]
+position = Vector2(400, 88)
+script = ExtResource("6_ahuth")
+object = "obj_flower1"
+gm_id = 101547
+
+[node name="obj_flower37" type="Node2D" parent="Instances" unique_id=457250990]
+position = Vector2(416, 88)
+script = ExtResource("6_ahuth")
+object = "obj_flower1"
+gm_id = 101548
+
+[node name="obj_arbol216" type="Node2D" parent="Instances" unique_id=793707781]
+position = Vector2(672, 48)
+script = ExtResource("6_ahuth")
+object = "obj_arbol"
+gm_id = 101549
+
+[node name="obj_arbol217" type="Node2D" parent="Instances" unique_id=2060407394]
+position = Vector2(672, 176)
+script = ExtResource("6_ahuth")
+object = "obj_arbol"
+gm_id = 101550
+
+[node name="obj_arbol218" type="Node2D" parent="Instances" unique_id=1604599956]
+position = Vector2(672, 208)
+script = ExtResource("6_ahuth")
+object = "obj_arbol"
+gm_id = 101551
+
+[node name="obj_arbol219" type="Node2D" parent="Instances" unique_id=1212524670]
+position = Vector2(672, 80)
+script = ExtResource("6_ahuth")
+object = "obj_arbol"
+gm_id = 101552
+
+[node name="obj_semipared" type="Node2D" parent="Instances" unique_id=808351762]
+position = Vector2(224, 56)
+script = ExtResource("6_ahuth")
+object = "obj_semipared"
+gm_id = 101553
+
+[node name="obj_semipared2" type="Node2D" parent="Instances" unique_id=518552587]
+position = Vector2(176, 56)
+script = ExtResource("6_ahuth")
+object = "obj_semipared"
+gm_id = 101554
+
+[node name="obj_semipared3" type="Node2D" parent="Instances" unique_id=253731883]
+position = Vector2(552, 344)
+script = ExtResource("6_ahuth")
+object = "obj_semipared"
+gm_id = 101555
+
+[node name="obj_semipared4" type="Node2D" parent="Instances" unique_id=1836726571]
+position = Vector2(552, 360)
+script = ExtResource("6_ahuth")
+object = "obj_semipared"
+gm_id = 101556
+
+[node name="obj_semipared5" type="Node2D" parent="Instances" unique_id=2049899121]
+position = Vector2(72, 296)
+script = ExtResource("6_ahuth")
+object = "obj_semipared"
+gm_id = 101557
+
+[node name="obj_semipared6" type="Node2D" parent="Instances" unique_id=561177745]
+position = Vector2(72, 312)
+script = ExtResource("6_ahuth")
+object = "obj_semipared"
+gm_id = 101558
+
+[node name="obj_semipared7" type="Node2D" parent="Instances" unique_id=1652839597]
+position = Vector2(384, 200)
+script = ExtResource("6_ahuth")
+object = "obj_semipared"
+gm_id = 101559
+
+[node name="obj_semipared8" type="Node2D" parent="Instances" unique_id=1645485370]
+position = Vector2(368, 200)
+script = ExtResource("6_ahuth")
+object = "obj_semipared"
+gm_id = 101560
+
+[node name="obj_semipared9" type="Node2D" parent="Instances" unique_id=1494163824]
+position = Vector2(360, 200)
+script = ExtResource("6_ahuth")
+object = "obj_semipared"
+gm_id = 101561
+
+[node name="obj_semipared10" type="Node2D" parent="Instances" unique_id=238134635]
+position = Vector2(432, 200)
+script = ExtResource("6_ahuth")
+object = "obj_semipared"
+gm_id = 101562
+
+[node name="obj_semipared11" type="Node2D" parent="Instances" unique_id=2121304276]
+position = Vector2(461, 200)
+script = ExtResource("6_ahuth")
+object = "obj_semipared"
+gm_id = 101563
+
+[node name="obj_semipared12" type="Node2D" parent="Instances" unique_id=1935208025]
+position = Vector2(448, 200)
+script = ExtResource("6_ahuth")
+object = "obj_semipared"
+gm_id = 101564
+
+[node name="obj_semipared13" type="Node2D" parent="Instances" unique_id=2034247040]
+position = Vector2(384, 192)
+script = ExtResource("6_ahuth")
+object = "obj_semipared"
+gm_id = 101565
+
+[node name="obj_semipared14" type="Node2D" parent="Instances" unique_id=555611621]
+position = Vector2(432, 192)
+script = ExtResource("6_ahuth")
+object = "obj_semipared"
+gm_id = 101566
+
+[node name="EXPLORER" type="Node2D" parent="Instances" unique_id=524812660]
+position = Vector2(48, 120)
+script = ExtResource("6_ahuth")
+object = "EXPLORER"
+gm_id = 101567

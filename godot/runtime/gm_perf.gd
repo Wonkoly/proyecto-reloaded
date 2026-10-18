@@ -4,6 +4,7 @@ class_name GMPerf
 extends RefCounted
 
 static var enabled := false
+static var scripts := false ## GM_PERF_SCRIPTS: also time every generated script
 static var _mutex := Mutex.new()
 static var _acc: Dictionary = {} # name -> [count, sum, max, min] (microseconds)
 static var _last := {}           # name -> last timestamp, for intervals
@@ -65,6 +66,6 @@ static func report() -> String:
 	var top := objs.keys()
 	top.sort_custom(func(a, b): return objs[a] > objs[b])
 	var tops := []
-	for k in top.slice(0, 12):
+	for k in top.slice(0, 25 if scripts else 12):
 		tops.append("%s %.1f" % [k, objs[k] / 1000.0])
 	return "perf (ms min/avg/max): " + "  ".join(parts) + ("\n  más costosos (ms/s): " + ", ".join(tops) if not tops.is_empty() else "")

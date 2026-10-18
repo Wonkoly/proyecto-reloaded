@@ -255,20 +255,30 @@ static func f_directory_exists(s: GMInstance, p: Variant) -> float:
 	return 1.0 if DirAccess.dir_exists_absolute(real_path(p)) else 0.0
 
 static func f_file_delete(s: GMInstance, p: Variant) -> float:
-	_path_cache.clear()
+	_files_changed()
 	return 1.0 if DirAccess.remove_absolute(real_path(p)) == OK else 0.0
 
 static func f_file_rename(s: GMInstance, a: Variant, b: Variant) -> float:
-	_path_cache.clear()
+	_files_changed()
 	return 1.0 if DirAccess.rename_absolute(real_path(a), real_path(b)) == OK else 0.0
 
 static func f_file_copy(s: GMInstance, a: Variant, b: Variant) -> float:
-	_path_cache.clear()
+	_files_changed()
 	return 1.0 if DirAccess.copy_absolute(real_path(a), real_path(b)) == OK else 0.0
 
-## Open text files: handle -> {lines: PackedStringArray, pos, line_pos, write: FileAccess}
+## Open text files: handle -> {text, pos, cr, write: FileAccess}
 static var _text_files: Dictionary = {}
 static var _next_handle := 1
+
+## Decoded contents of files read with file_text_open_read: path -> [text, has_cr]. The game
+## re-reads its text files constantly (TextReader opens txt_menu and skips lines on every call,
+## even once per step), so they are decoded once and dropped whenever the game writes a file.
+static var _text_cache: Dictionary = {}
+
+## The game wrote, deleted or renamed a file: cached paths and contents may be stale.
+static func _files_changed() -> void:
+	_path_cache.clear()
+	_text_cache.clear()
 
 static func _read_latin1(path: String) -> String:
 	return latin1_decode(FileAccess.get_file_as_bytes(path))
@@ -293,14 +303,19 @@ static func f_file_text_open_read(s: GMInstance, p: Variant) -> float:
 	var path := real_path(p)
 	if not FileAccess.file_exists(path):
 		return -1.0
+	var c = _text_cache.get(path)
+	if c == null:
+		var text := _read_latin1(path)
+		c = [text, text.contains("\r")]
+		_text_cache[path] = c
 	var h := _next_handle
 	_next_handle += 1
-	_text_files[h] = {"text": _read_latin1(path), "pos": 0, "write": null}
+	_text_files[h] = {"text": c[0], "pos": 0, "cr": c[1], "write": null}
 	return float(h)
 
 static func _open_write(p: Variant, append: bool) -> float:
 	var path := real_path(p)
-	_path_cache.clear()
+	_files_changed()
 	var f: FileAccess
 	if append and FileAccess.file_exists(path):
 		f = FileAccess.open(path, FileAccess.READ_WRITE)
@@ -312,7 +327,7 @@ static func _open_write(p: Variant, append: bool) -> float:
 		return -1.0
 	var h := _next_handle
 	_next_handle += 1
-	_text_files[h] = {"text": "", "pos": 0, "write": f}
+	_text_files[h] = {"text": "", "pos": 0, "cr": false, "write": f}
 	return float(h)
 
 static func f_file_text_open_write(s: GMInstance, p: Variant) -> float:
@@ -325,6 +340,7 @@ static func f_file_text_close(s: GMInstance, h: Variant) -> float:
 	var f = _text_files.get(ri(h))
 	if f and f.write:
 		f.write.close()
+		_files_changed()
 	_text_files.erase(ri(h))
 	return 0.0
 
@@ -353,9 +369,13 @@ static func f_file_text_read_string(s: GMInstance, h: Variant) -> String:
 		return ""
 	var text: String = f.text
 	var p: int = f.pos
-	var end := p
-	while end < text.length() and text.unicode_at(end) != 13 and text.unicode_at(end) != 10:
-		end += 1
+	var end := text.find("\n", p)
+	if end < 0:
+		end = text.length()
+	if f.cr:
+		var cr := text.find("\r", p)
+		if cr >= 0 and cr < end:
+			end = cr
 	f.pos = end
 	return text.substr(p, end - p)
 
@@ -378,10 +398,8 @@ static func f_file_text_readln(s: GMInstance, h: Variant) -> float:
 	if f == null:
 		return 0.0
 	var text: String = f.text
-	var p: int = f.pos
-	while p < text.length() and text.unicode_at(p) != 10:
-		p += 1
-	f.pos = mini(p + 1, text.length())
+	var p := text.find("\n", f.pos)
+	f.pos = text.length() if p < 0 else p + 1
 	return 0.0
 
 static func f_file_text_eof(s: GMInstance, h: Variant) -> float:
@@ -395,7 +413,7 @@ static var _bin_files: Dictionary = {}
 
 static func f_file_bin_open(s: GMInstance, p: Variant, mode: Variant) -> float:
 	var path := real_path(p)
-	_path_cache.clear()
+	_files_changed()
 	var m := ri(mode)
 	var f: FileAccess
 	match m:
@@ -447,6 +465,7 @@ static func f_file_bin_size(s: GMInstance, h: Variant) -> float:
 static func f_file_bin_rewrite(s: GMInstance, h: Variant) -> float:
 	var b = _bin_files.get(ri(h))
 	if b:
+		_files_changed()
 		b.f.close()
 		b.f = FileAccess.open(b.path, FileAccess.WRITE_READ)
 	return 0.0

@@ -8,6 +8,8 @@ class_name GMCore
 extends RefCounted
 
 const EPS := 1e-13
+const ALARM_EVENTS: Array[String] = ["alarm_0", "alarm_1", "alarm_2", "alarm_3", "alarm_4", "alarm_5",
+	"alarm_6", "alarm_7", "alarm_8", "alarm_9", "alarm_10", "alarm_11"]
 
 # ------------------------------------------------------------------ global state
 
@@ -29,6 +31,14 @@ static var next_seq := 0 # GMInstance.seq: insertion order, used to keep grid re
 static var tiles: Array = []                # Dictionary per tile
 static var next_tile_id := 10000001
 static var event_holders: Dictionary = {}   # event name -> Array[int] of objects having it
+## Bumped whenever an object gains its first instance or may have lost its last one, or the
+## holders change; present_holders() re-filters event_holders when it moves.
+static var presence_ver := 0
+static var _present: Dictionary = {}        # event name -> [presence_ver, Array[int]]
+## Instances whose animation / motion step may do something (see GMInstance.anim_idle):
+## the frame loop visits only these, which in big rooms are a small part of all instances.
+static var animating: Dictionary = {}       # GMInstance -> true
+static var moving: Dictionary = {}          # GMInstance -> true
 static var scene_change: Variant = null     # null | ["room", n] | ["restart"] | ["end"]
 static var stored_rooms: Dictionary = {}    # room index -> saved RoomState
 static var room_code_override: Dictionary = {} # room index -> code string (room_set_code)
@@ -492,7 +502,14 @@ static func _insert(inst: GMInstance) -> void:
 	var k := int(inst.object_index)
 	if not by_object.has(k):
 		by_object[k] = []
-	by_object[k].append(inst)
+	var lst: Array = by_object[k]
+	if lst.is_empty():
+		presence_ver += 1
+	lst.append(inst)
+	inst.anim_idle = false
+	inst.motion_idle = false
+	animating[inst] = true
+	moving[inst] = true
 	by_id[int(inst.id)] = inst
 
 ## Removes destroyed instances from the lists (end of step, like GM8).
@@ -503,11 +520,14 @@ static func purge_destroyed() -> void:
 		if i.destroyed:
 			any = true
 			by_id.erase(int(i.id))
+			animating.erase(i)
+			moving.erase(i)
 		else:
 			keep.append(i)
 	if not any:
 		return
 	draw_dirty = true
+	presence_ver += 1
 	instances = keep
 	for k in by_object.keys():
 		var lst: Array = by_object[k]
@@ -529,6 +549,9 @@ static func destroy_instance(inst: GMInstance, run_event := true) -> void:
 
 static func build_event_holders() -> void:
 	event_holders = {}
+	presence_ver += 1
+	for inst: GMInstance in instances:
+		inst.wake_anim()
 	for o: GMObject in GMAssets.objects:
 		if o == null:
 			continue
@@ -556,12 +579,23 @@ static func run_event(inst: GMInstance, ev: String, other: GMInstance) -> void:
 		o.events[ev] = c # resolved once
 	c.call(inst, other)
 
+## The objects that have `ev` and currently have instances, in event_holders order. Most of the
+## game's ~2,000 objects have no instances in a given room, and every step runs 15 such events.
+static func present_holders(ev: String) -> Array:
+	var c = _present.get(ev)
+	if c != null and c[0] == presence_ver:
+		return c[1]
+	var out := []
+	for obj_index in event_holders.get(ev, []):
+		var lst = by_object.get(obj_index)
+		if lst != null and not lst.is_empty():
+			out.append(obj_index)
+	_present[ev] = [presence_ver, out]
+	return out
+
 ## Runs an event on every instance of every object that has it.
 static func run_object_event(ev: String) -> void:
-	var holders = event_holders.get(ev)
-	if holders == null:
-		return
-	for obj_index in holders:
+	for obj_index in present_holders(ev):
 		var t0 := Time.get_ticks_usec() if GMPerf.enabled else 0
 		var lst := object_list(obj_index)
 		if not lst.is_empty():
@@ -621,6 +655,19 @@ static func run_code_string(s: GMInstance, o: GMInstance, code: String) -> void:
 			return
 
 # ------------------------------------------------------------------ generated code access
+
+static var _room_code_fns: Dictionary = {}
+
+## Runs a room or instance creation code function from gen/RoomCode.gd. Code added in a room
+## scene isn't there until gml2gd regenerates it, which is reported instead of crashing.
+static func _room_code_call(fn: String, inst: GMInstance) -> void:
+	if _room_code_fns.is_empty():
+		for m in room_code().get_script_method_list():
+			_room_code_fns[m.name] = true
+	if _room_code_fns.has(fn):
+		Callable(room_code(), fn).call(inst, inst)
+	else:
+		_error("%s: código de creación sin traducir; regenera con gml2gd (ver README)" % fn)
 
 static var _room_code: Script
 static var _sc: Array = []
@@ -729,6 +776,9 @@ static func load_room(room_index: int) -> void:
 	stored_rooms.erase(room_index)
 	instances = []
 	by_object = {}
+	animating = {}
+	moving = {}
+	presence_ver += 1
 	by_id = {}
 	tiles = []
 	tiles_dirty = true
@@ -821,7 +871,7 @@ static func load_room(room_index: int) -> void:
 		if GMAssets.settings.get("swap_creation_events", false):
 			run_event(inst, "create", inst)
 		if pair[1].creation_code.strip_edges() != "":
-			Callable(room_code(), "i_%d" % int(inst.id)).call(inst, inst)
+			_room_code_call("i_%d" % int(inst.id), inst)
 		if not GMAssets.settings.get("swap_creation_events", false):
 			run_event(inst, "create", inst)
 
@@ -835,7 +885,7 @@ static func load_room(room_index: int) -> void:
 		if room_code_override.has(room_index):
 			run_code_string(dummy, dummy, room_code_override[room_index])
 		elif rd.creation_code.strip_edges() != "":
-			Callable(room_code(), "r_" + GMAssets._file_name(rd.name)).call(dummy, dummy)
+			_room_code_call("r_" + GMAssets._file_name(rd.name), dummy)
 
 	run_other_event(4)
 	GM.screen_set_size()
@@ -848,6 +898,9 @@ static func restart_game() -> void:
 	run_other_event(3)
 	instances = []
 	by_object = {}
+	animating = {}
+	moving = {}
+	presence_ver += 1
 	by_id = {}
 	stored_rooms = {}
 	g = {}
@@ -969,10 +1022,10 @@ static func frame() -> void:
 	GMPerf.add("f_speeds", Time.get_ticks_usec() - _p_speeds)
 	var _p_motion := Time.get_ticks_usec()
 	# Instances created by a path-end event are appended and not moved this frame.
-	var lst := instances
+	var lst := _in_order(moving, instances, func(a, b): return a.seq < b.seq)
 	for n in lst.size():
 		var inst: GMInstance = lst[n]
-		if inst.gone:
+		if inst.gone or inst.motion_idle:
 			continue
 		if inst._hspeed != 0.0 or inst._vspeed != 0.0:
 			inst.x += inst._hspeed
@@ -1009,29 +1062,47 @@ static func frame() -> void:
 	var _p_anim := Time.get_ticks_usec()
 	# Like GM8, animations advance in draw order.
 	var sprites: Array = GMAssets.sprites
-	for inst: GMInstance in GM.draw_order():
-		if inst.gone:
+	var order: Array = GM.draw_order()
+	for inst: GMInstance in _in_order(animating, order, func(a, b): return a.draw_pos < b.draw_pos):
+		if inst.gone or inst.anim_idle:
 			continue
 		var si := int(inst.sprite_index)
 		var spr: GMSprite = sprites[si] if si >= 0 and si < sprites.size() else null
 		var n := float(spr.frames) if spr else 0.0
-		var idx := inst.image_index + inst.image_speed
+		var old := inst.image_index
+		var idx := old + inst.image_speed
 		if idx >= n:
 			inst.image_index = idx - n
-			run_event(inst, "other_7", inst)
+			if inst.obj != null and inst.obj.events.has("other_7"):
+				run_event(inst, "other_7", inst)
+			elif idx - n == old: # e.g. a 1-frame sprite at speed 1: wraps back to 0 every step
+				inst.anim_idle = true
+				animating.erase(inst)
 		else:
 			inst.image_index = idx
+			if idx == old:
+				inst.anim_idle = true
+				animating.erase(inst)
 	GMPerf.add("f_anim", Time.get_ticks_usec() - _p_anim)
 
 	GM.input_step()
 
+## The members of `active` (a subset of `all`) in `all`'s order: sorted when there are few,
+## otherwise just `all` (whose idle members the caller skips).
+static func _in_order(active: Dictionary, all: Array, before: Callable) -> Array:
+	if active.size() * 4 > all.size():
+		return all
+	var out := []
+	for inst: GMInstance in active:
+		if not inst.destroyed:
+			out.append(inst)
+	out.sort_custom(before)
+	return out
+
 static func _run_alarms() -> void:
 	for a in 12:
-		var holders = event_holders.get("alarm_%d" % a)
-		if holders == null:
-			continue
-		var ev := "alarm_%d" % a
-		for obj_index in holders:
+		var ev: String = ALARM_EVENTS[a]
+		for obj_index in present_holders(ev):
 			for inst in object_list(obj_index):
 				var al: float = inst.alarm[a]
 				if al >= 0.0:

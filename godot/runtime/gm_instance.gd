@@ -9,6 +9,7 @@ var v: Dictionary = {}
 var id: float = 0.0
 var object_index: float = 0.0:
 	set(val):
+		wake_anim()
 		if object_index != val:
 			GMCore.inst_changed(self, int(object_index))
 			object_index = val
@@ -27,6 +28,22 @@ var deactivated := false
 var seq := 0
 ## Position in the persistent draw order (GM8 keeps it between frames and sorts it stably by depth).
 var draw_pos := 0
+## Set by the frame loop when stepping this instance's animation / motion changed nothing (and
+## would run no event); the setters below clear them whenever an input of that step changes.
+## Most instances in a big room are static, and the loops can then skip them.
+## Not idle <=> listed in GMCore.animating / GMCore.moving (wake_* keep that in sync).
+var anim_idle := false
+var motion_idle := false
+
+func wake_anim() -> void:
+	if anim_idle:
+		anim_idle = false
+		GMCore.animating[self] = true
+
+func wake_motion() -> void:
+	if motion_idle:
+		motion_idle = false
+		GMCore.moving[self] = true
 ## Whether bbox_* must be recomputed before use. Setting it also tells the collision grids
 ## (gm_lib_inst.gd) that this instance's object changed.
 var bbox_stale := true:
@@ -63,6 +80,7 @@ var hspeed: float:
 	set(val):
 		if _hspeed != val:
 			_hspeed = val
+			wake_motion()
 			_update_speed_direction()
 var vspeed: float:
 	get:
@@ -70,21 +88,30 @@ var vspeed: float:
 	set(val):
 		if _vspeed != val:
 			_vspeed = val
+			wake_motion()
 			_update_speed_direction()
 var speed: float:
 	get:
 		return _speed
 	set(val):
 		_speed = val
+		wake_motion()
 		_update_hvspeed()
 var direction: float:
 	get:
 		return _direction
 	set(val):
 		_direction = fposmod(val, 360.0)
+		wake_motion()
 		_update_hvspeed()
-var friction := 0.0
-var gravity := 0.0
+var friction := 0.0:
+	set(val):
+		friction = val
+		wake_motion()
+var gravity := 0.0:
+	set(val):
+		gravity = val
+		wake_motion()
 var gravity_direction := 270.0
 
 var solid := false
@@ -100,9 +127,16 @@ var sprite_index := -1.0:
 	set(val):
 		if sprite_index != val:
 			sprite_index = val
+			wake_anim()
 			bbox_stale = true
-var image_index := 0.0
-var image_speed := 1.0
+var image_index := 0.0:
+	set(val):
+		image_index = val
+		wake_anim()
+var image_speed := 1.0:
+	set(val):
+		image_speed = val
+		wake_anim()
 var image_xscale := 1.0:
 	set(val):
 		image_xscale = val
@@ -129,7 +163,10 @@ var mask_index := -1.0:
 			mask_index = val
 			bbox_stale = true
 
-var path_index := -1.0
+var path_index := -1.0:
+	set(val):
+		path_index = val
+		wake_motion()
 var path_position := 0.0
 var path_positionprevious := 0.0
 var path_speed := 0.0
@@ -204,12 +241,14 @@ func set_hvspeed(h: float, vv: float) -> void:
 	if _hspeed != h or _vspeed != vv:
 		_hspeed = h
 		_vspeed = vv
+		wake_motion()
 		_update_speed_direction()
 
 ## Sets speed and direction together, updating hspeed/vspeed once.
 func set_speed_direction(sp: float, dir: float) -> void:
 	_speed = sp
 	_direction = fposmod(dir, 360.0)
+	wake_motion()
 	_update_hvspeed()
 
 ## Updates bbox_* from the current mask/sprite, like GM8's lazy bbox.

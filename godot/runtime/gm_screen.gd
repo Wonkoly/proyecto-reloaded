@@ -77,6 +77,8 @@ var _turbo_before := 1.0
 
 func _setup_dev() -> void:
 	GMPerf.enabled = OS.get_environment("GM_PERF") not in ["", "0"]
+	GMPerf.scripts = OS.get_environment("GM_PERF_SCRIPTS") not in ["", "0"]
+	GMPerf.enabled = GMPerf.enabled or GMPerf.scripts
 	GMDev.enabled = OS.get_environment("GM_DEV") not in ["", "0"] or "--dev" in OS.get_cmdline_user_args() \
 		or OS.has_feature("dev")
 	if not GMDev.enabled:

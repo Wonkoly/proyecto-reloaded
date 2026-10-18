@@ -20,3 +20,6 @@ target/
 
 # SoundFont (31 MB, se descarga: ver tools/soundfont/README.md)
 /tools/soundfont/*.sf2
+
+# Imágenes de tilesets copiadas por tools/rooms.sh
+/godot/rooms/backgrounds/

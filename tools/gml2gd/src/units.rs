@@ -17,7 +17,9 @@ pub struct Unit {
     pub source: String,
 }
 
-pub fn load(root: &Path) -> Vec<Unit> {
+/// `scenes`: folder of room scenes edited in Godot (godot/rooms); a room that has one takes its
+/// creation code from the scene instead of the extracted JSON.
+pub fn load(root: &Path, scenes: Option<&Path>) -> Vec<Unit> {
     let mut units = Vec::new();
 
     let mut scripts: Vec<_> = fs::read_dir(root.join("scripts")).unwrap().flatten().map(|e| e.path()).collect();
@@ -67,25 +69,100 @@ pub fn load(root: &Path) -> Vec<Unit> {
     for p in rooms {
         let r: Value = serde_json::from_str(&fs::read_to_string(&p).unwrap()).unwrap();
         let room = r["name"].as_str().unwrap().to_string();
-        let cc = r["creation_code"].as_str().unwrap_or("");
-        if !cc.trim().is_empty() {
+        let scene = scenes.map(|d| d.join(format!("{}.tscn", p.file_stem().unwrap().to_string_lossy())));
+        let (room_cc, insts) = match scene.filter(|s| s.exists()) {
+            Some(s) => scene_codes(&fs::read_to_string(&s).unwrap()),
+            None => (
+                r["creation_code"].as_str().unwrap_or("").to_string(),
+                r["instances"]
+                    .as_array()
+                    .unwrap()
+                    .iter()
+                    .map(|i| (i["id"].as_i64().unwrap(), i["creation_code"].as_str().unwrap_or("").to_string()))
+                    .collect(),
+            ),
+        };
+        if !room_cc.trim().is_empty() {
             units.push(Unit {
                 name: format!("{room}.creation"),
                 kind: UnitKind::RoomCreation { room: room.clone() },
-                source: cc.to_string(),
+                source: room_cc,
             });
         }
-        for i in r["instances"].as_array().unwrap() {
-            let cc = i["creation_code"].as_str().unwrap_or("");
+        for (id, cc) in insts {
             if !cc.trim().is_empty() {
-                let id = i["id"].as_i64().unwrap();
                 units.push(Unit {
                     name: format!("{room}.inst{id}"),
                     kind: UnitKind::InstanceCreation { room: room.clone(), instance_id: id },
-                    source: cc.to_string(),
+                    source: cc,
                 });
             }
         }
     }
     units
+}
+
+/// Creation code of a room scene (.tscn written by Godot): the root node's `creation_code` and
+/// each instance node's (`gm_id`, `creation_code`). Properties left at their default are omitted
+/// by Godot, so a missing `creation_code` is empty.
+fn scene_codes(text: &str) -> (String, Vec<(i64, String)>) {
+    let mut room_cc = String::new();
+    let mut insts = Vec::new();
+    // Current [node] section: (is root, gm_id, creation_code)
+    let mut cur: Option<(bool, Option<i64>, String)> = None;
+    let flush = |cur: &mut Option<(bool, Option<i64>, String)>, room_cc: &mut String, insts: &mut Vec<(i64, String)>| {
+        if let Some((root, id, cc)) = cur.take() {
+            match (root, id) {
+                (true, _) => *room_cc = cc,
+                (false, Some(id)) => insts.push((id, cc)),
+                _ => {},
+            }
+        }
+    };
+    let b = text.as_bytes();
+    let mut i = 0;
+    while i < b.len() {
+        let end = text[i..].find('\n').map_or(b.len(), |e| i + e);
+        let line = &text[i..end];
+        if line.starts_with('[') {
+            flush(&mut cur, &mut room_cc, &mut insts);
+            if line.starts_with("[node ") {
+                cur = Some((!line.contains(" parent="), None, String::new()));
+            }
+            i = end + 1;
+        } else if let Some(v) = line.strip_prefix("gm_id = ") {
+            if let Some(c) = cur.as_mut() {
+                c.1 = v.trim().parse().ok();
+            }
+            i = end + 1;
+        } else if line.starts_with("creation_code = \"") {
+            // A Godot string: may span lines; \\ and \" are escaped.
+            let mut j = i + "creation_code = \"".len();
+            let mut s = String::new();
+            while j < b.len() && b[j] != b'"' {
+                if b[j] == b'\\' && j + 1 < b.len() {
+                    j += 1;
+                    match b[j] {
+                        b'n' => s.push('\n'),
+                        b't' => s.push('\t'),
+                        b'r' => s.push('\r'),
+                        c => s.push(c as char),
+                    }
+                    j += 1;
+                } else {
+                    let ch = text[j..].chars().next().unwrap();
+                    s.push(ch);
+                    j += ch.len_utf8();
+                }
+            }
+            if let Some(c) = cur.as_mut() {
+                c.2 = s;
+            }
+            i = text[j..].find('\n').map_or(b.len(), |e| j + e + 1);
+        } else {
+            i = end + 1;
+        }
+    }
+    flush(&mut cur, &mut room_cc, &mut insts);
+    (room_cc, insts)
 }

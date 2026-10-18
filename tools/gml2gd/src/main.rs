@@ -106,7 +106,7 @@ fn walk<'a>(e: &Expr<'a>, f: &mut impl FnMut(&Expr<'a>)) {
 fn analyze(root: &Path) {
     let b = Builtins::load();
     let res = load_resources(root);
-    let units = units::load(root);
+    let units = units::load(root, None);
     let scripts: HashSet<String> = units
         .iter()
         .filter(|u| matches!(u.kind, units::UnitKind::Script))
@@ -213,7 +213,7 @@ fn gen(root: &Path, out: &Path) {
     use codegen::*;
     use std::panic::{catch_unwind, AssertUnwindSafe};
     let b = Builtins::load();
-    let units = units::load(root);
+    let units = units::load(root, Some(&out.join("rooms")));
     let res = load_resources(root);
     let consts: HashMap<String, String> =
         serde_json::from_str(&fs::read_to_string(root.join("constants.json")).unwrap()).unwrap();

@@ -483,6 +483,7 @@ static func f_instance_change(s: GMInstance, obj: Variant, perf: Variant) -> flo
 	if not by_object.has(o.index):
 		by_object[o.index] = []
 	by_object[o.index].append(s)
+	presence_ver += 1
 	next_instance_id += 1
 	if t(perf):
 		run_event(s, "create", s)
@@ -519,10 +520,17 @@ static func f_instance_activate_object(s: GMInstance, obj: Variant) -> float:
 # ------------------------------------------------------------------ motion
 
 static func process_speeds() -> void:
-	for inst: GMInstance in instances: # no events run here, so no snapshot is needed
+	# No events run here, so the order doesn't matter and no snapshot is needed
+	# (keys() is a copy, so erasing while iterating is fine).
+	for inst: GMInstance in moving.keys():
 		if inst.gone:
 			continue
 		var fr := inst.friction
+		if fr == 0.0 and inst.gravity == 0.0 and inst._hspeed == 0.0 and inst._vspeed == 0.0 \
+				and inst.path_index < 0.0:
+			inst.motion_idle = true # nothing to do here or in the frame's motion pass
+			moving.erase(inst)
+			continue
 		if fr != 0.0:
 			var sp := inst.speed
 			if sp >= 0.0:
@@ -658,10 +666,7 @@ static func f_mp_potential_step_object(s: GMInstance, gx: Variant, gy: Variant, 
 static func run_bound_events() -> void:
 	# Outside room (other_0) and boundary (other_1) events.
 	for ev in ["other_0", "other_1"]:
-		var holders = event_holders.get(ev)
-		if holders == null:
-			continue
-		for oi in holders:
+		for oi in present_holders(ev):
 			for inst: GMInstance in object_list(oi):
 				inst.update_bbox()
 				var bb: Array = inst._bbox
@@ -680,7 +685,7 @@ static func run_collisions() -> void:
 		var tobj := GMAssets.object(target)
 		if tobj == null:
 			continue
-		for oi in event_holders[ev]:
+		for oi in present_holders(ev):
 			if GMDev.noclip and oi == 14 and target == 1: # dev `atravesar`: obj_Prota vs obj_pared
 				continue
 			var _pt0 := Time.get_ticks_usec()

@@ -261,8 +261,25 @@ static func room(i: float) -> Dictionary:
 	if k < 0 or k >= room_names.size() or room_names[k] == null:
 		return {}
 	if not _rooms.has(k):
-		_rooms[k] = _json("rooms/%s.json" % _file_name(room_names[k]))
+		_rooms[k] = _room_from_scene(room_names[k])
+		if _rooms[k].is_empty():
+			_rooms[k] = _json("rooms/%s.json" % _file_name(room_names[k]))
 	return _rooms[k]
+
+## A room edited in Godot (res://rooms/<Room>.tscn, see rooms/editor/gm_room.gd) replaces the
+## extracted one. Returns {} if there is no scene for it.
+static func _room_from_scene(n: String) -> Dictionary:
+	var path := "res://rooms/%s.tscn" % _file_name(n)
+	if not ResourceLoader.exists(path):
+		return {}
+	var root = (load(path) as PackedScene).instantiate()
+	var d: Dictionary = root.to_dict() if root is GMRoom else {}
+	root.free()
+	if d.is_empty():
+		push_error("%s: la raíz no es un GMRoom" % path)
+	else:
+		d.name = n
+	return d
 
 ## Callable for a compiled object event; the object's generated script loads on first use.
 static func event_callable(owner: int, ev: String) -> Callable:
@@ -297,8 +314,18 @@ static func script_callable(i: float) -> Callable:
 	var c := Callable()
 	if k >= 0 and k < script_names.size() and script_names[k] != null:
 		c = Callable(load("res://gen/scripts/S_%s.gd" % script_names[k]), "f")
+		if GMPerf.scripts:
+			c = _timed(c, script_names[k])
 	_scripts[k] = c
 	return c
+
+## GM_PERF_SCRIPTS=1: wraps a script so the profiler lists its inclusive time.
+static func _timed(c: Callable, name: String) -> Callable:
+	return func(...args: Array) -> Variant:
+		var t0 := Time.get_ticks_usec()
+		var r = c.callv(args)
+		GMPerf.add_obj("script", 0, Time.get_ticks_usec() - t0, name)
+		return r
 
 static func script_id(n: String) -> int:
 	return _script_ids.get(n, -1)

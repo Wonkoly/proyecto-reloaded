@@ -56,7 +56,8 @@ tools/Godot_v4.7.2-stable_linux.x86_64 --path godot
 Depuración: `GM_SNAPSHOTS="dir:segundos:cantidad"` guarda capturas y cierra;
 `GM_INPUT="t:vk,..."` presiona teclas (códigos VK de Windows, p. ej. 90 = Z, 13 = Enter) en el segundo t;
 `GM_INPUT_UNTIL=Mapa` descarta las teclas pendientes al llegar a ese mapa;
-`GM_DEV_CMDS="t:comando;@Mapa+s:comando"` manda comandos de developer (requiere modo developer).
+`GM_DEV_CMDS="t:comando;@Mapa+s:comando"` manda comandos de developer (requiere modo developer);
+`GM_PERF=1` imprime el informe de rendimiento y `GM_PERF_SCRIPTS=1` además cronometra cada script del juego.
 
 ## Modo developer
 ```sh
@@ -66,6 +67,28 @@ tools/dev.sh 1      # arranca directo en la partida del slot 1 (sin intro)
 **F1** o **º** abre una consola dentro del juego (`tp`, `guardar`, `curar`, `dinero`, `objeto`, `atravesar`…);
 mantener **Tab** = velocidad x4. Lista completa de comandos: [COMANDOS.md](COMANDOS.md).
 `GM_ROOT=<carpeta>` usa otra carpeta del juego (para pruebas sin tocar tus partidas).
+
+## Editar mapas en Godot
+Cada mapa puede convertirse en una escena normal de Godot (`godot/rooms/<Mapa>.tscn`). Si la escena existe,
+**el juego carga el mapa desde ella** en lugar del original, así que lo que cambies en el editor se ve en el juego.
+```sh
+tools/rooms.sh PuebloAlba            # crea la escena (si ya existe no la toca)
+tools/rooms.sh --check PuebloAlba    # comprueba que sea idéntica al original (antes de editarla)
+tools/rooms.sh --force PuebloAlba    # la vuelve a crear desde el original: se pierden tus cambios
+```
+Estructura de la escena (abre `godot/` con el editor de Godot y luego `rooms/PuebloAlba.tscn`):
+- **Raíz (`GMRoom`)**: tamaño, velocidad, color de fondo, fondos, vistas y código de creación del mapa (inspector).
+- **`Tiles/Depth N`**: los tiles de cada profundidad (mayor = más al fondo). Dentro hay `TileMapLayer`
+  (se pintan con el editor de TileMap de Godot; cada tileset del juego es una fuente del TileSet) y tiles sueltos
+  (`GMRoomTile`: los que no caben en una rejilla, o los que el código del juego borra por id). Se dibujan en orden: lo de abajo en la lista va encima.
+- **`Instances`**: un nodo `GMRoomInstance` por instancia, en orden de creación. Se mueven, rotan y escalan como
+  cualquier nodo; en el inspector van el objeto (con sugerencias), el id y el código de creación. Para agregar una:
+  *Añadir nodo hijo → GMRoomInstance* y elegir el objeto. Se pueden agrupar en carpetas (nodos `Node2D`).
+
+Si cambias **código de creación** (de una instancia o del mapa) hay que volver a traducir el código:
+`tools/gml2gd/target/release/gml2gd gen extracted godot` (lee el código de las escenas). Mover cosas, pintar tiles o
+agregar instancias sin código no lo necesita. Ojo: parte del mapa vive en scripts y no en la escena (salidas entre mapas
+en `CambiosWorldRooms`, NPCs según la historia en `CreateNPC*`, puertas en `CreateDoors`).
 
 ## Arquitectura del port (`godot/`)
 - `gen/` — **generado, no editar**: `scripts/S_*.gd` (5,075 scripts), `objects/O_*.gd` (eventos de 1,991
@@ -89,9 +112,11 @@ mantener **Tab** = velocidad x4. Lista completa de comandos: [COMANDOS.md](COMAN
 - ✅ Batallas: salvajes, captura y contra entrenador, de principio a fin (probadas con la consola dev).
 - ✅ Rendimiento: rejilla de colisiones incremental, orden de dibujo en caché, recorte de lo que queda
   fuera de la vista y reloj del juego sincronizado con el refresco (30 fps parejos en mapas normales).
+- ✅ Mapas gigantes (IslaAlma, MontePiscis_3: 3–4 mil instancias) a 30 fps: los archivos de texto se
+  decodifican una sola vez (`TextReader` relee `txt_menu` en cada paso), cada evento recorre solo los
+  objetos con instancias en el mapa, y animación/movimiento solo visitan las instancias que cambian.
 - ⏳ Pendiente: revisar contra el original batallas, eventos de colisión y el resto de mapas;
-  `part_type_blend` (mezcla aditiva) se guarda pero se dibuja con mezcla normal; los mapas gigantes
-  (IslaAlma, MontePiscis_3: 3–4 mil instancias) van a 18–20 fps por el costo de GDScript.
+  `part_type_blend` (mezcla aditiva) se guarda pero se dibuja con mezcla normal.
 
 ## Lo que hay dentro del juego
 - **5,075 scripts** (~14 MB de GML), **1,991 objetos**, **717 mapas**, 3,857 sprites internos,

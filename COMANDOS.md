@@ -99,3 +99,5 @@ El mote del Pokémon capturado se acepta con Enter.
 Variables de entorno para correr el juego sin tocarlo (ver README):
 `GM_DEV_CMDS="t:comando;@Mapa+s:comando"`, `GM_DEV_LOAD=<slot>`, `GM_INPUT`, `GM_INPUT_UNTIL`,
 `GM_SNAPSHOTS` y `GM_ROOT` (carpeta del juego alternativa, para no tocar tus partidas).
+`GM_PERF=1` activa `perf` desde el arranque; `GM_PERF_SCRIPTS=1` además mide cada script del juego
+(tiempo inclusivo) y los lista entre los más costosos.

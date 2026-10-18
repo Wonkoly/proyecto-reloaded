@@ -21,6 +21,20 @@ const DIGITO_STAT: Dictionary[String, int] = {
 @export var movimientos: Array[MoveData] = []
 
 
+## Un Pokémon nuevo como los salvajes del original (IniciaSalvaje): iv y ntv al azar, movimientos
+## por nivel y HP y energía llenos.
+static func crear(especie_: PokemonData, nivel_: int) -> PokemonInstance:
+	var p := PokemonInstance.new()
+	p.especie = especie_
+	p.nivel = nivel_
+	p.iv = randi_range(0, 999999)
+	p.ntv = randi_range(0, 999999)
+	p.asignar_movimientos_por_nivel()
+	p.hp_actual = p.calcular_stats()["hp"]
+	p.energia_actual = p.calcular_energia_maxima()
+	return p
+
+
 ## Pone los movimientos como ColocaAtaques del original: los 4 últimos distintos aprendidos por
 ## nivel hasta el nivel actual (el más reciente primero). Si no hay ninguno, el primero que
 ## aprendería al subir de nivel.

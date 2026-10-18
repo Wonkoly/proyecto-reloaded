@@ -28,3 +28,9 @@ enum Crecimiento { MEDIO, RAPIDO, LENTO, PARABOLICO, ERRATICO, FLUCTUANTE }
 @export var sprite: Texture2D
 ## Por nivel (ordenados por nivel), luego MT, tutor y DT.
 @export var movimientos_aprendibles: Array[MovimientoAprendible] = []
+
+
+## SpriteFrames de batalla generado por tools/extraer.py (null si no se extrajo).
+func cargar_sprite_frames() -> SpriteFrames:
+	var ruta: String = "res://assets/extraido/sprites/pokemon/%04d/sprite_frames.tres" % id_original
+	return load(ruta) as SpriteFrames if ResourceLoader.exists(ruta) else null

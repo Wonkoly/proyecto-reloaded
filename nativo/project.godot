@@ -13,6 +13,12 @@ config_version=5
 config/name="Proyecto Reloaded (nativo)"
 config/features=PackedStringArray("4.7")
 
+[autoload]
+
+GameState="*res://autoload/game_state.gd"
+SaveManager="*res://autoload/save_manager.gd"
+AudioManager="*res://autoload/audio_manager.gd"
+
 [debug]
 
 gdscript/warnings/untyped_declaration=1

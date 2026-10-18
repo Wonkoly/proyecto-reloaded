@@ -1,0 +1,12 @@
+[gd_resource type="Resource" script_class="MoveData" format=3]
+
+[ext_resource type="Script" path="res://scripts/resources/move_data.gd" id="1_t37f1"]
+
+[resource]
+script = ExtResource("1_t37f1")
+nombre = "Ascuas"
+tipo = 1
+poder = 40
+cooldown = 1.5
+alcance = 96.0
+descripcion = "Lanza pequeñas llamas contra el objetivo."

@@ -1,0 +1,18 @@
+[gd_resource type="Resource" script_class="PokemonData" format=3]
+
+[ext_resource type="Script" path="res://scripts/resources/move_data.gd" id="1_31skl"]
+[ext_resource type="Resource" path="res://data/moves/ascuas.tres" id="2_rnejs"]
+[ext_resource type="Script" path="res://scripts/resources/pokemon_data.gd" id="3_2ih1e"]
+
+[resource]
+script = ExtResource("3_2ih1e")
+nombre = "Charmander"
+numero_pokedex = 4
+tipos = Array[int]([1])
+hp = 39
+ataque = 52
+defensa = 43
+ataque_esp = 60
+defensa_esp = 50
+velocidad = 65
+movimientos_aprendibles = Array[ExtResource("1_31skl")]([ExtResource("2_rnejs")])

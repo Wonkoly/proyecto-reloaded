@@ -64,7 +64,7 @@ Encaja con el patrón **BattlePokemon + controladores**: `Pokemon1Movimiento` le
   - **cooldown 0.5 s** sin poder volver a atacar (`alarm[0] = 15`) — global por Pokémon, no por movimiento,
   - **bloqueo 0.1667 s** sin poder moverse (`alarm[1] = 5`), y se detiene,
   - pone el sprite de ataque mirando hacia `mira` y crea el proyectil.
-- Proyectil: **360 px/s** (12 px/step) en la dirección del atacante; desaparece a los **6.667 s**
+- Proyectil: **360 px/s** (12 px/step) **apuntando al rival** (`point_direction` al objetivo, ± `random(prec·10)`° según la precisión); desaparece a los **6.667 s**
   (`alarm[10] = 200`, `AtaqueTimeOut`) si no choca. Con "Yo primero" (`YP`) acelera
   `+45 px/s²` (`speed += YP/20` por step).
 - Colisiones del proyectil: Pokémon rival (daño), paredes, ataques del otro lado (se anulan según el
@@ -201,6 +201,14 @@ Ids del juego → `Tipos.Tipo`: 1 Normal, 2 Fuego, 3 Agua, 4 Planta, 5 Eléctric
 `numero_pokedex` sale de `GetOrdenDex` (los ids internos no siguen la Pokédex nacional a partir del 494).
 
 ## Pendiente de revisar
+- **Batalla nativa (`scenes/battle/`)**: solo daño genérico. Faltan los casos especiales de
+  `Ataque1GolpeaPokemon2` (movimientos con efectos propios, contacto, absorber, multigolpe...),
+  `ExecuteAtack` (ataques que no son proyectil), estados (`STD`), cambios de stats (`Mod_*`), clima,
+  habilidades, objetos, mega/Z, "Yo primero" (MF), precisión (desvío del disparo), críticos,
+  rebote en paredes de 9 movimientos, proyectiles de poder 400 (`Ataque1CollitionAt2`), empuje al
+  recibir un golpe (`friction`), sprite y efecto de cada movimiento (`EffectAtack`; ahora es un
+  círculo del color del tipo), sombras, máscaras de colisión por especie (`DefineMaskPokemon`),
+  animación en reposo de voladores/levitantes, y cuánto dura la pose de herido (ahora 0.2 s).
 - Los movimientos iniciales de un Pokémon (`ColocaAtaques`) están en
   `PokemonInstance.asignar_movimientos_por_nivel()`; si la especie no aprende nada por nivel, el
   original pone el movimiento 167 (falta).

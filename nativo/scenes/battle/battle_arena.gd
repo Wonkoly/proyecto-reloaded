@@ -6,20 +6,33 @@ const MENU_PRUEBAS: String = "res://scenes/debug/menu_pruebas.tscn"
 
 @export var especie_jugador: int = 4
 @export var nivel_jugador: int = 50
+@export var especie_rival: int = 1
+@export var nivel_rival: int = 50
 
 @onready var pokemons: Node2D = $Pokemon
 
 
 func _ready() -> void:
-	var especie: PokemonData = Datos.especie(especie_jugador)
-	if especie == null:
+	var jugador: BattlePokemon = _crear_pokemon("Jugador", especie_jugador, nivel_jugador, 1, $PosicionJugador.position)
+	var rival: BattlePokemon = _crear_pokemon("Rival", especie_rival, nivel_rival, 2, $PosicionRival.position)
+	if jugador == null or rival == null:
 		return
-	var jugador: BattlePokemon = ESCENA_POKEMON.instantiate()
-	jugador.name = "Jugador"
-	jugador.position = $PosicionJugador.position
-	jugador.configurar(PokemonInstance.crear(especie, nivel_jugador))
 	jugador.add_child(PlayerController.new())
-	pokemons.add_child(jugador)
+	jugador.objetivo = rival
+	rival.objetivo = jugador
+
+
+func _crear_pokemon(nombre: String, id_especie: int, nivel: int, lado: int, posicion: Vector2) -> BattlePokemon:
+	var especie: PokemonData = Datos.especie(id_especie)
+	if especie == null:
+		return null
+	var bp: BattlePokemon = ESCENA_POKEMON.instantiate()
+	bp.name = nombre
+	bp.lado = lado
+	bp.position = posicion
+	bp.configurar(PokemonInstance.crear(especie, nivel))
+	pokemons.add_child(bp)
+	return bp
 
 
 func _unhandled_input(event: InputEvent) -> void:

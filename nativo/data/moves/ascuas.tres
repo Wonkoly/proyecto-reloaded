@@ -5,8 +5,9 @@
 [resource]
 script = ExtResource("1_t37f1")
 nombre = "Ascuas"
+id_original = 1
 tipo = 1
+categoria = 1
 poder = 40
-cooldown = 1.5
-alcance = 96.0
-descripcion = "Lanza pequeñas llamas contra el objetivo."
+costo_energia = 40
+descripcion = "Ligero ataque que puede causar quemaduras."

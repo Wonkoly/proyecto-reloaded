@@ -8,6 +8,7 @@
 script = ExtResource("3_2ih1e")
 nombre = "Charmander"
 numero_pokedex = 4
+id_original = 4
 tipos = Array[int]([1])
 hp = 39
 ataque = 52
@@ -15,4 +16,7 @@ defensa = 43
 ataque_esp = 60
 defensa_esp = 50
 velocidad = 65
+energia = 52
+exp_base = 62
+crecimiento = 3
 movimientos_aprendibles = Array[ExtResource("1_31skl")]([ExtResource("2_rnejs")])

@@ -4,20 +4,22 @@ extends Node2D
 const ESCENA_POKEMON: PackedScene = preload("res://scenes/battle/battle_pokemon.tscn")
 const MENU_PRUEBAS: String = "res://scenes/debug/menu_pruebas.tscn"
 
-@export var especie_jugador: int = 4
-@export var nivel_jugador: int = 50
-@export var especie_rival: int = 1
-@export var nivel_rival: int = 50
-
 @onready var pokemons: Node2D = $Pokemon
 
 
 func _ready() -> void:
-	var jugador: BattlePokemon = _crear_pokemon("Jugador", especie_jugador, nivel_jugador, 1, $PosicionJugador.position)
-	var rival: BattlePokemon = _crear_pokemon("Rival", especie_rival, nivel_rival, 2, $PosicionRival.position)
+	var jugador: BattlePokemon = _crear_pokemon("Jugador", ConfigPruebas.especie_jugador,
+		ConfigPruebas.nivel_jugador, 1, $PosicionJugador.position)
+	var rival: BattlePokemon = _crear_pokemon("Rival", ConfigPruebas.especie_rival,
+		ConfigPruebas.nivel_rival, 2, $PosicionRival.position)
 	if jugador == null or rival == null:
 		return
 	jugador.add_child(PlayerController.new())
+	var ia := AIController.new()
+	ia.entrenador = ConfigPruebas.rival_entrenador
+	ia.crack = ConfigPruebas.rival_crack
+	ia.maestro = ConfigPruebas.rival_maestro
+	rival.add_child(ia)
 	jugador.objetivo = rival
 	rival.objetivo = jugador
 

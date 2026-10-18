@@ -68,6 +68,14 @@ func set_direccion(dir: Vector2) -> void:
 	_actualizar_animacion()
 
 
+## Gira hacia un punto sin moverse.
+func mirar_hacia(punto: Vector2) -> void:
+	var dir: Vector2 = global_position.direction_to(punto)
+	if dir != Vector2.ZERO:
+		mira = MIRA_POR_SECTOR[wrapi(roundi(dir.angle() / (PI / 4.0)), 0, 8)]
+	_actualizar_animacion()
+
+
 func esta_debilitado() -> bool:
 	return pokemon == null or pokemon.hp_actual <= 0
 
@@ -87,6 +95,11 @@ func puede_atacar(indice: int) -> bool:
 		return false
 	var costo: int = pokemon.movimientos[indice].costo_energia
 	return _energia >= costo or _energia >= energia_max
+
+
+## Si tiene algún movimiento y no está en cooldown.
+func movimientos_disponibles() -> bool:
+	return not esta_debilitado() and _cooldown <= 0.0 and not pokemon.movimientos.is_empty()
 
 
 ## Usa el movimiento `indice` (0-3). Devuelve false si no pudo.

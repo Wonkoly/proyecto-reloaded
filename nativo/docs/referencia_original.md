@@ -127,6 +127,11 @@ No hay PP por movimiento: cada Pokémon tiene **una barra de energía** comparti
   menos de 80 px, si son más rápidos, van a la velocidad del jugador menos 30 px/s, y a menos de
   32 px se detienen.
 - Elige objetivo con probabilidad 1/5 por step (6 veces/s).
+- **Cuándo ataca** (`CreateAttack` con `argument0 = 2`): con probabilidad 1/F por step, F = 15
+  quieto (**2 intentos/s**) o 30 en movimiento (1/s); 5 si es maestro con ventaja a menos de 80 px;
+  ×2 en Fácil, ÷2 de Difícil para arriba. Al atacar se detiene (`speed = 0`). Los salvajes eligen
+  el movimiento al azar; los entrenadores con `BattleEstrategia`. `FISICO` = tiene al menos un
+  movimiento físico.
 - `BattleEstrategia` elige el ataque al azar con pesos: parte de 25 por movimiento y los ajusta según
   el movimiento y la situación (efectividad, efectos activos...); 0 para los que no puede usar.
 
@@ -209,6 +214,10 @@ Ids del juego → `Tipos.Tipo`: 1 Normal, 2 Fuego, 3 Agua, 4 Planta, 5 Eléctric
   recibir un golpe (`friction`), sprite y efecto de cada movimiento (`EffectAtack`; ahora es un
   círculo del color del tipo), sombras, máscaras de colisión por especie (`DefineMaskPokemon`),
   animación en reposo de voladores/levitantes, y cuánto dura la pose de herido (ahora 0.2 s).
+- **IA nativa (`AIController`)**: se mueve en 8 direcciones (el original en cualquier ángulo); al
+  chocar con una pared elige otra dirección (el original no rebota); el maestro no ajusta su
+  velocidad a la del jugador; `BattleEstrategia` solo usa el peso base y la efectividad (faltan las
+  reglas por movimiento); no hay desobediencia, "acoso", Espacio Inverso ni varios rivales.
 - Los movimientos iniciales de un Pokémon (`ColocaAtaques`) están en
   `PokemonInstance.asignar_movimientos_por_nivel()`; si la especie no aprende nada por nivel, el
   original pone el movimiento 167 (falta).

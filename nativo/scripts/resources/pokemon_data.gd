@@ -26,4 +26,5 @@ enum Crecimiento { MEDIO, RAPIDO, LENTO, PARABOLICO, ERRATICO, FLUCTUANTE }
 
 @export_group("")
 @export var sprite: Texture2D
-@export var movimientos_aprendibles: Array[MoveData] = []
+## Por nivel (ordenados por nivel), luego MT, tutor y DT.
+@export var movimientos_aprendibles: Array[MovimientoAprendible] = []

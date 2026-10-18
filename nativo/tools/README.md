@@ -51,8 +51,11 @@ sobrescribe en la siguiente corrida.
   de `MoveData`, que es el global del original.
 - **Especies**: ids 1-1000 y 2001-2425 que tengan stats y nombre (1395). No se extraen los shiny
   (id + 1000) ni las formas/megas (ids > 100000). `numero_pokedex` = `GetOrdenDex`, `crecimiento` =
-  `GetCrecimiento`, `movimientos_aprendibles` = los de `Ataque_Nivel` ordenados por nivel (el nivel
-  no se guarda todavía). `sprite` es el primer frame del sprite de batalla mirando abajo (`2.png`),
+  `GetCrecimiento`. `movimientos_aprendibles` (`MovimientoAprendible`: movimiento, nivel y método):
+  primero los de `Ataque_Nivel` ordenados por nivel, luego MT (`Ataque_MT` + `MTAtack`, en orden de
+  MT), tutor (`Ataque_Tutor`) y DT (`Ataque_DT`; hay 25 DT al revés: los aprenden todos menos la
+  lista). Mew (151) y la especie 500 aprenden cualquier MT/tutor/DT; Smeargle (235) ninguno. Las
+  excepciones por forma (`TieneAprendizajeEspecifico`) no se aplican. `sprite` es el primer frame del sprite de batalla mirando abajo (`2.png`),
   solo si ese Pokémon tiene sprites extraídos.
 - **Tipos**: el juego numera los tipos en otro orden; el script los traduce a `Tipos.Tipo`
   (tabla `TIPO_JUEGO_A_ENUM`). El tipo 19 del juego ("???") no existe en `Tipos`: el único movimiento

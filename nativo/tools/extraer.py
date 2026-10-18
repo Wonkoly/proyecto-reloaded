@@ -243,6 +243,52 @@ def leer_aprendizaje(gml: str) -> dict[int, list[tuple[int, int]]]:
     return sets
 
 
+# Especies que aprenden cualquier MT, tutor o DT (Ataque_MT, Ataque_Tutor, Ataque_DT); 235 ninguno.
+APRENDEN_TODO = {151, 500}
+NO_APRENDEN = {235}
+METODO = {"NIVEL": 0, "MT": 1, "TUTOR": 2, "DT": 3}
+
+
+def leer_switch(gml: str, var: str) -> dict[int, set[int]]:
+    """Ataque_MT / Ataque_Tutor: if(VAR=N){switch(PK){case a: case b: {return(true)...}} -> {N: {a, b}}."""
+    tabla: dict[int, set[int]] = {}
+    for n, cuerpo in re.findall(rf"if\({var}=(\d+)\)\{{switch\(PK\)\{{(.*?)default:", gml):
+        tabla.setdefault(int(n), set()).update(int(c) for c in re.findall(r"case (\d+):", cuerpo))
+    for n in re.findall(rf"if\({var}=(\d+)\)\{{return true;\}}", gml):  # sin lista: todos
+        tabla[int(n)] = {-1}
+    return tabla
+
+
+def leer_dt(gml: str) -> dict[int, tuple[bool, set[int]]]:
+    """Ataque_DT: if(AT=M){if(PK=a || ...)return true;} -> {M: (excluye, {a, ...})}.
+    Algunos bloques son al revés: return false para la lista y true para el resto (excluye=True)."""
+    tabla = {}
+    partes = re.split(r"if\(AT=(\d+)\)\{", gml)
+    for i in range(1, len(partes), 2):
+        cuerpo = partes[i + 1]
+        tabla[int(partes[i])] = ("return false" in cuerpo, {int(x) for x in re.findall(r"PK=(\d+)", cuerpo)})
+    return tabla
+
+
+def aprendizaje_otros(pk: int, mts: dict, mt_mov: "Tabla", tutores: dict, dts: dict) -> list[tuple[int, int]]:
+    """[(metodo, movimiento)] por MT (en orden de MT), tutor y DT (en orden de movimiento)."""
+    if pk in NO_APRENDEN:
+        return []
+    todo = pk in APRENDEN_TODO
+    lista = []
+    for mt, especies in sorted(mts.items()):
+        mov = mt_mov.valor(mt)
+        if mov and (todo or pk in especies or -1 in especies):
+            lista.append((METODO["MT"], int(mov)))
+    for mov, especies in sorted(tutores.items()):
+        if todo or pk in especies or -1 in especies:
+            lista.append((METODO["TUTOR"], mov))
+    for mov, (excluye, especies) in sorted(dts.items()):
+        if todo or (pk in especies) != excluye:
+            lista.append((METODO["DT"], mov))
+    return lista
+
+
 # --------------------------------------------------------------------------------------
 # Generación de .tres
 
@@ -412,6 +458,8 @@ def extraer_datos(plan: Plan, ext: Path, indice: dict) -> None:
     orden_dex = Tabla(gml("GetOrdenDex"))
     crecimiento = Tabla(gml("GetCrecimiento"), var="PK")
     aprendizaje = leer_aprendizaje(gml("Ataque_Nivel"))
+    mts, mt_mov = leer_switch(gml("Ataque_MT"), "MK"), Tabla(gml("MTAtack"))
+    tutores, dts = leer_switch(gml("Ataque_Tutor"), "MV"), leer_dt(gml("Ataque_DT"))
     total = 0
     for a, b in RANGOS_ESPECIES:
         for pk in range(a, b + 1):
@@ -439,14 +487,20 @@ def extraer_datos(plan: Plan, ext: Path, indice: dict) -> None:
                 w, h = png_size(frente)
                 frames = indice.get(f"P{pk}_2", {}).get("frames", 1)
                 props.append(f"sprite = {atlas(tres, frente, (0, 0, w // max(frames, 1), h))}")
-            movs = [rutas_mov[m] for _, m in sorted(aprendizaje.get(pk, [])) if m in rutas_mov]
-            vistos: list[Path] = []
-            for m in movs:
-                if m not in vistos:
-                    vistos.append(m)
-            script_mov = tres.ext_resource("Script", "res://scripts/resources/move_data.gd")
-            refs = ", ".join(tres.ext_resource("Resource", res(m)) for m in vistos)
-            props.append(f"movimientos_aprendibles = Array[{script_mov}]([{refs}])")
+            entradas = [(METODO["NIVEL"], m, nv) for nv, m in sorted(aprendizaje.get(pk, []))]
+            entradas += [(metodo, m, 0) for metodo, m in aprendizaje_otros(pk, mts, mt_mov, tutores, dts)]
+            script_apr = tres.ext_resource("Script", "res://scripts/resources/movimiento_aprendible.gd")
+            refs = []
+            for metodo, m, nv in entradas:
+                if m not in rutas_mov:
+                    continue
+                sub = [f"script = {script_apr}", f"move = {tres.ext_resource('Resource', res(rutas_mov[m]))}"]
+                if nv:
+                    sub.append(f"nivel = {nv}")
+                if metodo:
+                    sub.append(f"metodo = {metodo}")
+                refs.append(tres.sub_resource("Resource", sub))
+            props.append(f"movimientos_aprendibles = Array[{script_apr}]([{', '.join(refs)}])")
             plan.escribir(DATA / "pokemon" / f"{pk:04d}_{snake(nombre)}.tres", tres.texto(props))
             total += 1
     print(f"  {total} especies")

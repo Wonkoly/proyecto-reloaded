@@ -201,7 +201,8 @@ Ids del juego → `Tipos.Tipo`: 1 Normal, 2 Fuego, 3 Agua, 4 Planta, 5 Eléctric
 `numero_pokedex` sale de `GetOrdenDex` (los ids internos no siguen la Pokédex nacional a partir del 494).
 
 ## Pendiente de revisar
-- Los niveles de aprendizaje (`Ataque_Nivel`) se pierden al pasar a `movimientos_aprendibles`;
-  MT, tutores y DT (`Ataque_MT`, `Ataque_Tutor`, `Ataque_DT`) no se extraen todavía.
+- Los movimientos iniciales de un Pokémon (`ColocaAtaques`) están en
+  `PokemonInstance.asignar_movimientos_por_nivel()`; si la especie no aprende nada por nivel, el
+  original pone el movimiento 167 (falta).
 - Las apariciones salvajes (`AparicionSalvajes`) son lógica, no una tabla: falta decidir cómo pasarlas a datos.
 - Megas, formas, movimientos Z, clima, estados y habilidades: solo están en el código de batalla.

@@ -1,8 +1,13 @@
 [gd_resource type="Resource" script_class="PokemonData" format=3]
 
-[ext_resource type="Script" path="res://scripts/resources/move_data.gd" id="1_31skl"]
+[ext_resource type="Script" path="res://scripts/resources/movimiento_aprendible.gd" id="1_31skl"]
 [ext_resource type="Resource" path="res://data/moves/ascuas.tres" id="2_rnejs"]
 [ext_resource type="Script" path="res://scripts/resources/pokemon_data.gd" id="3_2ih1e"]
+
+[sub_resource type="Resource" id="Resource_rnejs"]
+script = ExtResource("1_31skl")
+move = ExtResource("2_rnejs")
+nivel = 5
 
 [resource]
 script = ExtResource("3_2ih1e")
@@ -19,4 +24,4 @@ velocidad = 65
 energia = 52
 exp_base = 62
 crecimiento = 3
-movimientos_aprendibles = Array[ExtResource("1_31skl")]([ExtResource("2_rnejs")])
+movimientos_aprendibles = Array[ExtResource("1_31skl")]([SubResource("Resource_rnejs")])

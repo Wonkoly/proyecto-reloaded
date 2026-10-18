@@ -21,6 +21,23 @@ const DIGITO_STAT: Dictionary[String, int] = {
 @export var movimientos: Array[MoveData] = []
 
 
+## Pone los movimientos como ColocaAtaques del original: los 4 últimos distintos aprendidos por
+## nivel hasta el nivel actual (el más reciente primero). Si no hay ninguno, el primero que
+## aprendería al subir de nivel.
+func asignar_movimientos_por_nivel() -> void:
+	var por_nivel: Array[MovimientoAprendible] = especie.movimientos_aprendibles.filter(
+		func(m: MovimientoAprendible) -> bool: return m.metodo == MovimientoAprendible.Metodo.NIVEL and m.move != null)
+	por_nivel.sort_custom(func(a: MovimientoAprendible, b: MovimientoAprendible) -> bool: return a.nivel > b.nivel)
+	movimientos.clear()
+	for m: MovimientoAprendible in por_nivel:
+		if m.nivel <= nivel and m.move not in movimientos:
+			movimientos.append(m.move)
+			if movimientos.size() == 4:
+				return
+	if movimientos.is_empty() and not por_nivel.is_empty():
+		movimientos.append(por_nivel.back().move)
+
+
 ## Stats según el nivel, con las fórmulas del original (PSPokemon, ATPokemon... ShowStatVel).
 func calcular_stats() -> Dictionary[String, int]:
 	var stats: Dictionary[String, int] = {}

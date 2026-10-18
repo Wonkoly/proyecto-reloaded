@@ -24,7 +24,7 @@ func _ready() -> void:
 	rival.objetivo = jugador
 	var manager: BattleManager = $BattleManager
 	var hud: BattleHud = $BattleHud
-	hud.conectar(jugador, rival)
+	hud.conectar(jugador, rival, ConfigPruebas.rival_entrenador)
 	manager.batalla_terminada.connect(
 		func(ganador: BattlePokemon) -> void: hud.mostrar_resultado("¡Gana %s!" % ganador.pokemon.especie.nombre))
 	manager.iniciar(jugador, rival)

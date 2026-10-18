@@ -32,9 +32,11 @@ sobrescribe en la siguiente corrida.
 ## Categorías
 | Categoría | Flag | Origen | Salida |
 |---|---|---|---|
-| datos | (por defecto) | `extracted/scripts/*.gml` (tablas) + `extracted/text/es/` | `data/extraido/moves/NNNN_nombre.tres` (MoveData), `data/extraido/pokemon/NNNN_nombre.tres` (PokemonData) |
+| datos | (por defecto) | `extracted/scripts/*.gml` (tablas) + `extracted/text/es/` | `data/extraido/moves/NNNN_nombre.tres` (MoveData), `data/extraido/pokemon/NNNN_nombre.tres` (PokemonData), `data/extraido/textos/es/*.txt` (textos del juego; `Textos.batalla(n)` = `TextBattle(n)`) |
 | sprites | (por defecto) `--pokemon` | `extracted/pkmnbattle/` | `assets/extraido/sprites/pokemon/NNNN/*.png` + `sprite_frames.tres` |
 | fondos | (por defecto) `--fondos-todos` | `gamedata/data/battleback/` | `assets/extraido/sprites/battlebacks/{realistic,traditional}/` (sin el flag: solo los 3 primeros realistas) |
+| ui | (por defecto) | `gamedata/_internal/sprites/` (los del HUD de batalla, `SPRITES_UI`) | `assets/extraido/sprites/ui/<sprite>/N.png` + `<sprite>.tres` (`SpriteOriginal`: frames y origen de GM8) |
+| fuentes | (por defecto) | `gamedata/_internal/fonts/` | `assets/extraido/fonts/<fuente>.png` + `.fnt` (BMFont; Godot lo importa como fuente) |
 | tilesets | `--tilesets` | `gamedata/_internal/backgrounds/` | `assets/extraido/sprites/tilesets/*.png` + un `TileSet` `.tres` de 16×16 por imagen |
 | musica | `--musica` | `gamedata/data/audio/musica/{pk,re}/*.ogg`, `Music_Intro_*.mp3` | `assets/extraido/audio/music/` |
 | gritos | `--gritos` | `gamedata/data/audio/grito/*.wav` | `assets/extraido/audio/sfx/gritos/` |

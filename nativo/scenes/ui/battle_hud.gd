@@ -1,33 +1,67 @@
 class_name BattleHud
 extends CanvasLayer
-## HUD de batalla: HP y energía de los dos Pokémon y los 4 ataques del jugador.
-## Se conecta solo por señales: lee los datos fijos (nombres, costos) al conectarse y luego
-## escucha hp_cambiado, energia_cambiada y el fin de la batalla.
+## HUD de batalla del original (DrawEventBattle1, DrawBattleAttacks, DrawMiniPokeball): los
+## mismos sprites en las mismas coordenadas de la pantalla de 576×324, más el panel de mensajes.
+## Se conecta solo por señales: lee los datos fijos al conectarse y luego escucha los cambios.
 
-const COLOR_HP: Array[Color] = [Color("e05038"), Color("f8c030"), Color("58d058")]
-const COLOR_ENERGIA: Color = Color("58a8f8")
-const COLOR_FONDO_BARRA: Color = Color(0.1, 0.1, 0.12, 0.85)
-const TECLAS: Array[String] = ["J", "K", "L", "Ñ"]
+const UI: String = "res://assets/extraido/sprites/ui/"
+const ESCALA_BARRA: float = 200.0 / 3.0
+## Teclas que se muestran en la lista de ataques (Shift), como NameTecla del original.
+const TECLAS: Array[String] = ["Z", "X", "C", "V"]
 
-var _costos: Array[int] = []
+## Lo que dibuja el panel de cada Pokémon.
+class Lado:
+	var nombre: String = ""
+	var nivel: int = 1
+	var hp: int = 0
+	var hp_max: int = 1
+	var energia: int = 0
+	var energia_max: int = 1
+	## Ids de tipo del original (frames de spr_gotype).
+	var tipos: Array[int] = []
+	var sexo: int = 0
+	var estado: int = 0
+	var exp_fraccion: float = 0.0
+	var ataques: Array[MoveData] = []
+	var debilitado: bool = false
 
-@onready var _ataques: HBoxContainer = %Ataques
+var _jugador: Lado = Lado.new()
+var _rival: Lado = Lado.new()
+var _rival_entrenador: bool = false
+var _mostrar_ataques: bool = false
+var _spr: Dictionary[String, SpriteOriginal] = {}
+var _fuente_s: Font = load("res://assets/extraido/fonts/fuente_s.fnt")
+
+@onready var _lienzo: Control = $Lienzo
+@onready var _mensajes: PanelMensajes = $PanelMensajes
 @onready var _resultado: Label = %Resultado
 
 
 func _ready() -> void:
 	_resultado.hide()
-	for panel: Control in [%Jugador, %Rival]:
-		_estilizar(panel.get_node("BarraHP"), COLOR_HP[2])
-		_estilizar(panel.get_node("BarraEnergia"), COLOR_ENERGIA)
+	for archivo: String in DirAccess.get_files_at(UI):
+		if archivo.ends_with(".tres"):
+			_spr[archivo.get_basename()] = load(UI + archivo)
+	_lienzo.draw.connect(_dibujar)
 
 
-func conectar(jugador: BattlePokemon, rival: BattlePokemon) -> void:
-	_conectar_panel(%Jugador, jugador)
-	_conectar_panel(%Rival, rival)
-	_crear_ataques(jugador)
-	jugador.energia_cambiada.connect(_actualizar_ataques)
-	_actualizar_ataques(jugador.pokemon.energia_actual, jugador.energia_max)
+func conectar(jugador: BattlePokemon, rival: BattlePokemon, rival_entrenador: bool = false) -> void:
+	_rival_entrenador = rival_entrenador
+	for par: Array in [[_jugador, jugador], [_rival, rival]]:
+		var lado: Lado = par[0]
+		var bp: BattlePokemon = par[1]
+		lado.nombre = bp.pokemon.apodo if bp.pokemon.apodo != "" else bp.pokemon.especie.nombre
+		lado.nivel = bp.pokemon.nivel
+		lado.tipos.assign(bp.pokemon.especie.tipos.map(func(t: Tipos.Tipo) -> int: return Tipos.ID_ORIGINAL[t]))
+		lado.ataques = bp.pokemon.movimientos
+		_on_hp(bp.pokemon.hp_actual, bp.hp_max, lado)
+		_on_energia(bp.pokemon.energia_actual, bp.energia_max, lado)
+		bp.hp_cambiado.connect(_on_hp.bind(lado))
+		bp.energia_cambiada.connect(_on_energia.bind(lado))
+		bp.ataco.connect(func(move: MoveData) -> void:
+			_mensajes.agregar(Textos.par(Textos.batalla(195), lado.nombre, move.nombre)))
+		bp.golpeado.connect(_on_golpeado.bind(lado))
+		bp.movido.connect(_mensajes.on_pokemon_movido.bind(bp))
 
 
 func mostrar_resultado(texto: String) -> void:
@@ -35,64 +69,119 @@ func mostrar_resultado(texto: String) -> void:
 	_resultado.show()
 
 
-func _conectar_panel(panel: Control, bp: BattlePokemon) -> void:
-	(panel.get_node("Nombre") as Label).text = "%s  Nv. %d" % [bp.pokemon.especie.nombre, bp.pokemon.nivel]
-	var al_hp: Callable = _actualizar_hp.bind(panel)
-	var al_energia: Callable = _actualizar_energia.bind(panel)
-	bp.hp_cambiado.connect(al_hp)
-	bp.energia_cambiada.connect(al_energia)
-	al_hp.call(bp.pokemon.hp_actual, bp.hp_max)
-	al_energia.call(bp.pokemon.energia_actual, bp.energia_max)
+func _process(_delta: float) -> void:
+	var mostrar: bool = Input.is_action_pressed("mostrar_ataques")
+	if mostrar != _mostrar_ataques:
+		_mostrar_ataques = mostrar
+		_lienzo.queue_redraw()
 
 
-func _actualizar_hp(hp: int, hp_max: int, panel: Control) -> void:
-	var barra: ProgressBar = panel.get_node("BarraHP")
-	barra.max_value = hp_max
-	barra.value = hp
-	var fraccion: float = float(hp) / hp_max
-	var color: Color = COLOR_HP[0] if fraccion <= 0.2 else COLOR_HP[1] if fraccion <= 0.5 else COLOR_HP[2]
-	(barra.get_theme_stylebox("fill") as StyleBoxFlat).bg_color = color
-	(panel.get_node("BarraHP/Texto") as Label).text = "%d/%d" % [hp, hp_max]
+func _on_hp(hp: int, hp_max: int, lado: Lado) -> void:
+	lado.hp = hp
+	lado.hp_max = hp_max
+	lado.debilitado = hp <= 0
+	_lienzo.queue_redraw()
 
 
-func _actualizar_energia(energia: int, energia_max: int, panel: Control) -> void:
-	var barra: ProgressBar = panel.get_node("BarraEnergia")
-	barra.max_value = energia_max
-	barra.value = maxi(energia, 0)
-	(panel.get_node("BarraEnergia/Texto") as Label).text = "%d/%d" % [energia, energia_max]
+func _on_energia(energia: int, energia_max: int, lado: Lado) -> void:
+	lado.energia = energia
+	lado.energia_max = energia_max
+	_lienzo.queue_redraw()
 
 
-func _crear_ataques(bp: BattlePokemon) -> void:
-	for hijo: Node in _ataques.get_children():
-		hijo.queue_free()
-	_costos.clear()
-	for i: int in bp.pokemon.movimientos.size():
-		var m: MoveData = bp.pokemon.movimientos[i]
-		var caja := PanelContainer.new()
-		var fondo := StyleBoxFlat.new()
-		fondo.bg_color = COLOR_FONDO_BARRA
-		fondo.set_content_margin_all(3)
-		caja.add_theme_stylebox_override("panel", fondo)
-		caja.custom_minimum_size = Vector2(128, 0)
-		var etiqueta := Label.new()
-		etiqueta.text = "[%s] %s\n%d de energía" % [TECLAS[i], m.nombre, m.costo_energia]
-		etiqueta.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-		caja.add_child(etiqueta)
-		_ataques.add_child(caja)
-		_costos.append(m.costo_energia)
+## Mensaje de Ataque1GolpeaPokemon2: "<movimiento> ha golpeado a <Pokémon>." + la eficacia.
+func _on_golpeado(move: MoveData, _danio: int, eficacia: float, lado: Lado) -> void:
+	var texto: String
+	if eficacia == 0.0:
+		texto = Textos.par(Textos.batalla(75), move.nombre, lado.nombre)
+	else:
+		texto = Textos.par(Textos.batalla(209), move.nombre, lado.nombre)
+		if eficacia <= 0.25:
+			texto += Textos.batalla(210)
+		elif eficacia == 0.5:
+			texto += Textos.batalla(211)
+		elif eficacia == 2.0 or eficacia == 1.5:
+			texto += Textos.batalla(212)
+		elif eficacia >= 3.0:
+			texto += Textos.batalla(213)
+	_mensajes.agregar(texto)
 
 
-## Atenúa los ataques que no alcanza a pagar (salvo con la barra llena, como en el original).
-func _actualizar_ataques(energia: int, energia_max: int) -> void:
-	for i: int in _costos.size():
-		var alcanza: bool = energia >= _costos[i] or energia >= energia_max
-		(_ataques.get_child(i) as Control).modulate = Color.WHITE if alcanza else Color(1, 1, 1, 0.45)
+func _dibujar() -> void:
+	_panel(_jugador, 0.0, "spr_pkmn_name1")
+	_panel(_rival, 224.0, "spr_pkmn_name2")
+	_indicadores_ataques(_jugador)
+	_equipo(Vector2(225, 5), Vector2(234, 10), _jugador)
+	_spr["spr_team"].dibujar(_lienzo, 0, Vector2(449, 5))
+	if _rival_entrenador:
+		_mini_pokeballs(Vector2(458, 10), _rival)
+	if _mostrar_ataques:
+		_lista_ataques()
 
 
-func _estilizar(barra: ProgressBar, color: Color) -> void:
-	var fondo := StyleBoxFlat.new()
-	fondo.bg_color = COLOR_FONDO_BARRA
-	var relleno := StyleBoxFlat.new()
-	relleno.bg_color = color
-	barra.add_theme_stylebox_override("background", fondo)
-	barra.add_theme_stylebox_override("fill", relleno)
+## Panel de un Pokémon; el del rival es el mismo desplazado 224 px.
+func _panel(lado: Lado, dx: float, sprite: String) -> void:
+	_spr[sprite].dibujar(_lienzo, 0, Vector2(176 + dx, 24))
+	_texto(lado.nombre, Vector2(107 + dx, 9), HORIZONTAL_ALIGNMENT_LEFT, Color.BLACK)
+	_texto(Textos.par(Textos.batalla(160), str(lado.nivel)), Vector2(215 + dx, 9), HORIZONTAL_ALIGNMENT_RIGHT, Color.BLACK)
+	var porcentaje: float = 100.0 * lado.hp / lado.hp_max
+	var barra: String = "spr_barra_green" if porcentaje >= 50.0 else "spr_barra_red" if porcentaje <= 15.0 else "spr_barra_yellow"
+	_spr["spr_barra_gray"].dibujar(_lienzo, 0, Vector2(140 + dx, 25), Vector2(ESCALA_BARRA, 1))
+	_spr[barra].dibujar(_lienzo, 0, Vector2(140 + dx, 25), Vector2(ESCALA_BARRA * maxi(lado.hp, 0) / lado.hp_max, 1))
+	if lado == _jugador:
+		_spr["spr_barra_blue"].dibujar(_lienzo, 0, Vector2(97, 43), Vector2(100.0 * lado.exp_fraccion, 1))
+	_spr["spr_barra_silver"].dibujar(_lienzo, 0, Vector2(140 + dx, 33), Vector2(ESCALA_BARRA, 1))
+	if lado.energia > 0:
+		_spr["spr_barra_purple"].dibujar(_lienzo, 0, Vector2(140 + dx, 33),
+			Vector2(ESCALA_BARRA * lado.energia / lado.energia_max, 1))
+	var xs: Array[float] = [94.0, 107.0]
+	if lado.tipos.size() == 1:
+		xs = [100.0]
+	for i: int in mini(lado.tipos.size(), 2):
+		_spr["spr_gotype"].dibujar(_lienzo, lado.tipos[i], Vector2(xs[i] + dx, 29))
+	_spr["spr_pkmnsex"].dibujar(_lienzo, lado.sexo, Vector2(117 + dx, 21))
+	_spr["spr_stat"].dibujar(_lienzo, lado.estado, Vector2(106 + dx, 25))
+
+
+## Símbolos de los 4 ataques bajo la caja del equipo (DrawBattleAttacks): la forma dice la
+## categoría y el color si se puede usar (azul) o no alcanza la energía (gris).
+func _indicadores_ataques(lado: Lado) -> void:
+	for i: int in 4:
+		var sprite: String = "spr_simbolito_atfs"
+		var frame: int = 0
+		if i < lado.ataques.size():
+			var m: MoveData = lado.ataques[i]
+			sprite = ["spr_simbolito_atfs", "spr_simbolito_atsp", "spr_simbolito_atst"][m.categoria]
+			frame = 1 if m.costo_energia > lado.energia and lado.energia < lado.energia_max else 2
+		_spr[sprite].dibujar(_lienzo, frame, Vector2(229 + 9 * i, 35))
+
+
+func _equipo(caja: Vector2, primera: Vector2, lado: Lado) -> void:
+	_spr["spr_team"].dibujar(_lienzo, 0, caja)
+	_mini_pokeballs(primera, lado)
+	_spr["spr_selhave"].dibujar(_lienzo, 0, primera)  # el Pokémon en combate
+
+
+## Las 6 Poké Balls del equipo (DrawMiniPokeball): vacía, con vida o debilitado.
+func _mini_pokeballs(primera: Vector2, lado: Lado) -> void:
+	for i: int in 6:
+		var frame: int = (2 if lado.debilitado else 1) if i == 0 else 0
+		_spr["spr_have"].dibujar(_lienzo, frame, primera + Vector2(8 * (i % 3), 8 * floori(i / 3.0)))
+
+
+## Con Shift: la lista de ataques con su tecla (DIBUJA_ATAQUES).
+func _lista_ataques() -> void:
+	var lineas: PackedStringArray = []
+	for i: int in _jugador.ataques.size():
+		lineas.append("%s - %s" % [TECLAS[i], _jugador.ataques[i].nombre])
+	_lienzo.draw_rect(Rect2(103, 76, 97, 15 + 11 * lineas.size()), Color(0, 0, 0, 0.6))
+	for i: int in lineas.size():
+		_texto(lineas[i], Vector2(112, 80 + 11 * i), HORIZONTAL_ALIGNMENT_LEFT, Color(1, 1, 1, 0.9))
+
+
+## draw_text del original: (x, y) es la esquina de arriba del texto, según la alineación.
+func _texto(texto: String, pos: Vector2, alineacion: HorizontalAlignment, color: Color) -> void:
+	var ancho: float = _fuente_s.get_string_size(texto, HORIZONTAL_ALIGNMENT_LEFT, -1, 12).x
+	var x: float = pos.x - (ancho if alineacion == HORIZONTAL_ALIGNMENT_RIGHT else ancho / 2.0 if alineacion == HORIZONTAL_ALIGNMENT_CENTER else 0.0)
+	_lienzo.draw_string(_fuente_s, Vector2(x, pos.y + _fuente_s.get_ascent(12)), texto,
+		HORIZONTAL_ALIGNMENT_LEFT, -1, 12, color)

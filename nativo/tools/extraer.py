@@ -42,12 +42,22 @@ DIRECCIONES_MOVER = ["1", "2", "3", "4", "6", "7", "8", "9"]
 # En las tiras A (ataque) y H (herido) cada frame es una dirección (Renew_Sprite_Atack).
 DIRECCION_POR_FRAME = ["8", "9", "6", "3", "2", "1", "4", "7"]
 
-CATEGORIAS = ["datos", "sprites", "fondos", "tilesets", "musica", "gritos", "entrenadores", "mapas"]
-POR_DEFECTO = ["datos", "sprites", "fondos"]
+CATEGORIAS = ["datos", "sprites", "fondos", "ui", "fuentes", "tilesets", "musica", "gritos", "entrenadores", "mapas"]
+POR_DEFECTO = ["datos", "sprites", "fondos", "ui", "fuentes"]
+
+# Sprites internos que usa el HUD de batalla (DrawEventBattle1, DrawBattleAttacks, DrawPanelInformativo).
+SPRITES_UI = [
+    "spr_PkmnName1", "spr_PkmnName2", "spr_Team", "spr_have", "spr_SELhave", "spr_ball", "spr_objPokeBtt",
+    "spr_barra_gray", "spr_barra_green", "spr_barra_yellow", "spr_barra_red", "spr_barra_blue",
+    "spr_barra_purple", "spr_barra_silver", "spr_gotype", "spr_pkmnsex", "spr_stat",
+    "spr_simbolito_atfs", "spr_simbolito_atsp", "spr_simbolito_atst",
+]
 CARPETAS = {
-    "datos": [DATA / "pokemon", DATA / "moves"],
+    "datos": [DATA / "pokemon", DATA / "moves", DATA / "textos"],
     "sprites": [ASSETS / "sprites" / "pokemon"],
     "fondos": [ASSETS / "sprites" / "battlebacks"],
+    "ui": [ASSETS / "sprites" / "ui"],
+    "fuentes": [ASSETS / "fonts"],
     "tilesets": [ASSETS / "sprites" / "tilesets"],
     "musica": [ASSETS / "audio" / "music"],
     "gritos": [ASSETS / "audio" / "sfx" / "gritos"],
@@ -411,6 +421,10 @@ def extraer_datos(plan: Plan, ext: Path, indice: dict) -> None:
     gml = lambda nombre: (scripts / f"{nombre}.gml").read_text(encoding="utf-8")
     texto = ext / "text" / "es"
 
+    # Textos del juego (español), para mensajes de batalla, menús, etc.
+    for txt in sorted(texto.glob("*.txt")):
+        plan.copiar(txt, DATA / "textos" / "es" / txt.name)
+
     # Movimientos
     nombres_mov = leer_lineas(texto / "txt_attack.txt")
     descs_mov = leer_lineas(texto / "txt_attack_desc.txt")
@@ -521,6 +535,57 @@ def extraer_fondos(plan: Plan, juego: Path, todos: bool) -> None:
             pngs = pngs[:3] if estilo == "realistic" else []
         for png in pngs:
             plan.copiar(png, ASSETS / "sprites" / "battlebacks" / estilo / f"{snake(png.stem)}.png")
+
+
+def extraer_sprite_original(plan: Plan, juego: Path, nombre: str, carpeta: Path) -> Path:
+    """Copia los frames de un sprite interno y crea su SpriteOriginal (.tres) con el origen de GM8."""
+    origen = juego / "_internal" / "sprites" / nombre
+    meta = json.loads((origen / "meta.json").read_text())
+    destino = carpeta / snake(nombre)
+    tres = Tres("Resource", "SpriteOriginal")
+    refs = []
+    for i in range(meta["frames"]):
+        png = destino / f"{i}.png"
+        plan.copiar(origen / f"{i}.png", png)
+        refs.append(tres.ext_resource("Texture2D", res(png)))
+    ruta = carpeta / f"{snake(nombre)}.tres"
+    plan.escribir(ruta, tres.texto([
+        f"script = {tres.ext_resource('Script', 'res://scripts/resources/sprite_original.gd')}",
+        f"frames = Array[Texture2D]([{', '.join(refs)}])",
+        f"origen = Vector2({meta['origin_x']}, {meta['origin_y']})",
+    ]))
+    return ruta
+
+
+def extraer_fuentes(plan: Plan, juego: Path) -> None:
+    """Fuentes de mapa de bits del original -> .png + .fnt (BMFont de texto, Godot lo importa como FontFile).
+    En el JSON de gm8dump, "offset" es el avance horizontal y "advance" el desplazamiento en x (con signo)."""
+    for js in sorted((juego / "_internal" / "fonts").glob("*.json")):
+        fuente = json.loads(js.read_text())
+        nombre = snake(js.stem)
+        png = ASSETS / "fonts" / f"{nombre}.png"
+        plan.copiar(js.with_suffix(".png"), png)
+        w, h = png_size(js.with_suffix(".png"))
+        alto = max((g["h"] for g in fuente["glyphs"]), default=1)
+        lineas = [
+            f'info face="{fuente["name"]}" size={alto} bold={int(fuente["bold"])} italic={int(fuente["italic"])} '
+            'charset="" unicode=1 stretchH=100 smooth=0 aa=1 padding=0,0,0,0 spacing=0,0',
+            f"common lineHeight={alto} base={alto} scaleW={w} scaleH={h} pages=1 packed=0",
+            f'page id=0 file="{png.name}"',
+            "chars count=0",
+        ]
+        glifos = []
+        for g in fuente["glyphs"]:
+            dx = g["advance"] - (1 << 32) if g["advance"] >= 1 << 31 else g["advance"]
+            # GM8 guarda los caracteres en Windows-1252; el texto del juego ya está en Unicode.
+            try:
+                car = bytes([g["char"]]).decode("cp1252") if g["char"] >= 32 else chr(g["char"])
+            except UnicodeDecodeError:
+                continue  # byte sin carácter en Windows-1252
+            glifos.append(f"char id={ord(car)} x={g['x']} y={g['y']} width={g['w']} height={g['h']} "
+                          f"xoffset={dx} yoffset=0 xadvance={g['offset']} page=0 chnl=15")
+        lineas[3] = f"chars count={len(glifos)}"
+        plan.escribir(ASSETS / "fonts" / f"{nombre}.fnt", "\n".join(lineas + glifos) + "\n")
 
 
 def extraer_tilesets(plan: Plan, juego: Path) -> dict[str, tuple[Path, Path, int, int]]:
@@ -759,6 +824,11 @@ def main() -> None:
             extraer_sprites(plan, EXT, parse_rangos(args.pokemon))
         elif cat == "fondos":
             extraer_fondos(plan, args.juego, args.fondos_todos)
+        elif cat == "ui":
+            for nombre in SPRITES_UI:
+                extraer_sprite_original(plan, args.juego, nombre, ASSETS / "sprites" / "ui")
+        elif cat == "fuentes":
+            extraer_fuentes(plan, args.juego)
         elif cat == "tilesets":
             tilesets = extraer_tilesets(plan, args.juego)
         elif cat == "mapas":

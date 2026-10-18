@@ -218,8 +218,11 @@ Ids del juego → `Tipos.Tipo`: 1 Normal, 2 Fuego, 3 Agua, 4 Planta, 5 Eléctric
   chocar con una pared elige otra dirección (el original no rebota); el maestro no ajusta su
   velocidad a la del jugador; `BattleEstrategia` solo usa el peso base y la efectividad (faltan las
   reglas por movimiento); no hay desobediencia, "acoso", Espacio Inverso ni varios rivales.
-- **HUD nativo (`scenes/ui/battle_hud.tscn`)**: diseño propio y provisional, no el de `DrawBattle`
-  del original (falta revisarlo: textos de batalla, estados, equipo, temporizador...).
+- **HUD nativo (`scenes/ui/battle_hud.tscn`)**: dibuja lo mismo que `DrawEventBattle1` (paneles,
+  barras, tipos, caja del equipo, símbolos de ataques, lista con Shift) y el panel de mensajes
+  (`obj_panel_informativo`). Falta: Ball asignada y su cantidad (centro), objeto equipado, sexo
+  (`PkmnSetSexValor`), estados, barra de experiencia real, límites de cambios/objetos, modificadores
+  de stats y tiempo de combate, golpes críticos y el resto de mensajes de batalla.
 - Los movimientos iniciales de un Pokémon (`ColocaAtaques`) están en
   `PokemonInstance.asignar_movimientos_por_nivel()`; si la especie no aprende nada por nivel, el
   original pone el movimiento 167 (falta).

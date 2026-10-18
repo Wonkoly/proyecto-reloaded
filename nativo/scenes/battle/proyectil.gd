@@ -59,5 +59,5 @@ func _on_area_entered(area: Area2D) -> void:
 	if objetivo and objetivo.lado != duenio.lado and objetivo.puede_recibir_danio():
 		var danio: int = FormulasBatalla.calcular_danio(duenio.pokemon, objetivo.pokemon, move,
 			GameState.pow_dif(duenio.lado))
-		objetivo.recibir_danio(danio)
+		objetivo.recibir_golpe(move, danio, Efectividad.multiplicador(move.tipo, objetivo.pokemon.especie.tipos))
 		queue_free()

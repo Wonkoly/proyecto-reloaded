@@ -6,6 +6,11 @@ extends CharacterBody2D
 signal hp_cambiado(hp: int, hp_max: int)
 signal energia_cambiada(energia: int, energia_max: int)
 signal debilitado
+## Usó un movimiento (para el panel de mensajes: "X usó Y.").
+signal ataco(move: MoveData)
+## Le pegó un ataque ("Y ha golpeado a X. Es muy efectivo.").
+signal golpeado(move: MoveData, danio: int, eficacia: float)
+signal movido(posicion: Vector2)
 
 const ESCENA_PROYECTIL: PackedScene = preload("res://scenes/battle/proyectil.tscn")
 ## Límites de velocidad del original (2-15 px/step).
@@ -118,7 +123,16 @@ func atacar(indice: int) -> bool:
 	proyectil.global_position = global_position
 	get_parent().add_child(proyectil)
 	_actualizar_animacion()
+	ataco.emit(move)
 	return true
+
+
+## Lo alcanza un ataque: avisa (golpeado) y aplica el daño.
+func recibir_golpe(move: MoveData, danio: int, eficacia: float) -> void:
+	if esta_debilitado():
+		return
+	golpeado.emit(move, danio, eficacia)
+	recibir_danio(danio)
 
 
 func recibir_danio(cantidad: int) -> void:
@@ -143,7 +157,10 @@ func _physics_process(delta: float) -> void:
 	if estaba_bloqueado and _bloqueo <= 0.0 and _herido <= 0.0:
 		_actualizar_animacion()
 	velocity = direccion * velocidad if puede_moverse() else Vector2.ZERO
+	var antes: Vector2 = position
 	move_and_slide()
+	if position != antes:
+		movido.emit(position)
 
 
 func _set_energia(valor: float) -> void:

@@ -695,7 +695,11 @@ def extraer_mapas(plan: Plan, juego: Path, ext: Path, tilesets: dict, filtro: li
     resumen = []
     for ruta in rooms:
         room = json.loads(ruta.read_text(encoding="utf-8"))
-        texto, no_convertidos = mapas_original.escena_mapa(room, original, tilesets, sprite_tres, snake, res, tabla_npc)
+        try:
+            texto, no_convertidos = mapas_original.escena_mapa(room, original, tilesets, sprite_tres, snake, res, tabla_npc)
+        except Exception as error:  # un mapa raro no frena al resto
+            avisar(f"{room['name']}: no se pudo convertir ({type(error).__name__}: {error})")
+            continue
         plan.escribir(ASSETS / "mapas" / f"{snake(room['name'])}.tscn", texto)
         if no_convertidos:
             resumen.append(f"{room['name']}: " + ", ".join(sorted(set(no_convertidos))))
@@ -767,9 +771,12 @@ def main() -> None:
     ap.add_argument("--pokemon", default="1-151", help="ids para los sprites de batalla, p. ej. 1-151,2001-2010")
     ap.add_argument("--solo", help="solo estas categorías (separadas por coma): " + ", ".join(CATEGORIAS))
     for c in CATEGORIAS:
-        if c not in POR_DEFECTO:
+        if c not in POR_DEFECTO and c != "mapas":
             ap.add_argument(f"--{c}", action="store_true", help=f"agrega la categoría {c}")
-    ap.add_argument("--mapas-lista", metavar="NOMBRES", help="con --mapas: solo estos mapas (nombre original, separados por coma)")
+    ap.add_argument("--mapas", nargs="?", const="", metavar="todos|NOMBRES",
+                    help="mapas a extraer: 'todos' (los 717) o nombres originales separados por coma; "
+                         "sin valor, los de por defecto")
+    ap.add_argument("--mapas-lista", metavar="NOMBRES", help="igual que --mapas NOMBRES")
     ap.add_argument("--fondos-todos", action="store_true", help="todos los fondos de batalla (por defecto solo 3)")
     ap.add_argument("--todo", action="store_true", help="todas las categorías")
     ap.add_argument("--limpiar", action="store_true", help="borra todo lo extraído y sale")
@@ -822,8 +829,11 @@ def main() -> None:
         elif cat == "tilesets":
             tilesets = extraer_tilesets(plan, args.juego)
         elif cat == "mapas":
-            filtro = [m.strip() for m in args.mapas_lista.split(",")] if args.mapas_lista else (
-                None if args.todo else MAPAS_POR_DEFECTO)
+            lista = args.mapas or args.mapas_lista or ""
+            if lista.lower() == "todos" or (args.todo and not lista):
+                filtro = None
+            else:
+                filtro = [m.strip() for m in lista.split(",") if m.strip()] or MAPAS_POR_DEFECTO
             extraer_mapas(plan, args.juego, EXT, tilesets, filtro)
         elif cat == "musica":
             musica = args.juego / "data" / "audio"

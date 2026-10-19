@@ -28,6 +28,11 @@ DEPTH_TILES_ARRIBA = -10
 # "variables"; las que no están valen 0). Por defecto: ya recibió su primer Pokémon (fy_002) y el
 # móvil (movil), así el camino de PuebloAlba a la Ruta 1 está abierto.
 ESTADO_HISTORIA = {"fy_002": 1, "movil": 1}
+# Saltos (ProtaSaltos): dirección del salto y rotación de la colisión de un solo sentido (en Godot
+# bloquea a lo que se mueve hacia su +Y local: girada 180° bloquea subir, -90° ir a la derecha...).
+SALTOS = {"obj_saltos_I": ((-1, 0), -1.5707963), "obj_saltos_D": ((1, 0), 1.5707963), "obj_saltos": ((0, 1), 3.1415927)}
+# obj_saltos se sube 16 px (12 en la room 40) cuando el jugador está debajo (DefineSaltos): bloquea ahí.
+SUBIDA_SALTO = 16
 # Objetos que no son nada en el mapa: controladores, y obj_bloqueado (invisible; ProtaMovimiento no
 # choca con él: marca celdas de las guaridas/decoración).
 IGNORADOS = {"EXPLORER", "variables", "Control", "obj_bloqueado"}
@@ -45,6 +50,7 @@ class Juego:
         self.rooms: list[str] = indice["rooms"]
         self._obj: dict[str, dict] = {}
         self._meta: dict[str, dict | None] = {}
+        self._arboles: dict[str, list] = {}
 
     def objeto(self, nombre: str) -> dict:
         if nombre not in self._obj:
@@ -69,6 +75,12 @@ class Juego:
 
     def script(self, nombre: str) -> str:
         return (self.ext / "scripts" / f"{nombre}.gml").read_text(encoding="utf-8")
+
+    def arbol(self, nombre: str) -> list:
+        """El script parseado (se guarda: los de puertas, NPCs y salidas se leen para cada room)."""
+        if nombre not in self._arboles:
+            self._arboles[nombre] = gml_visual.Parser(gml_visual.tokenizar(self.script(nombre))).programa()
+        return self._arboles[nombre]
 
 
 # ---------------------------------------------------------------------------------------------
@@ -252,13 +264,20 @@ class Evaluador:
                 return bool(a) or bool(b)
             if isinstance(a, dict) or isinstance(b, dict):
                 raise _Desconocido("objeto")
-            return {"=": a == b, "==": a == b, "!=": a != b, "<": a < b, ">": a > b, "<=": a <= b,
-                    ">=": a >= b, "+": a + b if not isinstance(a, str) else str(a) + str(b),
-                    "-": a - b, "*": a * b, "/": a / b if b else 0.0}[op]
+            operaciones = {"=": lambda: a == b, "==": lambda: a == b, "!=": lambda: a != b, "<": lambda: a < b,
+                           ">": lambda: a > b, "<=": lambda: a <= b, ">=": lambda: a >= b,
+                           "+": lambda: a + b if not isinstance(a, str) else str(a) + str(b),
+                           "-": lambda: a - b, "*": lambda: a * b, "/": lambda: a / b if b else 0.0,
+                           "mod": lambda: a % b if b else 0.0, "div": lambda: a // b if b else 0.0}
+            if op not in operaciones:
+                raise _Desconocido(op)
+            return operaciones[op]()
         if k == "llamada":
             nombre, args = e[1], e[2]
             if nombre == "instance_create":
                 x, y, obj = (self.valor(a) for a in args)
+                if not isinstance(obj, float) or not 0 <= int(obj) < len(self.juego.objetos):
+                    raise _Desconocido("objeto")
                 inst = {"objeto": self.juego.objetos[int(obj)], "x": x, "y": y, "condicion": list(self.condicion),
                         "destruir_si": []}
                 self.instancias.append(inst)
@@ -266,7 +285,8 @@ class Evaluador:
             if nombre in ("Destruye", "instance_destroy"):
                 v = self.valor(args[0]) if args else None
                 destino = [v] if isinstance(v, dict) else [
-                    i for i in self.instancias if isinstance(v, float) and i["objeto"] == self.juego.objetos[int(v)]]
+                    i for i in self.instancias if isinstance(v, float) and 0 <= int(v) < len(self.juego.objetos)
+                    and i["objeto"] == self.juego.objetos[int(v)]]
                 for inst in destino:
                     extra = self.condicion[len(inst["condicion"]):]
                     if extra:
@@ -309,8 +329,7 @@ def activa_al_inicio(condicion: str) -> bool:
 def instancias_por_script(juego: Juego, room: int, scripts: list[str]) -> list[dict]:
     out = []
     for nombre in scripts:
-        arbol = gml_visual.Parser(gml_visual.tokenizar(juego.script(nombre))).programa()
-        for bloque in bloques_room(arbol, room):
+        for bloque in bloques_room(juego.arbol(nombre), room):
             ev = Evaluador(juego, room)
             ev.correr(bloque)
             out += [i for i in ev.instancias if not i.get("destruida")]
@@ -350,8 +369,7 @@ def salidas_room(juego: Juego, room: int, ancho: int, alto: int) -> tuple[list[d
     """[{rect, destino, x, y, relativa_x, relativa_y}], cantidad de condiciones que no se pudieron leer."""
     salidas, raras = [], 0
     for nombre in ("CambiosWorldRooms", "CambiosSpecialRooms"):
-        arbol = gml_visual.Parser(gml_visual.tokenizar(juego.script(nombre))).programa()
-        for bloque in bloques_room(arbol, room):
+        for bloque in bloques_room(juego.arbol(nombre), room):
             cuerpo = bloque[2][1] if bloque[2][0] == "bloque" else [bloque[2]]
             for inst in cuerpo:
                 if inst[0] != "if":
@@ -377,6 +395,8 @@ def _salida(inst, ancho: int, alto: int, juego: Juego) -> dict | None:
             rect[eje + "1"] = min(rect[eje + "1"], n)
         else:
             return None
+    if rect["x1"] <= rect["x0"] or rect["y1"] <= rect["y0"]:
+        return None  # condiciones que se contradicen (o fuera del mapa)
     asig = {}
     cuerpo = inst[2][1] if inst[2][0] == "bloque" else [inst[2]]
     for a in cuerpo:
@@ -587,6 +607,7 @@ def escena_mapa(room: dict, juego: Juego, tilesets: dict, sprite_tres, snake, re
         f"script = {e.ref('Script', 'res://scenes/overworld/zona_hierba.gd')}", f"collision_layer = {CAPA_ZONAS}",
         "collision_mask = 0", "monitoring = false"], grupos=["zona_hierba"])
     e.nodo("Salidas", "Node2D", ".", [])
+    e.nodo("Saltos", "Node2D", ".", [])
     e.nodo("Marcadores", "Node2D", ".", [])
     n_pared = n_hierba = 0
 
@@ -663,6 +684,29 @@ def escena_mapa(room: dict, juego: Juego, tilesets: dict, sprite_tres, snake, re
             if meta and (c := caja(meta, 0, 0, 1, 1)):
                 e.nodo("CollisionShape2D", "CollisionShape2D", f"Objetos/{nombre}", [
                     f"position = Vector2({f(c[0])}, {f(c[1])})", f"shape = {e.rect(c[2], c[3])}"])
+        elif juego.es(obj, "obj_saltos") and meta:
+            clase = next(k for k in SALTOS if juego.es(obj, k))
+            (dx, dy), rot = SALTOS[clase]
+            c = caja(meta, 0, 0, sx, sy)
+            e.nodo(nombre, "Area2D", "Saltos", [
+                f"position = Vector2({f(x)}, {f(y)})", f"script = {e.ref('Script', 'res://scenes/overworld/salto.gd')}",
+                "collision_layer = 0", f"collision_mask = {CAPA_JUGADOR}", "monitorable = false",
+                f"direccion = Vector2({dx}, {dy})"])
+            e.nodo("CollisionShape2D", "CollisionShape2D", f"Saltos/{nombre}", [
+                f"position = Vector2({f(c[0])}, {f(c[1])})", f"shape = {e.rect(c[2], c[3])}"])
+            e.nodo("Bloqueo", "StaticBody2D", f"Saltos/{nombre}", [f"collision_layer = {CAPA_PAREDES}", "collision_mask = 0"])
+            subida = (12 if ridx == 40 else SUBIDA_SALTO) if clase == "obj_saltos" else 0
+            e.nodo("CollisionShape2D", "CollisionShape2D", f"Saltos/{nombre}/Bloqueo", [
+                f"position = Vector2({f(c[0])}, {f(c[1] - subida)})", f"rotation = {rot}",
+                f"shape = {e.rect(c[2], c[3]) if dy else e.rect(c[3], c[2])}", "one_way_collision = true"])
+        elif obj in ("obj_reversibleHorizontal", "obj_reversibleVertical") and meta:
+            c = caja(meta, 0, 0, sx, sy)
+            e.nodo(nombre, "Area2D", "Saltos", [
+                f"position = Vector2({f(x)}, {f(y)})", f"script = {e.ref('Script', 'res://scenes/overworld/salto.gd')}",
+                "collision_layer = 0", f"collision_mask = {CAPA_JUGADOR}", "monitorable = false",
+                f"reversible = {1 if obj == 'obj_reversibleHorizontal' else 2}"])
+            e.nodo("CollisionShape2D", "CollisionShape2D", f"Saltos/{nombre}", [
+                f"position = Vector2({f(c[0])}, {f(c[1])})", f"shape = {e.rect(c[2], c[3])}"])
         elif juego.es(obj, "obj_hierba"):
             n_hierba += 1
             decorado(f"base_{n_hierba}", "spr_bck_hierba", x - 8, y - 8, padre="BaseHierba")

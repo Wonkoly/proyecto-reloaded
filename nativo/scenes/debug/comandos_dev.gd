@@ -50,7 +50,7 @@ static func _tp(args: PackedStringArray, c: Node) -> String:
 	if args.size() >= 3:
 		pos = Vector2(args[1].to_float(), args[2].to_float())
 	SceneManager.ir_a_mapa(mapa, pos)
-	c.call_deferred("_alternar_consola")
+	c.call_deferred("cerrar")
 	return "→ %s %s" % [mapa, "" if pos == SceneManager.CENTRO else str(pos)]
 
 
@@ -112,7 +112,7 @@ static func _encuentro(args: PackedStringArray, c: Node) -> String:
 		return "No tienes Pokémon que puedan combatir (curar)"
 	var salvaje: PokemonInstance = PokemonInstance.crear(especie, clampi(args[1].to_int() if args.size() > 1 else 5, 1, 100))
 	SceneManager.ir_a_batalla(salvaje, c.jugador())
-	c.call_deferred("_alternar_consola")
+	c.call_deferred("cerrar")
 	return "¡%s salvaje nivel %d!" % [especie.nombre, salvaje.nivel]
 
 
@@ -140,7 +140,7 @@ static func _historia(args: PackedStringArray) -> String:
 static func _codigo(args: PackedStringArray, c: Node) -> String:
 	if args.is_empty():
 		return "uso: codigo <texto> (los del original: guarderia, cara, mote, cheats, me rindo...)"
-	c.call_deferred("_alternar_consola")  # los códigos abren sus propios cuadros
+	c.call_deferred("cerrar")  # los códigos abren sus propios cuadros
 	var trucos: Node = c.get_node("/root/Trucos")
 	trucos.call_deferred("ejecutar", " ".join(args))
 	return "código %s" % " ".join(args).to_upper()

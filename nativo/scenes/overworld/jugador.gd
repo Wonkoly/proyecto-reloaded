@@ -28,6 +28,9 @@ var _moviendose: bool = false
 var _salidas_dentro: Array[Salida] = []
 var _primer_frame: bool = true
 var _tabla: TablaEncuentros
+## El salto que se está cruzando y su dirección (fija mientras dura, como global.wait = 3).
+var _salto: Salto
+var _dir_salto: Vector2 = Vector2.ZERO
 
 @onready var camara: Camera2D = $Camera2D
 
@@ -72,9 +75,30 @@ func _physics_process(delta: float) -> void:
 	velocity = dir.normalized() * velocidad
 	var antes: Vector2 = global_position
 	move_and_slide()
+	_saltar(velocidad, delta)
 	queue_redraw()
 	_revisar_salidas()
 	_revisar_encuentro(global_position.distance_to(antes))
+
+
+## Sobre un salto lo empuja en su dirección a su velocidad + 1 px/step (ProtaSaltos).
+## La dirección se decide al empezar a tocarlo y no cambia hasta salir (en el original el salto es
+## una animación que congela SENTIDO).
+func _saltar(velocidad: float, delta: float) -> void:
+	var tocado: Salto = null
+	for nodo: Node in get_tree().get_nodes_in_group("saltos"):
+		var s: Salto = nodo as Salto
+		if s and s.overlaps_body(self):
+			tocado = s
+			break
+	if tocado == null:
+		_salto = null
+		return
+	# Una fila de saltos se cruza de una vez: la dirección se fija con el primero que se toca.
+	if _salto == null:
+		_salto = tocado
+		_dir_salto = tocado.direccion_para(global_position)
+	move_and_collide(_dir_salto * (velocidad + 30.0) * delta)
 
 
 ## Está en la hierba si su máscara la toca en su posición y 8 px más abajo (ProtaCheckHierba).

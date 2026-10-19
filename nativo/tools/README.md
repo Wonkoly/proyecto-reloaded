@@ -14,7 +14,8 @@ están en `.gitignore`. Solo se versionan el script y este README.
 cd nativo
 python3 tools/extraer.py                  # por defecto: datos + sprites de batalla 1-151 + 3 fondos de batalla
 python3 tools/extraer.py --musica --gritos           # agrega categorías
-python3 tools/extraer.py --mapas --mapas-lista PuebloAlba,Home_2
+python3 tools/extraer.py --mapas PuebloAlba,Home_2     # solo esos mapas
+python3 tools/extraer.py --mapas todos                # los 717 (~20 s; ~230 MB; Godot tarda ~4 min en importar en frío)
 python3 tools/extraer.py --solo datos                # solo esa categoría (las demás no se tocan)
 python3 tools/extraer.py --pokemon 1-151,2001-2010   # rango de sprites de batalla
 python3 tools/extraer.py --todo                      # todo (~1.3 GB; los 717 mapas si no hay --mapas-lista)
@@ -124,6 +125,9 @@ Cada mapa es una escena con:
 - `Paredes`: un `StaticBody2D` con la caja de colisión de cada descendiente de `obj_pared`
   (y `obj_bloqueado`), del `meta.json` del sprite o de su máscara.
 - `ZonaHierba`: un rectángulo por mata (`obj_hierba`).
+- `Saltos`: `Salto` (Area2D) por cada `obj_saltos`/`obj_saltos_I`/`obj_saltos_D` (colisión de un solo
+  sentido que no deja subir el borde + empuje al cruzarlo) y por cada `obj_reversibleHorizontal`/
+  `obj_reversibleVertical` (sin bloqueo: empuja a través en el sentido en que se llega).
 - `Salidas`: `Salida` (Area2D) por cada condición de `CambiosWorldRooms`/`CambiosSpecialRooms`
   (bordes, escaleras) con destino fijo o relativo a la posición del jugador; las puertas de
   `CreateDoors` se entran pulsando arriba y `obj_out` (salida de interiores) pulsando abajo.

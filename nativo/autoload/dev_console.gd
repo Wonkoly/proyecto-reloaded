@@ -78,6 +78,11 @@ func abierta() -> bool:
 	return _panel.visible
 
 
+func cerrar() -> void:
+	if abierta():
+		_alternar_consola()
+
+
 func _input(evento: InputEvent) -> void:
 	var tecla: InputEventKey = evento as InputEventKey
 	if tecla == null or not tecla.pressed or tecla.echo:

@@ -42,7 +42,7 @@ sobrescribe en la siguiente corrida.
 | musica | `--musica` | `gamedata/data/audio/musica/{pk,re}/*.ogg`, `Music_Intro_*.mp3` | `assets/extraido/audio/music/` |
 | gritos | `--gritos` | `gamedata/data/audio/grito/*.wav` | `assets/extraido/audio/sfx/gritos/` |
 | entrenadores | `--entrenadores` | `gamedata/data/trainer/*.png` | `assets/extraido/sprites/trainers/` |
-| mapas | `--mapas` `--mapas-lista` | `extracted/rooms/*.json` | `assets/extraido/mapas/nombre.tscn` (también extrae los tilesets) |
+| mapas | (por defecto: Home_2, Home_1, PuebloAlba, Ruta_1) `--mapas-lista` | `extracted/rooms/*.json` + `CreateDoors`, `CreateNPC1..5`, `CambiosWorldRooms`, `CambiosSpecialRooms` | `assets/extraido/mapas/nombre.tscn` y `assets/extraido/sprites/overworld/` (también extrae los tilesets; `--todo` extrae los 717 mapas) |
 
 `NNNN` es el `id_original` del juego con 4 dígitos. Los nombres de archivo pasan a snake_case
 (`Nidoran♀` → `0029_nidoran_hembra.tres`, `PuebloAlba` → `pueblo_alba.tscn`).
@@ -119,9 +119,14 @@ Cada mapa es una escena con:
   `TileMapLayer` por tileset; si hay tiles puestos fuera de la rejilla de 16 (p. ej. en x = 8) van en
   otra capa `<tileset>_desfase_X_Y` desplazada. Los que no caben en ninguna rejilla (escalados,
   teñidos, de tamaño no múltiplo de 16) quedan como `Sprite2D` sueltos (`tile_<id>`).
-- `Instancias`: un `Marker2D` por instancia con `metadata/objeto` y, si tiene, `metadata/codigo_creacion`
-  (GML, solo como referencia). Edificios, árboles, NPCs y paredes son instancias: no se ven hasta que
-  el overworld nativo las convierta en nodos.
-
-Las salidas entre mapas, NPCs según la historia y puertas no están en las rooms sino en scripts
-(`CambiosWorldRooms`, `CreateNPC*`, `CreateDoors`): ver `docs/referencia_original.md`.
+- `Objetos` (y-sort, como el `depth = -y/100` del original): `Decorado` (árboles, edificios, flores,
+  hierba al 75 %), NPCs (`npc.tscn`) y puertas. `BaseHierba` va debajo.
+- `Paredes`: un `StaticBody2D` con la caja de colisión de cada descendiente de `obj_pared`
+  (y `obj_bloqueado`), del `meta.json` del sprite o de su máscara.
+- `ZonaHierba`: un rectángulo por mata (`obj_hierba`).
+- `Salidas`: `Salida` (Area2D) por cada condición de `CambiosWorldRooms`/`CambiosSpecialRooms`
+  (bordes, escaleras) con destino fijo o relativo a la posición del jugador; las puertas de
+  `CreateDoors` se entran pulsando arriba y `obj_out` (salida de interiores) pulsando abajo.
+- NPCs y puertas salen de evaluar los bloques de la room en `CreateNPC1..5` y `CreateDoors` como en
+  una **partida nueva** (todas las banderas de la historia en 0).
+- `Marcadores`: `Marker2D` para lo que todavía no se convierte (el script lo lista al terminar).

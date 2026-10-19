@@ -110,6 +110,7 @@ mostrar_ataques={
 2d_physics/layer_2="pokemon"
 2d_physics/layer_3="hurtbox"
 2d_physics/layer_4="proyectiles"
+2d_physics/layer_5="jugador"
 
 [rendering]
 

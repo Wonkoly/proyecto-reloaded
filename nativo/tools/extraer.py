@@ -24,7 +24,8 @@ import zlib
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
-import gml_visual  # noqa: E402  (módulo propio, al lado de este script)
+import gml_visual  # noqa: E402  (módulos propios, al lado de este script)
+import mapas_original  # noqa: E402
 
 NATIVO = Path(__file__).resolve().parent.parent
 REPO = NATIVO.parent
@@ -48,7 +49,7 @@ DIRECCIONES_MOVER = ["1", "2", "3", "4", "6", "7", "8", "9"]
 DIRECCION_POR_FRAME = ["8", "9", "6", "3", "2", "1", "4", "7"]
 
 CATEGORIAS = ["datos", "sprites", "fondos", "ui", "fuentes", "efectos", "tilesets", "musica", "gritos", "entrenadores", "mapas"]
-POR_DEFECTO = ["datos", "sprites", "fondos", "ui", "fuentes", "efectos"]
+POR_DEFECTO = ["datos", "sprites", "fondos", "ui", "fuentes", "efectos", "mapas"]
 
 # Sprites internos que usa el HUD de batalla (DrawEventBattle1, DrawBattleAttacks, DrawPanelInformativo).
 SPRITES_UI = [
@@ -68,7 +69,7 @@ CARPETAS = {
     "musica": [ASSETS / "audio" / "music"],
     "gritos": [ASSETS / "audio" / "sfx" / "gritos"],
     "entrenadores": [ASSETS / "sprites" / "trainers"],
-    "mapas": [ASSETS / "mapas"],
+    "mapas": [ASSETS / "mapas", ASSETS / "sprites" / "overworld"],
 }
 
 
@@ -647,123 +648,42 @@ def extraer_tilesets(plan: Plan, juego: Path) -> dict[str, tuple[Path, Path, int
     return tilesets
 
 
-def extraer_mapas(plan: Plan, ext: Path, tilesets: dict, filtro: list[str] | None) -> None:
+# Mapas que se extraen por defecto (el inicio: la casa del protagonista, su pueblo y la primera ruta).
+MAPAS_POR_DEFECTO = ["Home_2", "Home_1", "PuebloAlba", "Ruta_1"]
+
+
+def extraer_mapas(plan: Plan, juego: Path, ext: Path, tilesets: dict, filtro: list[str] | None) -> list[str]:
+    """Escenas de los mapas (mapas_original.py) y los sprites que usan. Devuelve los objetos no convertidos."""
     rooms = sorted((ext / "rooms").glob("*.json"))
     if filtro:
         rooms = [r for r in rooms if r.stem in filtro]
         faltan = set(filtro) - {r.stem for r in rooms}
         if faltan:
             avisar("mapas que no existen: " + ", ".join(sorted(faltan)))
+    original = mapas_original.Juego(ext, juego)
+    tabla_npc = mapas_original.sprites_entrenador(original)
+    usados: set[str] = set()
+
+    def sprite_tres(nombre: str) -> str:
+        usados.add(nombre)
+        return res(ASSETS / "sprites" / "overworld" / f"{snake(nombre)}.tres")
+
+    resumen = []
     for ruta in rooms:
         room = json.loads(ruta.read_text(encoding="utf-8"))
-        plan.escribir(ASSETS / "mapas" / f"{snake(room['name'])}.tscn", escena_mapa(room, tilesets))
-    print(f"  {len(rooms)} mapas")
-
-
-def escena_mapa(room: dict, tilesets: dict) -> str:
-    ext: dict[str, tuple[str, str]] = {}
-
-    def ref(tipo: str, ruta: Path) -> str:
-        r = res(ruta)
-        if r not in ext:
-            ext[r] = (tipo, str(len(ext) + 1))
-        return f'ExtResource("{ext[r][1]}")'
-
-    nodos: list[str] = []
-
-    def nodo(nombre: str, tipo: str, padre: str, props: list[str]) -> None:
-        nodos.append(f'[node name="{nombre}" type="{tipo}" parent="{padre}"]')
-        nodos.extend(props)
-        nodos.append("")
-
-    nombre_raiz = room["name"]
-    nodo("Fondos", "Node2D", ".", [])
-    for i, bg in enumerate(room["backgrounds"]):
-        if not bg.get("visible") or not bg.get("bg") or bg["bg"] not in tilesets:
-            continue
-        png, _, w, h = tilesets[bg["bg"]]
-        props = [f"texture = {ref('Texture2D', png)}", "centered = false",
-                 f"position = Vector2({bg['x']}, {bg['y']})"]
-        if bg.get("tile_h") or bg.get("tile_v"):
-            rw = room["width"] if bg.get("tile_h") else w
-            rh = room["height"] if bg.get("tile_v") else h
-            props += ["texture_repeat = 2", "region_enabled = true", f"region_rect = Rect2(0, 0, {rw}, {rh})"]
-        if bg.get("foreground"):
-            props.append("z_index = 1")
-        nodo(f"fondo_{i}", "Sprite2D", "Fondos", props)
-
-    nodo("Tiles", "Node2D", ".", [])
-    por_depth: dict[int, list[dict]] = {}
-    for t in room["tiles"]:
-        por_depth.setdefault(t["depth"], []).append(t)
-    for depth in sorted(por_depth, reverse=True):  # mayor depth = más al fondo = primero
-        padre_depth = f"profundidad_{depth}".replace("-", "m")
-        nodo(padre_depth, "Node2D", "Tiles", [])
-        # una capa por tileset y desfase dentro de la rejilla (hay tiles puestos en x = 8, etc.)
-        capas: dict[tuple[str, int, int], dict[tuple[int, int], tuple[int, int]]] = {}
-        sueltos: list[dict] = []
-        for t in por_depth[depth]:
-            if t["bg"] not in tilesets:
-                avisar(f"{nombre_raiz}: tileset {t['bg']} no existe")
-                continue
-            _, _, tw, th = tilesets[t["bg"]]
-            en_rejilla = (t["xscale"] == 1 and t["yscale"] == 1 and t["blend"] == 0xFFFFFFFF
-                          and all(v % 16 == 0 for v in (t["tx"], t["ty"], t["w"], t["h"]))
-                          and t["tx"] + t["w"] <= tw - tw % 16 and t["ty"] + t["h"] <= th - th % 16)
-            celdas = {}
-            if en_rejilla:
-                fx, fy = t["x"] % 16, t["y"] % 16
-                capa = capas.setdefault((t["bg"], fx, fy), {})
-                for dy in range(0, t["h"], 16):
-                    for dx in range(0, t["w"], 16):
-                        celda = ((t["x"] - fx + dx) // 16, (t["y"] - fy + dy) // 16)
-                        if celda in capa or celda in celdas:
-                            en_rejilla = False
-                        celdas[celda] = ((t["tx"] + dx) // 16, (t["ty"] + dy) // 16)
-            if en_rejilla:
-                capa.update(celdas)
-            else:
-                sueltos.append(t)
-        for (bg, fx, fy), celdas in sorted(capas.items()):
-            datos = bytearray(struct.pack("<H", 0))
-            for (x, y), (ax, ay) in sorted(celdas.items(), key=lambda c: (c[0][1], c[0][0])):
-                datos += struct.pack("<hhHHHH", x, y, 0, ax, ay, 0)
-            props = [] if (fx, fy) == (0, 0) else [f"position = Vector2({fx}, {fy})"]
-            nombre = snake(bg) + ("" if (fx, fy) == (0, 0) else f"_desfase_{fx}_{fy}")
-            nodo(nombre, "TileMapLayer", f"Tiles/{padre_depth}", props + [
-                "tile_map_data = PackedByteArray(%s)" % ", ".join(str(b) for b in datos),
-                f"tile_set = {ref('TileSet', tilesets[bg][1])}"])
-        for t in sueltos:
-            props = [f"texture = {ref('Texture2D', tilesets[t['bg']][0])}", "centered = false",
-                     f"position = Vector2({t['x']}, {t['y']})",
-                     "region_enabled = true", f"region_rect = Rect2({t['tx']}, {t['ty']}, {t['w']}, {t['h']})"]
-            if t["xscale"] != 1 or t["yscale"] != 1:
-                props.append(f"scale = Vector2({fmt_float(t['xscale'])}, {fmt_float(t['yscale'])})")
-            if t["blend"] != 0xFFFFFFFF:
-                c = t["blend"]
-                props.append("modulate = Color(%s, %s, %s, %s)" % tuple(
-                    fmt_float(round(v / 255, 4)) for v in (c & 255, (c >> 8) & 255, (c >> 16) & 255, (c >> 24) & 255)))
-            nodo(f"tile_{t['id']}", "Sprite2D", f"Tiles/{padre_depth}", props)
-
-    nodo("Instancias", "Node2D", ".", [])
-    for inst in room["instances"]:
-        props = [f"position = Vector2({inst['x']}, {inst['y']})"]
-        if inst.get("angle"):
-            props.append(f"rotation = {fmt_float(-inst['angle'] * 3.141592653589793 / 180)}")
-        if inst["xscale"] != 1 or inst["yscale"] != 1:
-            props.append(f"scale = Vector2({fmt_float(inst['xscale'])}, {fmt_float(inst['yscale'])})")
-        props.append(f"metadata/objeto = {gd_str(inst['object'] or '')}")
-        if inst.get("creation_code"):
-            props.append(f"metadata/codigo_creacion = {gd_str(inst['creation_code'])}")
-        nodo(f"{inst['object'] or 'sin_objeto'}_{inst['id']}", "Marker2D", "Instancias", props)
-
-    out = ["[gd_scene format=3]", ""]
-    for r, (tipo, ident) in ext.items():
-        out.append(f'[ext_resource type="{tipo}" path="{r}" id="{ident}"]')
-    out += ["", f'[node name="{snake(nombre_raiz)}" type="Node2D"]',
-            f"metadata/nombre_original = {gd_str(nombre_raiz)}",
-            f"metadata/tamano = Vector2i({room['width']}, {room['height']})", ""]
-    return "\n".join(out + nodos)
+        texto, no_convertidos = mapas_original.escena_mapa(room, original, tilesets, sprite_tres, snake, res, tabla_npc)
+        plan.escribir(ASSETS / "mapas" / f"{snake(room['name'])}.tscn", texto)
+        if no_convertidos:
+            resumen.append(f"{room['name']}: " + ", ".join(sorted(set(no_convertidos))))
+    for nombre in sorted(usados):
+        if (juego / "_internal" / "sprites" / nombre).is_dir():
+            extraer_sprite_original(plan, juego, nombre, ASSETS / "sprites" / "overworld")
+        else:
+            avisar(f"sprite {nombre} no existe")
+    print(f"  {len(rooms)} mapas, {len(usados)} sprites")
+    for linea in resumen:
+        print("  sin convertir:", linea)
+    return resumen
 
 
 def _chunks_wav(b: bytes, con_relleno: bool) -> list[tuple[bytes, bytes]] | None:
@@ -878,8 +798,9 @@ def main() -> None:
         elif cat == "tilesets":
             tilesets = extraer_tilesets(plan, args.juego)
         elif cat == "mapas":
-            filtro = [m.strip() for m in args.mapas_lista.split(",")] if args.mapas_lista else None
-            extraer_mapas(plan, EXT, tilesets, filtro)
+            filtro = [m.strip() for m in args.mapas_lista.split(",")] if args.mapas_lista else (
+                None if args.todo else MAPAS_POR_DEFECTO)
+            extraer_mapas(plan, args.juego, EXT, tilesets, filtro)
         elif cat == "musica":
             musica = args.juego / "data" / "audio"
             extraer_simple(plan, musica / "musica", ASSETS / "audio" / "music", ["*/*.ogg"])

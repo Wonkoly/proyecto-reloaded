@@ -148,7 +148,7 @@ func _desfallecer() -> void:
 		p.hp_actual = p.calcular_stats()["hp"]
 		p.energia_actual = p.calcular_energia_maxima()
 	GameState.dinero = 0
-	GameState.historia["ev_1429"] = GameState.bandera("ev_1429") + 1
+	GameState.cambiar_historia("ev_1429", GameState.bandera("ev_1429") + 1)
 	GameState.trucos_usados += 1
 	GameState.salvaje = null
 	SceneManager.ir_a_mapa(CASA, CAMA, 2)

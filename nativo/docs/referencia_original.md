@@ -247,8 +247,8 @@ Ids del juego → `Tipos.Tipo`: 1 Normal, 2 Fuego, 3 Agua, 4 Planta, 5 Eléctric
   equipo (si todos están debilitados no hay encuentros) y guardar/cargar partida.
 - **Mapas nativos** (`tools/mapas_original.py`): no se convierten los saltos (`obj_saltos`,
   `obj_saltos_I`: bordes que se bajan saltando; quedan como `Marker2D`), las sombras de los edificios
-  (`obj_shadowFixed`), el movimiento de los NPCs (`MOVE`), las salidas que dependen de la historia y
-  las instancias giradas. `EXPLORER` (encuentros) no es un nodo: lo hace el jugador.
+  (`obj_shadowFixed`), el movimiento de los NPCs (`MOVE`), las salidas de `CambiosWorldRooms` que dependen
+  de la historia (los NPCs y puertas sí son dinámicos) y las instancias giradas. `EXPLORER` (encuentros) no es un nodo: lo hace el jugador.
 - **Batalla nativa (`scenes/battle/`)**: solo daño genérico. Faltan los casos especiales de
   `Ataque1GolpeaPokemon2` (movimientos con efectos propios, contacto, absorber, multigolpe...),
   `ExecuteAtack` (ataques que no son proyectil), estados (`STD`), cambios de stats (`Mod_*`), clima,

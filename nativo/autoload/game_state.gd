@@ -1,6 +1,9 @@
 extends Node
 ## Estado global de la partida (equipo, flags, posición del jugador...).
 
+## Cambió una bandera de la historia (los mapas activan o desactivan lo que depende de ella).
+signal historia_cambiada
+
 ## Dificultad del original (global.dificultad). Los nombres siguen el orden de las opciones del
 ## menú (txt_menu: Fácil, Normal, Difícil, Maestro, Extrema); el original tiene un sexto valor.
 enum Dificultad { FACIL = 1, NORMAL, DIFICIL, MAESTRO, EXTREMA, SEXTA }
@@ -29,7 +32,8 @@ var posicion_salida: Vector2 = Vector2.ZERO
 ## El Pokémon salvaje de la batalla en curso (null si la batalla no viene del overworld).
 var salvaje: PokemonInstance
 ## Banderas de la historia (las del objeto "variables" del original; las que no están valen 0).
-## Empieza tras recibir el primer Pokémon y el móvil, como los mapas extraídos.
+## Empieza tras recibir el primer Pokémon y el móvil (igual que ESTADO_HISTORIA en
+## tools/mapas_original.py, con el que se toman los valores iniciales de los mapas).
 var historia: Dictionary[String, int] = {"fy_002": 1, "movil": 1}
 
 var dinero: int = 0
@@ -78,3 +82,8 @@ func pow_dif(lado: int) -> int:
 
 func bandera(nombre: String) -> int:
 	return historia.get(nombre, 0)
+
+
+func cambiar_historia(nombre: String, valor: int) -> void:
+	historia[nombre] = valor
+	historia_cambiada.emit()

@@ -98,13 +98,72 @@ def _menciona_room(cond, room: int) -> bool:
 
 
 class Evaluador:
-    """Ejecuta un subconjunto de GML con el estado de una partida nueva: (18).x, global.x = 0."""
+    """Ejecuta un subconjunto de GML. Los if que dependen de banderas de la historia ((18).x) no se
+    deciden: se recorren las dos ramas y cada instancia creada guarda su condición como expresión de
+    GDScript sobre h (GameState.historia), p. ej. h.get("fy_002", 0) == 0. Lo demás (globales, otros
+    objetos) vale lo inicial (0). Los valores de propiedades y variables dentro de ramas de la historia
+    se toman como en ESTADO_HISTORIA."""
 
     def __init__(self, juego: Juego, room: int):
         self.juego = juego
         self.room = room
         self.instancias: list[dict] = []
         self.locales: dict[str, object] = {}
+        # Condiciones de la historia de lo que se ejecuta ahora (se cumplen todas).
+        self.condicion: list[str] = []
+        # Si con ESTADO_HISTORIA se llegaría aquí (las asignaciones fuera de las instancias nuevas
+        # solo cuentan entonces).
+        self.concreto = True
+
+    def _rama(self, inst, cond: str, verdadera: bool) -> None:
+        cond_antes, concreto_antes = self.condicion, self.concreto
+        self.condicion = cond_antes + [cond]
+        self.concreto = concreto_antes and verdadera
+        salio = False
+        try:
+            self.ejecutar(inst)
+        except _Salir:
+            salio = True
+        self.condicion, self.concreto = cond_antes, concreto_antes
+        if salio:
+            # exit dentro de la rama: lo que sigue solo pasa si la rama no se tomó.
+            self.condicion = cond_antes + [f"not ({cond})"]
+            self.concreto = concreto_antes and not verdadera
+
+    def simbolica(self, e) -> str | None:
+        """La condición como GDScript sobre h si depende de la historia; None si no (o no se puede)."""
+        if not _usa_historia(e):
+            return None
+        try:
+            return self._gd(e)
+        except _Desconocido:
+            return None
+
+    def _gd(self, e) -> str:
+        k = e[0]
+        if k == "num":
+            v = float(e[1])
+            return str(int(v)) if v.is_integer() else repr(v)
+        if k == "id" and e[1] in ("true", "false"):
+            return "1" if e[1] == "true" else "0"
+        if k == "campo" and e[1] == ("num", "18"):
+            return f'h.get("{e[2]}", 0)'
+        if k == "indice" and e[1][0] == "campo" and e[1][1] == ("num", "18") and e[2][0] == "num":
+            return f'h.get("{e[1][2]}_{int(float(e[2][1]))}", 0)'
+        if k == "campo" and (e[1][0] == "num" or e[1] == ("id", "global")):
+            return "0"
+        if k == "un":
+            return f"(not {self._gd(e[2])})" if e[1] in ("!", "not") else f"(-{self._gd(e[2])})"
+        if k == "bin":
+            op = {"=": "==", "&&": "and", "||": "or", "and": "and", "or": "or"}.get(e[1], e[1])
+            if op not in ("==", "!=", "<", ">", "<=", ">=", "and", "or", "+", "-", "*"):
+                raise _Desconocido(op)
+            return f"({self._gd(e[2])} {op} {self._gd(e[3])})"
+        raise _Desconocido(k)
+
+    def _del_contexto(self, inst: dict) -> bool:
+        """Si la instancia se creó en la rama actual (o más adentro)."""
+        return len(inst.get("condicion", [])) >= len(self.condicion)
 
     def correr(self, inst) -> None:
         try:
@@ -118,11 +177,16 @@ class Evaluador:
             for x in i[1]:
                 self.ejecutar(x)
         elif k == "if":
+            simb = self.simbolica(i[1])
             try:
                 c = self.valor(i[1])
             except _Desconocido:
                 return
-            if c:
+            if simb is not None:
+                self._rama(i[2], simb, bool(c))
+                if i[3] is not None:
+                    self._rama(i[3], f"not ({simb})", not c)
+            elif c:
                 self.ejecutar(i[2])
             elif i[3] is not None:
                 self.ejecutar(i[3])
@@ -135,9 +199,12 @@ class Evaluador:
                 return
             lv = i[1]
             if lv[0] == "id":
-                self.locales[lv[1]] = v
+                if self.concreto or isinstance(v, dict):
+                    self.locales[lv[1]] = v
             elif lv[0] == "campo" and lv[1][0] == "id" and isinstance(self.locales.get(lv[1][1]), dict):
-                self.locales[lv[1][1]][lv[2]] = v
+                destino = self.locales[lv[1][1]]
+                if self.concreto or self._del_contexto(destino):
+                    destino[lv[2]] = v
         elif k == "expr":
             try:
                 self.valor(i[1])
@@ -192,17 +259,20 @@ class Evaluador:
             nombre, args = e[1], e[2]
             if nombre == "instance_create":
                 x, y, obj = (self.valor(a) for a in args)
-                inst = {"objeto": self.juego.objetos[int(obj)], "x": x, "y": y}
+                inst = {"objeto": self.juego.objetos[int(obj)], "x": x, "y": y, "condicion": list(self.condicion),
+                        "destruir_si": []}
                 self.instancias.append(inst)
                 return inst
             if nombre in ("Destruye", "instance_destroy"):
                 v = self.valor(args[0]) if args else None
-                if isinstance(v, dict):
-                    v["destruida"] = True
-                elif isinstance(v, float):
-                    for inst in self.instancias:
-                        if inst["objeto"] == self.juego.objetos[int(v)]:
-                            inst["destruida"] = True
+                destino = [v] if isinstance(v, dict) else [
+                    i for i in self.instancias if isinstance(v, float) and i["objeto"] == self.juego.objetos[int(v)]]
+                for inst in destino:
+                    extra = self.condicion[len(inst["condicion"]):]
+                    if extra:
+                        inst["destruir_si"].append(" and ".join(f"({c})" for c in extra))
+                    elif self.concreto or self._del_contexto(inst):
+                        inst["destruida"] = True
                 return 0.0
             if nombre == "TextDialog":
                 return {"dialogo": int(self.valor(args[0]))}
@@ -212,6 +282,28 @@ class Evaluador:
                 return ""
             raise _Desconocido(nombre)
         raise _Desconocido(k)
+
+
+def _usa_historia(e) -> bool:
+    if isinstance(e, tuple):
+        if e[:2] == ("campo", ("num", "18")):
+            return True
+        return any(_usa_historia(x) for x in e[1:] if isinstance(x, (tuple, list)))
+    if isinstance(e, list):
+        return any(_usa_historia(x) for x in e)
+    return False
+
+
+def condicion_final(inst: dict) -> str:
+    """Expresión de GDScript (sobre h) con la que la instancia existe; "" si siempre."""
+    partes = [f"({c})" for c in inst.get("condicion", [])]
+    if inst.get("destruir_si"):
+        partes.append("not (" + " or ".join(f"({d})" for d in inst["destruir_si"]) + ")")
+    return " and ".join(partes)
+
+
+def activa_al_inicio(condicion: str) -> bool:
+    return not condicion or bool(eval(condicion, {"__builtins__": {}}, {"h": dict(ESTADO_HISTORIA)}))
 
 
 def instancias_por_script(juego: Juego, room: int, scripts: list[str]) -> list[dict]:
@@ -335,6 +427,8 @@ class Escena:
         self.subs: list[str] = []
         self._formas: dict[tuple, str] = {}
         self.nodos: list[str] = []
+        # Condición de la historia de la instancia que se está escribiendo ("" = siempre existe).
+        self.condicion = ""
 
     def ref(self, tipo: str, ruta: str) -> str:
         if ruta not in self.ext:
@@ -358,6 +452,9 @@ class Escena:
             cab += f' parent="{padre}"'
         if instancia:
             cab += f" instance={instancia}"
+        if self.condicion:
+            grupos = (grupos or []) + ["historia"]
+            props = props + [f"metadata/condicion = {gd_str(self.condicion)}"]
         if grupos:
             cab += " groups=[" + ", ".join(f'"{g}"' for g in grupos) + "]"
         self.nodos.append(cab + "]")
@@ -526,6 +623,7 @@ def escena_mapa(room: dict, juego: Juego, tilesets: dict, sprite_tres, snake, re
         x, y = float(inst["x"]), float(inst["y"])
         sx, sy = float(inst.get("xscale", 1.0)), float(inst.get("yscale", 1.0))
         nombre = f"{obj}_{inst['id']}"
+        e.condicion = condicion_final(inst)
         if juego.es(obj, "obj_door"):
             props = [f"position = Vector2({f(x)}, {f(y)})", f"script = {e.ref('Script', 'res://scenes/overworld/salida.gd')}",
                      "collision_layer = 0", f"collision_mask = {CAPA_JUGADOR}", "monitorable = false",
@@ -583,6 +681,7 @@ def escena_mapa(room: dict, juego: Juego, tilesets: dict, sprite_tres, snake, re
             no_convertidos.append(obj)
             e.nodo(nombre, "Marker2D", "Marcadores", [f"position = Vector2({f(x)}, {f(y)})", f"metadata/objeto = {gd_str(obj)}"])
 
+    e.condicion = ""
     salidas, raras = salidas_room(juego, ridx, room["width"], room["height"])
     for k, s in enumerate(salidas, start=1):
         r = s["rect"]

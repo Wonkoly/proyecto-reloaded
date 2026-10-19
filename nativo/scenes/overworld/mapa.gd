@@ -14,6 +14,36 @@ const RESOLUCION: Vector2i = Vector2i(320, 180)
 
 func _ready() -> void:
 	get_window().content_scale_size = RESOLUCION
+	aplicar_historia()
+	GameState.historia_cambiada.connect(aplicar_historia)
+
+
+## Activa o desactiva lo que depende de la historia (grupo "historia", con metadata/condicion: una
+## expresión sobre h = GameState.historia, generada desde CreateNPC*/CreateDoors).
+func aplicar_historia() -> void:
+	for n: Node in find_children("*", "", true, false):
+		if n.is_in_group("historia"):
+			_activar(n, _cumple(str(n.get_meta("condicion", ""))))
+
+
+func _cumple(condicion: String) -> bool:
+	if condicion == "":
+		return true
+	var e := Expression.new()
+	if e.parse(condicion, ["h"]) != OK:
+		push_warning("Condición de historia inválida: %s" % condicion)
+		return true
+	return bool(e.execute([GameState.historia]))
+
+
+func _activar(n: Node, activo: bool) -> void:
+	if n is CollisionShape2D:
+		(n as CollisionShape2D).set_deferred("disabled", not activo)
+		return
+	if n is CanvasItem:
+		(n as CanvasItem).visible = activo
+	# Sin procesar, los cuerpos y áreas salen de la física (no chocan ni detectan).
+	n.process_mode = Node.PROCESS_MODE_INHERIT if activo else Node.PROCESS_MODE_DISABLED
 
 
 ## Donde van el jugador y lo que se ordena por y.

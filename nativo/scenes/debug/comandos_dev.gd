@@ -21,7 +21,7 @@ static func registrar_todos(c: Node) -> void:
 		func(i: int, t: String) -> PackedStringArray: return _filtrar(_especies(), t) if i == 0 else PackedStringArray())
 	c.registrar("encuentros", "Activa o desactiva los Pokémon salvajes", "encuentros on|off", _encuentros)
 	c.registrar("dificultad", "Fuerza el divisor de daño (PowDif) de los dos lados; 0 = normal", "dificultad <1|2|4|0>", _dificultad)
-	c.registrar("historia", "Muestra o cambia banderas de la historia (recarga el mapa para verlo)", "historia [bandera] [valor]", _historia)
+	c.registrar("historia", "Muestra o cambia banderas de la historia (el mapa se actualiza al momento)", "historia [bandera] [valor]", _historia)
 	c.registrar("god", "No recibes daño en batalla", "god", _alternar.bind("dev_god", "god"))
 	c.registrar("energia_infinita", "Tu Pokémon tiene la energía siempre llena", "energia_infinita", _alternar.bind("dev_energia_infinita", "energía infinita"))
 	c.registrar("pos", "Mapa y posición del jugador", "pos", _pos.bind(c))
@@ -131,7 +131,7 @@ static func _dificultad(args: PackedStringArray) -> String:
 
 static func _historia(args: PackedStringArray) -> String:
 	if args.size() >= 2 and args[1].is_valid_int():
-		GameState.historia[args[0]] = args[1].to_int()
+		GameState.cambiar_historia(args[0], args[1].to_int())
 	elif args.size() == 1:
 		return "%s = %d" % [args[0], GameState.bandera(args[0])]
 	return "historia: %s" % str(GameState.historia)

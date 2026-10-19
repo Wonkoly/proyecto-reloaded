@@ -3,12 +3,15 @@ extends Node2D
 
 const ESCENA_POKEMON: PackedScene = preload("res://scenes/battle/battle_pokemon.tscn")
 const MENU_PRUEBAS: String = "res://scenes/debug/menu_pruebas.tscn"
+## La batalla del original se ve en 576×324 (BattleROOM).
+const RESOLUCION: Vector2i = Vector2i(576, 324)
 
 @onready var pokemons: Node2D = $Pokemon
 var _numeros: Dictionary[BattlePokemon, Variant] = {}
 
 
 func _ready() -> void:
+	get_window().content_scale_size = RESOLUCION
 	var jugador: BattlePokemon = _crear_pokemon("Jugador", ConfigPruebas.especie_jugador,
 		ConfigPruebas.nivel_jugador, 1, $PosicionJugador.position)
 	var rival: BattlePokemon = _crear_pokemon("Rival", ConfigPruebas.especie_rival,

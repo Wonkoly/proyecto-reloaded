@@ -650,6 +650,7 @@ def extraer_tilesets(plan: Plan, juego: Path) -> dict[str, tuple[Path, Path, int
 
 # Mapas que se extraen por defecto (el inicio: la casa del protagonista, su pueblo y la primera ruta).
 MAPAS_POR_DEFECTO = ["Home_2", "Home_1", "PuebloAlba", "Ruta_1"]
+SPRITES_PROTAGONISTA = ["Ash_D", "Ash_U", "Ash_R", "ProtaMaskSprite"]
 
 
 def extraer_mapas(plan: Plan, juego: Path, ext: Path, tilesets: dict, filtro: list[str] | None) -> list[str]:
@@ -668,6 +669,9 @@ def extraer_mapas(plan: Plan, juego: Path, ext: Path, tilesets: dict, filtro: li
         usados.add(nombre)
         return res(ASSETS / "sprites" / "overworld" / f"{snake(nombre)}.tres")
 
+    # El protagonista por defecto (Ash: global.sprD/U/R = 21/22/23) y su máscara.
+    for nombre in SPRITES_PROTAGONISTA:
+        sprite_tres(nombre)
     resumen = []
     for ruta in rooms:
         room = json.loads(ruta.read_text(encoding="utf-8"))

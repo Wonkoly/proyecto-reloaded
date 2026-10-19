@@ -121,4 +121,9 @@ unique_name_in_owner = true
 layout_mode = 2
 text = "Batalla de prueba"
 
+[node name="Overworld" type="Button" parent="Centro/Opciones"]
+layout_mode = 2
+text = "Overworld"
+
 [connection signal="pressed" from="Centro/Opciones/Batalla" to="." method="_on_batalla_pressed"]
+[connection signal="pressed" from="Centro/Opciones/Overworld" to="." method="_on_overworld_pressed"]

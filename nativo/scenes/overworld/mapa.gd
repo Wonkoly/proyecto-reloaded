@@ -4,9 +4,16 @@ extends Node2D
 ## Hijos: Fondos, TilesDebajo, BaseHierba, Objetos (y-sort: decorado, NPCs, puertas y el jugador),
 ## TilesArriba, Paredes, ZonaHierba, Salidas y Marcadores (instancias que aún no se convierten).
 
+## Resolución de la vista del original en el overworld.
+const RESOLUCION: Vector2i = Vector2i(320, 180)
+
 ## Nombre de la room en el original (PuebloAlba, Ruta_1...).
 @export var nombre_original: String = ""
 @export var tamano: Vector2i = Vector2i(320, 180)
+
+
+func _ready() -> void:
+	get_window().content_scale_size = RESOLUCION
 
 
 ## Donde van el jugador y lo que se ordena por y.

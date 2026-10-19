@@ -11,7 +11,11 @@ extends Control
 @onready var dificultad: OptionButton = %Dificultad
 
 
+const JUGADOR: PackedScene = preload("res://scenes/overworld/jugador.tscn")
+
+
 func _ready() -> void:
+	get_window().content_scale_size = Vector2i(576, 324)
 	for id: int in Datos.especies_con_sprites():
 		var texto: String = "%03d %s" % [id, Datos.especies_con_sprites()[id]]
 		especie_jugador.add_item(texto, id)
@@ -39,3 +43,12 @@ func _on_batalla_pressed() -> void:
 	ConfigPruebas.rival_maestro = maestro.button_pressed
 	GameState.dificultad = dificultad.get_selected_id() as GameState.Dificultad
 	get_tree().change_scene_to_file("res://scenes/battle/battle_arena.tscn")
+
+
+## PuebloAlba con el jugador frente a la puerta de su casa.
+func _on_overworld_pressed() -> void:
+	var mapa: Mapa = (load("res://assets/extraido/mapas/pueblo_alba.tscn") as PackedScene).instantiate()
+	var jugador: Jugador = JUGADOR.instantiate()
+	jugador.position = Vector2(417, 214)
+	mapa.objetos().add_child(jugador)
+	get_tree().change_scene_to_node(mapa)

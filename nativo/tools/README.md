@@ -45,6 +45,7 @@ sobrescribe en la siguiente corrida.
 | entrenadores | `--entrenadores` | `gamedata/data/trainer/*.png` | `assets/extraido/sprites/trainers/` |
 | mapas | (por defecto: Home_2, Home_1, PuebloAlba, Ruta_1) `--mapas-lista` | `extracted/rooms/*.json` + `CreateDoors`, `CreateNPC1..5`, `CreateDevices`, `SetOnlyWater`, `CambiosWorldRooms`, `CambiosSpecialRooms` | `assets/extraido/mapas/nombre.tscn` y `assets/extraido/sprites/overworld/` (también extrae los tilesets; `--todo` extrae los 717 mapas) |
 | conexiones | (por defecto) | lo mismo que mapas, para los 717 | `data/extraido/conexiones.json` (grafo) y `data/extraido/mapas_geometria.json` (ver Conexiones) |
+| encuentros | (por defecto) | `extracted/scripts/AparicionSalvajes.gml`, `HierbasSalvajes`, `ActivacionSalvajes` | `data/extraido/encuentros/<mapa>.tres` (`TablaEncuentros`; ver `docs/analisis_encuentros.md`; ~5 min) |
 
 `NNNN` es el `id_original` del juego con 4 dígitos. Los nombres de archivo pasan a snake_case
 (`Nidoran♀` → `0029_nidoran_hembra.tres`, `PuebloAlba` → `pueblo_alba.tscn`).

@@ -15,6 +15,8 @@ const FPS_LENTO: float = 4.5
 const BORDE_VISTA: float = 120.0
 ## Capa de física de las zonas (hierba).
 const CAPA_ZONAS: int = 32
+## Steps del original por segundo (room_speed).
+const STEPS_POR_SEGUNDO: float = 30.0
 ## Paredes (capa 1) y agua (capa 7: hasta que haya Surf, el agua no se pisa).
 const CAPAS_CHOQUE: int = 1 | 64
 
@@ -80,7 +82,7 @@ func _physics_process(delta: float) -> void:
 	_saltar(velocidad, delta)
 	queue_redraw()
 	_revisar_salidas()
-	_revisar_encuentro(global_position.distance_to(antes))
+	_revisar_encuentro(delta, global_position != antes)
 
 
 ## Sobre un salto lo empuja en su dirección a su velocidad + 1 px/step (ProtaSaltos).
@@ -108,14 +110,22 @@ func en_hierba() -> bool:
 	return _toca_zona(Vector2.ZERO) and _toca_zona(Vector2(0, 8))
 
 
-## Caminando por la hierba: encuentro con la probabilidad de FrequencySalvajes según la distancia.
-func _revisar_encuentro(distancia: float) -> void:
-	if _tabla == null or distancia <= 0.0 or SceneManager.en_transicion or not GameState.dev_encuentros or not en_hierba():
+## ExplorerSalvajes tira el dado en cada step en que el jugador se movió ((18).moving: la posición
+## cambió desde el step anterior), 30 por segundo, con probabilidad 1/frecuencia (FrequencySalvajes).
+## Aquí: la probabilidad de al menos un acierto en los steps que caben en `delta`, así no depende de
+## los FPS y correr o ir en bici cubren más distancia con la misma tasa por segundo, como en el original.
+func _revisar_encuentro(delta: float, se_movio: bool) -> void:
+	if _tabla == null or not se_movio or SceneManager.en_transicion or not GameState.dev_encuentros or not en_hierba():
 		return
-	if randf() < _tabla.probabilidad(distancia) and GameState.pokemon_para_combatir() != null:
-		var salvaje: PokemonInstance = _tabla.elegir()
-		if salvaje:
-			SceneManager.ir_a_batalla(salvaje, self)
+	var sub: SubtablaEncuentros = _tabla.subtabla(SubtablaEncuentros.Metodo.HIERBA, true, global_position, _mapa().cumple)
+	if sub == null:
+		return
+	if randf() < 1.0 - pow(1.0 - 1.0 / maxf(sub.frecuencia, 1.0), STEPS_POR_SEGUNDO * delta) \
+			and GameState.pokemon_para_combatir() != null:
+		var e: EncuentroSalvaje = sub.sortear(_mapa().cumple)
+		var especie: PokemonData = Datos.especie(e.id_especie) if e else null
+		if especie:
+			SceneManager.ir_a_batalla(PokemonInstance.crear(especie, randi_range(e.nivel_min, e.nivel_max)), self)
 
 
 func _toca_zona(desplazamiento: Vector2) -> bool:

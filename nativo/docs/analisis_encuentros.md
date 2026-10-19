@@ -1,7 +1,35 @@
-# Análisis de AparicionSalvajes (Fase 6, sin implementar)
+# Encuentros salvajes del original (AparicionSalvajes)
 
-Hoy solo `data/encuentros/ruta_1.tres` tiene tabla, y está hecha a mano: Pidgey, Rattata y Caterpie.
-No coincide con el original. Los mapas sin `TablaEncuentros` no tienen encuentros; no se inventan tablas.
+Las tablas se generan con `tools/encuentros_original.py` (categoría `encuentros` de `extraer.py`) en
+`data/extraido/encuentros/<mapa>.tres`: **405 mapas, 1387 subtablas**. La `ruta_1.tres` que había hecha a
+mano (Pidgey, Rattata, Caterpie: no coincidía con el original) quedó en `data/extraido/ejemplos/`.
+Los mapas sin tabla no tienen encuentros; no se inventan tablas.
+
+## Lo que se comprobó al generarlas
+
+- **Bug de HierbasSalvajes**: la lista de rooms del modo hierba tiene `room=(61) || (24) || room=(25)`;
+  `(24)` siempre es verdadero, así que el modo 1 vale en **todas** las rooms y su bloque sale con `exit`.
+  **El modo 4 (hierba especial) es código muerto**: se genera (`codigo_muerto = true`, 10 subtablas)
+  pero el juego no lo usa.
+- **Cuándo se tira el dado**: `ExplorerSalvajes` (step del objeto EXPLORER) en cada step en que el
+  jugador se movió (`moving`: la posición cambió desde el step anterior), 30 por segundo, con
+  probabilidad 1/frecuencia (`FrequencySalvajes`: `ceil(random(F)) = F`). En nativo se replica por
+  tiempo en movimiento (no por distancia): correr o ir en bici cambian la tasa por píxel como en el
+  original.
+- **Nivel**: `NV = base + ceil(random(k))`. `random(k)` devuelve [0, k): `ceil` da 1..k, así que
+  `nivel_min = base + 1` y `nivel_max = base + k`. Solo si `random` devolviera 0 exacto saldría `base`
+  (probabilidad ~0; se ignora). Si `NV <= 0` el original no da encuentro (`if(Pokemon<=0 || NV<=0){}`).
+- **Unown y fósiles**: cada especie ocupa un hueco de tamaño fijo (Unown 38, salvo 627/628 con 6;
+  fósiles 100) y una bandera apagada deja su hueco vacío (no sale nada). Comprobado con gml_eval en las
+  16 combinaciones de Unown y 48 de fósiles: el peso no cambia según las demás banderas → condición por
+  especie. Las tablas con hasta 3 condiciones de la historia (contando una vez la misma comparación
+  escrita en varios sitios) se generan como una subtabla por combinación.
+- **39 tablas no se usan en el original**: hay tabla, pero HierbasSalvajes no activa ese modo en la
+  room (p. ej. surf en Ruta_2_2). No se generan.
+- **Unown 601–628** están en las tablas pero no en `data/extraido/pokemon` (no los trae la extracción
+  de datos): mientras falten, ese sorteo no da encuentro.
+- **La hora exacta** (`(66).Hora = 19` en CuevaRemolino) se toma como 12 de día y 22 de noche: el caso
+  de las 19:00 se pierde.
 
 ## Cómo es en el original
 

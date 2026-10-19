@@ -27,6 +27,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 import gml_eval  # noqa: E402  (módulos propios, al lado de este script)
 import gml_visual  # noqa: E402
 import conexiones
+import encuentros_original
 import mapas_original  # noqa: E402
 
 NATIVO = Path(__file__).resolve().parent.parent
@@ -51,8 +52,8 @@ DIRECCIONES_MOVER = ["1", "2", "3", "4", "6", "7", "8", "9"]
 DIRECCION_POR_FRAME = ["8", "9", "6", "3", "2", "1", "4", "7"]
 
 CATEGORIAS = ["datos", "sprites", "fondos", "ui", "fuentes", "efectos", "tilesets", "musica", "gritos", "entrenadores", "mapas",
-              "conexiones"]
-POR_DEFECTO = ["datos", "sprites", "fondos", "ui", "fuentes", "efectos", "mapas", "conexiones"]
+              "conexiones", "encuentros"]
+POR_DEFECTO = ["datos", "sprites", "fondos", "ui", "fuentes", "efectos", "mapas", "conexiones", "encuentros"]
 
 # Sprites internos que usa el HUD de batalla (DrawEventBattle1, DrawBattleAttacks, DrawPanelInformativo).
 SPRITES_UI = [
@@ -74,6 +75,7 @@ CARPETAS = {
     "entrenadores": [ASSETS / "sprites" / "trainers"],
     "mapas": [ASSETS / "mapas", ASSETS / "sprites" / "overworld", DATA / "personajes.json"],
     "conexiones": [DATA / "conexiones.json", DATA / "mapas_geometria.json"],
+    "encuentros": [DATA / "encuentros"],
 }
 
 
@@ -742,6 +744,62 @@ def extraer_conexiones(plan: Plan, juego: Path, ext: Path, tilesets: dict, geome
           f"{len(grafo['conexiones'])} conexiones")
 
 
+def extraer_encuentros(plan: Plan, ext: Path) -> None:
+    """Las tablas de encuentros del original (tools/encuentros_original.py) →
+    data/extraido/encuentros/<mapa>.tres (TablaEncuentros con sus SubtablaEncuentros)."""
+    gen = encuentros_original.Generador(ext)
+    tablas = gen.generar()
+    metodos = list(encuentros_original.METODOS.values())
+    horarios = ["SIEMPRE", "DIA", "NOCHE"]
+    especies = {int(f.name[:4]) for f in (DATA / "pokemon").glob("*.tres")} if (DATA / "pokemon").is_dir() else set()
+    faltan: set[int] = set()
+    n_sub = 0
+    for room, datos in sorted(tablas.items()):
+        tres = Tres("Resource", "TablaEncuentros")
+        script_tabla = tres.ext_resource("Script", "res://scripts/resources/tabla_encuentros.gd")
+        script_sub = tres.ext_resource("Script", "res://scripts/resources/subtabla_encuentros.gd")
+        script_ent = tres.ext_resource("Script", "res://scripts/resources/encuentro_salvaje.gd")
+        subs = []
+        for s in datos["subtablas"]:
+            entradas = []
+            orden = sorted(s["tabla"]["entradas"].items(), key=lambda x: (-x[1][0], x[0]))
+            for pk, (peso, nmin, nmax) in orden:
+                if especies and pk not in especies:
+                    faltan.add(pk)
+                props = [f"script = {script_ent}", f"id_especie = {pk}", f"nivel_min = {max(1, nmin)}",
+                         f"nivel_max = {max(1, nmax)}", f"peso = {peso}"]
+                cond = s["condicion_especie"].get(pk, "")
+                if cond:
+                    props.append(f"condicion = {gd_str(cond)}")
+                entradas.append(tres.sub_resource("Resource", props))
+            props = [f"script = {script_sub}", f"metodo = {metodos.index(s['metodo'])}",
+                     f"horario = {horarios.index(s['horario'])}", f"frecuencia = {s['frecuencia']}",
+                     f"entradas = Array[{script_ent}]([{', '.join(entradas)}])"]
+            if s["condicion"]:
+                props.append(f"condicion = {gd_str(s['condicion'])}")
+            if s["zona"]:
+                x0, y0, x1, y1 = s["zona"]
+                props.append(f"zona = Rect2({fmt_float(x0)}, {fmt_float(y0)}, {fmt_float(x1 - x0)}, {fmt_float(y1 - y0)})")
+            for clave in ("raros", "super_raros"):
+                if s["tabla"][clave]:
+                    props.append(f"{clave} = PackedInt32Array({', '.join(map(str, s['tabla'][clave]))})")
+            if s["codigo_muerto"]:
+                props.append("codigo_muerto = true")
+            subs.append(tres.sub_resource("Resource", props))
+            n_sub += 1
+        props = [f"script = {script_tabla}", f"subtablas = Array[{script_sub}]([{', '.join(subs)}])"]
+        if datos["sin_hierba"]:
+            rects = ", ".join(f"Rect2({fmt_float(a)}, {fmt_float(b)}, {fmt_float(c - a)}, {fmt_float(d - b)})"
+                              for a, b, c, d in datos["sin_hierba"])
+            props.append(f"sin_hierba = Array[Rect2]([{rects}])")
+        plan.escribir(DATA / "encuentros" / f"{snake(room)}.tres", tres.texto(props))
+    print(f"  {len(tablas)} mapas, {n_sub} subtablas")
+    if faltan:
+        avisar(f"{len(faltan)} especies de las tablas no están en data/extraido/pokemon: {sorted(faltan)[:20]}")
+    for problema in gen.problemas:
+        print("  no se usa:", problema)
+
+
 def _chunks_wav(b: bytes, con_relleno: bool) -> list[tuple[bytes, bytes]] | None:
     chunks, i = [], 12
     while i + 8 <= len(b):
@@ -866,6 +924,8 @@ def main() -> None:
             extraer_mapas(plan, args.juego, EXT, tilesets, filtro, geometrias)
         elif cat == "conexiones":
             extraer_conexiones(plan, args.juego, EXT, tilesets, geometrias)
+        elif cat == "encuentros":
+            extraer_encuentros(plan, EXT)
         elif cat == "musica":
             musica = args.juego / "data" / "audio"
             extraer_simple(plan, musica / "musica", ASSETS / "audio" / "music", ["*/*.ogg"])

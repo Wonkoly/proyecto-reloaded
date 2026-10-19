@@ -1,8 +1,9 @@
 """Evalúa funciones puras del original (GML) en Python, para precalcular tablas como datos.
 
 Sirve para scripts que son lógica sin estado del juego (MYSON, GrupoHuevo1, OneSex...): variables
-locales, if/else, return y llamadas a otros scripts (recursivas). Si una función toca algo que no
-se puede saber (globales, instancias, random), devuelve None.
+locales y arrays locales (a[i]), if/else, for/while/repeat, return y llamadas a otros scripts
+(recursivas). Si una función toca algo que no se puede saber (globales, instancias, random), devuelve
+None. Una subclase puede dar valores a esas cosas redefiniendo _valor (ver encuentros_original.py).
 """
 
 from __future__ import annotations
@@ -14,6 +15,10 @@ import gml_visual
 
 class Desconocido(Exception):
     pass
+
+
+# Tope de vueltas de un bucle (un while que no termina no cuelga la extracción).
+MAX_VUELTAS = 100000
 
 
 class _Retorno(Exception):
@@ -75,13 +80,39 @@ class Funciones:
             raise _Retorno(0.0)
         elif k == "asig":
             lv, op = i[1], i[2]
-            if lv[0] != "id":
-                raise Desconocido("asignación a campo")
             v = self._valor(i[3], loc, prof)
-            if op != "=":
-                a = loc.get(lv[1], 0.0)
-                v = {"+=": a + v, "-=": a - v, "*=": a * v, "/=": a / v}[op]
-            loc[lv[1]] = v
+            if lv[0] == "id":
+                if op != "=":
+                    v = _operar(op, loc.get(lv[1], 0.0), v)
+                loc[lv[1]] = v
+            elif lv[0] == "indice" and lv[1][0] == "id":
+                # Array local: a[i] = v (en GM el array nace al asignarle un índice).
+                arr = loc.get(lv[1][1])
+                if not isinstance(arr, dict):
+                    arr = loc[lv[1][1]] = {}
+                n = int(self._valor(lv[2], loc, prof))
+                arr[n] = _operar(op, arr.get(n, 0.0), v) if op != "=" else v
+            else:
+                raise Desconocido("asignación a campo")
+        elif k == "for":
+            self._ejecutar(i[1], loc, prof)
+            for _ in range(MAX_VUELTAS):
+                if not self._valor(i[2], loc, prof):
+                    break
+                self._ejecutar(i[4], loc, prof)
+                self._ejecutar(i[3], loc, prof)
+            else:
+                raise Desconocido("bucle sin fin")
+        elif k == "while":
+            for _ in range(MAX_VUELTAS):
+                if not self._valor(i[1], loc, prof):
+                    break
+                self._ejecutar(i[2], loc, prof)
+            else:
+                raise Desconocido("bucle sin fin")
+        elif k == "repeat":
+            for _ in range(min(int(self._valor(i[1], loc, prof)), MAX_VUELTAS)):
+                self._ejecutar(i[2], loc, prof)
         elif k == "expr":
             self._valor(i[1], loc, prof)
         elif k in ("var", "nada"):
@@ -101,6 +132,8 @@ class Funciones:
             if e[1] in gml_visual.CONSTANTES and not isinstance(gml_visual.CONSTANTES[e[1]], str):
                 return float(gml_visual.CONSTANTES[e[1]])
             raise Desconocido(e[1])
+        if k == "indice" and e[1][0] == "id" and isinstance(loc.get(e[1][1]), dict):
+            return loc[e[1][1]].get(int(self._valor(e[2], loc, prof)), 0.0)
         if k == "un":
             v = self._valor(e[2], loc, prof)
             return float(not v) if e[1] in ("!", "not") else -v
@@ -129,3 +162,7 @@ class Funciones:
                 raise Desconocido(nombre)
             return self._llamar(nombre, args, prof + 1)
         raise Desconocido(k)
+
+
+def _operar(op: str, a, b):
+    return {"+=": lambda: a + b, "-=": lambda: a - b, "*=": lambda: a * b, "/=": lambda: a / b}[op]()

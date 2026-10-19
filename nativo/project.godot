@@ -21,6 +21,7 @@ SaveManager="*res://autoload/save_manager.gd"
 AudioManager="*res://autoload/audio_manager.gd"
 SceneManager="*res://autoload/scene_manager.gd"
 Trucos="*res://autoload/trucos.gd"
+Reloj="*res://autoload/reloj.gd"
 DevConsole="*res://autoload/dev_console.gd"
 
 [debug]

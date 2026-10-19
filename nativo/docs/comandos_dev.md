@@ -8,7 +8,7 @@ Solo en builds de depuración (al correr desde el editor o con `--path`); en un 
 | **F1** | Abre/cierra la consola (pausa el juego mientras está abierta) |
 | ↑ / ↓ | Historial de comandos |
 | Tab | Completa el comando o su argumento (mapas, especies) |
-| **F3** | Overlay (Shift+F3: pantalla de códigos del original): FPS, mapa, posición, banderas de la historia, tamaño del equipo |
+| **F3** | Overlay (Shift+F3: pantalla de códigos del original): FPS, mapa, posición, hora (día/noche), banderas de la historia, tamaño del equipo |
 | **F4** | Dibuja colisiones (rojo), NPCs (naranja), hierba (verde), salidas con su destino (azul) y marcadores sin convertir (amarillo) |
 
 | Comando | Qué hace |
@@ -29,6 +29,7 @@ Solo en builds de depuración (al correr desde el editor o con `--path`); en un 
 | `energia_infinita` | Tu Pokémon tiene siempre la energía llena |
 | `pos` | Mapa, posición y dirección del jugador |
 | `codigo <texto>` | Mete un código del original (ver `referencia_original.md`; también Shift+F3) |
+| `hora <h>[:mm]` / `hora real` | Fija la hora del juego (queda quieta) o vuelve a la del sistema (y a avanzar como el original: 30× en el mapa) |
 | `validar` | Revisa las salidas del mapa actual con la historia actual: destino, llegada caminable, rebote, regreso; cada una ok / error / requiere X / inactiva ahora |
 | `ir <mapa> [tp]` | Ruta con menos cambios de mapa desde el actual (de `data/extraido/conexiones.json`) con el tipo y requisitos de cada paso; con `tp` va al primer mapa de la ruta |
 

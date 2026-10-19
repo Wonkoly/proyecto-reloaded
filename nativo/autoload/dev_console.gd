@@ -182,6 +182,7 @@ func _texto_overlay() -> String:
 		"FPS %d" % Engine.get_frames_per_second(),
 		"Mapa %s" % (GameState.mapa_actual if j else str(get_tree().current_scene.name if get_tree().current_scene else "-")),
 		"Pos %s" % (str(j.global_position.round()) if j else "-"),
+		"Hora %s" % Reloj.texto(),
 		"Historia %s" % str(GameState.historia),
 		"Equipo %d" % GameState.equipo.size(),
 	]

@@ -26,6 +26,7 @@ static func registrar_todos(c: Node) -> void:
 	c.registrar("energia_infinita", "Tu Pokémon tiene la energía siempre llena", "energia_infinita", _alternar.bind("dev_energia_infinita", "energía infinita"))
 	c.registrar("pos", "Mapa y posición del jugador", "pos", _pos.bind(c))
 	c.registrar("codigo", "Mete un código del original (como Shift+F3)", "codigo <texto>", _codigo.bind(c))
+	c.registrar("hora", "Fija la hora del juego (queda quieta) o vuelve a la del sistema", "hora <h>[:mm] | hora real", _hora)
 	c.registrar("validar", "Revisa las salidas del mapa actual (destino, llegada, rebote, regreso)", "validar", _validar.bind(c))
 	c.registrar("ir", "Ruta más corta hasta un mapa; con tp va al primer mapa de la ruta", "ir <mapa> [tp]", _ir.bind(c),
 		func(i: int, t: String) -> PackedStringArray: return _filtrar(ConexionesDev.grafo().get("mapas", {}).keys(), t) if i == 0 else PackedStringArray())
@@ -55,6 +56,19 @@ static func _tp(args: PackedStringArray, c: Node) -> String:
 	SceneManager.ir_a_mapa(mapa, pos)
 	c.call_deferred("cerrar")
 	return "→ %s %s" % [mapa, "" if pos == SceneManager.CENTRO else str(pos)]
+
+
+static func _hora(args: PackedStringArray) -> String:
+	if args.is_empty():
+		return "Hora: %s" % Reloj.texto()
+	if args[0].to_lower() == "real":
+		Reloj.poner_hora_del_sistema()
+		return "Hora del sistema: %s" % Reloj.texto()
+	var partes: PackedStringArray = args[0].split(":")
+	if not partes[0].is_valid_int():
+		return "uso: hora <h>[:mm] | hora real"
+	Reloj.fijar(partes[0].to_int(), partes[1].to_int() if partes.size() > 1 else 0)
+	return "Hora fijada: %s" % Reloj.texto()
 
 
 static func _validar(_args: PackedStringArray, c: Node) -> String:

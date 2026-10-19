@@ -19,7 +19,12 @@ import shutil
 import struct
 import sys
 import unicodedata
+import zlib
+
 from pathlib import Path
+
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+import gml_visual  # noqa: E402  (módulo propio, al lado de este script)
 
 NATIVO = Path(__file__).resolve().parent.parent
 REPO = NATIVO.parent
@@ -42,8 +47,8 @@ DIRECCIONES_MOVER = ["1", "2", "3", "4", "6", "7", "8", "9"]
 # En las tiras A (ataque) y H (herido) cada frame es una dirección (Renew_Sprite_Atack).
 DIRECCION_POR_FRAME = ["8", "9", "6", "3", "2", "1", "4", "7"]
 
-CATEGORIAS = ["datos", "sprites", "fondos", "ui", "fuentes", "tilesets", "musica", "gritos", "entrenadores", "mapas"]
-POR_DEFECTO = ["datos", "sprites", "fondos", "ui", "fuentes"]
+CATEGORIAS = ["datos", "sprites", "fondos", "ui", "fuentes", "efectos", "tilesets", "musica", "gritos", "entrenadores", "mapas"]
+POR_DEFECTO = ["datos", "sprites", "fondos", "ui", "fuentes", "efectos"]
 
 # Sprites internos que usa el HUD de batalla (DrawEventBattle1, DrawBattleAttacks, DrawPanelInformativo).
 SPRITES_UI = [
@@ -58,6 +63,7 @@ CARPETAS = {
     "fondos": [ASSETS / "sprites" / "battlebacks"],
     "ui": [ASSETS / "sprites" / "ui"],
     "fuentes": [ASSETS / "fonts"],
+    "efectos": [ASSETS / "sprites" / "particulas", ASSETS / "sprites" / "efectos", DATA / "visuales"],
     "tilesets": [ASSETS / "sprites" / "tilesets"],
     "musica": [ASSETS / "audio" / "music"],
     "gritos": [ASSETS / "audio" / "sfx" / "gritos"],
@@ -86,6 +92,15 @@ def png_size(path: Path) -> tuple[int, int]:
     with open(path, "rb") as f:
         head = f.read(24)
     return struct.unpack(">II", head[16:24])
+
+
+def png_rgba(ancho: int, alto: int, rgba: bytes) -> bytes:
+    """Codifica una imagen RGBA de 8 bits como PNG (sin dependencias)."""
+    def chunk(tipo: bytes, datos: bytes) -> bytes:
+        return struct.pack(">I", len(datos)) + tipo + datos + struct.pack(">I", zlib.crc32(tipo + datos) & 0xFFFFFFFF)
+    filas = b"".join(b"\0" + rgba[y * ancho * 4:(y + 1) * ancho * 4] for y in range(alto))
+    return (b"\x89PNG\r\n\x1a\n" + chunk(b"IHDR", struct.pack(">IIBBBBB", ancho, alto, 8, 6, 0, 0, 0))
+            + chunk(b"IDAT", zlib.compress(filas, 9)) + chunk(b"IEND", b""))
 
 
 def fmt_float(x: float) -> str:
@@ -432,6 +447,7 @@ def extraer_datos(plan: Plan, ext: Path, indice: dict) -> None:
     tipo_mov = Tabla(gml("TheoricTypeAttack"))
     costo = Tabla(gml("TheoricPPAtack"))
     modo = Tabla(gml("ModeAtack"))
+    ejecucion = Tabla(gml("ExecuteAtack"))
     rutas_mov: dict[int, Path] = {}
     tipos_raros: dict[int, int] = {}
     for i, nombre in enumerate(nombres_mov, start=1):
@@ -451,6 +467,7 @@ def extraer_datos(plan: Plan, ext: Path, indice: dict) -> None:
             f"id_original = {i}",
             f"tipo = {TIPO_JUEGO_A_ENUM.get(t, 0)}",
             f"categoria = {int(modo.valor(i, 2) or 0)}",
+            f"modo = {max(0, int(ejecucion.valor(i, 2) or 2) - 1)}",
             f"poder = {int(poder.valor(i, 0) or 0)}",
             f"costo_energia = {int(costo.valor(i, 0) or 0)}",
             f"descripcion = {gd_str(descs_mov[i - 1].strip() if i <= len(descs_mov) else '')}",
@@ -586,6 +603,32 @@ def extraer_fuentes(plan: Plan, juego: Path) -> None:
                           f"xoffset={dx} yoffset=0 xadvance={g['offset']} page=0 chnl=15")
         lineas[3] = f"chars count={len(glifos)}"
         plan.escribir(ASSETS / "fonts" / f"{nombre}.fnt", "\n".join(lineas + glifos) + "\n")
+
+
+def extraer_particulas(plan: Plan, juego: Path) -> None:
+    """Las 14 formas de partícula de GM8 (pt_shape_*): particles.dat son 14 imágenes de 64x64 que
+    solo guardan el alfa; el color es blanco y el origen está en el centro."""
+    datos = (juego / "_internal" / "particles.dat").read_bytes()
+    for i in range(14):
+        alfa = datos[64 * 64 * i:64 * 64 * (i + 1)]
+        rgba = b"".join(b"\xff\xff\xff" + bytes([a]) for a in alfa)
+        plan.archivos[ASSETS / "sprites" / "particulas" / f"forma_{i}.png"] = png_rgba(64, 64, rgba)
+
+
+def extraer_visuales(plan: Plan, juego: Path, ext: Path) -> None:
+    """Traduce la parte visual de los ataques (gml_visual.py) y extrae los sprites que usa."""
+    scripts = ext / "scripts"
+    leer = lambda n: (scripts / f"{n}.gml").read_text(encoding="utf-8")
+    codigo, sprites, traducidas, omitidas = gml_visual.generar(leer("EfectoEspecial"), leer("EffectAtackCreate"), leer("EffectAtack"))
+    plan.escribir(DATA / "visuales" / "visuales_ataques.gd", codigo)
+    nombres = json.loads((ext / "index.json").read_text())["sprites"]
+    carpeta = ASSETS / "sprites" / "efectos"
+    for sid in sorted(sprites):
+        if 0 <= sid < len(nombres) and nombres[sid] and (juego / "_internal" / "sprites" / nombres[sid]).is_dir():
+            ruta = extraer_sprite_original(plan, juego, nombres[sid], carpeta)
+            # se busca por id: <id>.tres apunta al mismo SpriteOriginal
+            plan.archivos[carpeta / f"{sid}.tres"] = plan.archivos.pop(ruta)
+    print(f"  {traducidas} instrucciones visuales traducidas, {omitidas} omitidas; {len(sprites)} sprites")
 
 
 def extraer_tilesets(plan: Plan, juego: Path) -> dict[str, tuple[Path, Path, int, int]]:
@@ -829,6 +872,9 @@ def main() -> None:
                 extraer_sprite_original(plan, args.juego, nombre, ASSETS / "sprites" / "ui")
         elif cat == "fuentes":
             extraer_fuentes(plan, args.juego)
+        elif cat == "efectos":
+            extraer_particulas(plan, args.juego)
+            extraer_visuales(plan, args.juego, EXT)
         elif cat == "tilesets":
             tilesets = extraer_tilesets(plan, args.juego)
         elif cat == "mapas":

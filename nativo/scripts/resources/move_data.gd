@@ -5,12 +5,16 @@ extends Resource
 ## (30 steps/s): ver docs/referencia_original.md.
 
 enum Categoria { FISICO, ESPECIAL, ESTADO }
+## Cómo se ejecuta (ExecuteAtack): el Pokémon se lanza contra el rival, dispara un proyectil, actúa
+## sobre sí mismo sin proyectil, o es un caso especial (Vuelo, Excavar...).
+enum Modo { CONTACTO, PROYECTIL, ESTADO, ESPECIAL }
 
 @export var nombre: String = ""
 ## Número interno del movimiento en el juego original.
 @export var id_original: int = 0
 @export var tipo: Tipos.Tipo = Tipos.Tipo.NORMAL
 @export var categoria: Categoria = Categoria.FISICO
+@export var modo: Modo = Modo.PROYECTIL
 @export var poder: int = 0
 ## Energía que gasta cada uso.
 @export var costo_energia: int = 0

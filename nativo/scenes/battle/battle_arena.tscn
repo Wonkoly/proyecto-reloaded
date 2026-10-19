@@ -4,6 +4,7 @@
 [ext_resource type="Texture2D" path="res://assets/extraido/sprites/battlebacks/realistic/1.png" id="2"]
 [ext_resource type="Script" path="res://scenes/battle/battle_manager.gd" id="3"]
 [ext_resource type="PackedScene" path="res://scenes/ui/battle_hud.tscn" id="4"]
+[ext_resource type="Script" path="res://scripts/efectos/particulas_gm.gd" id="5"]
 
 [sub_resource type="RectangleShape2D" id="horizontal"]
 size = Vector2(672, 48)
@@ -36,8 +37,14 @@ shape = SubResource("vertical")
 position = Vector2(544, 162)
 shape = SubResource("vertical")
 
+[node name="EfectosDebajo" type="Node2D" parent="." groups=["efectos_debajo"]]
+script = ExtResource("5")
+
 [node name="Pokemon" type="Node2D" parent="."]
 y_sort_enabled = true
+
+[node name="EfectosArriba" type="Node2D" parent="." groups=["efectos_arriba"]]
+script = ExtResource("5")
 
 [node name="PosicionJugador" type="Marker2D" parent="."]
 position = Vector2(192, 168)

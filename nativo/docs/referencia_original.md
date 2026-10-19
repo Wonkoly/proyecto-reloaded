@@ -56,6 +56,14 @@ Encaja con el patrón **BattlePokemon + controladores**: `Pokemon1Movimiento` le
   estado 1 (`STD = 1`) `÷1.125`, varios efectos y habilidades `×1.25` o `÷1.25`, y en Espacio Raro
   `vel = 330 - vel` (11 px/step - vel). Al final se limita a **[60, 450] px/s** (2-15 px/step).
 
+### Modos de ataque (`ExecuteAtack`)
+| Modo | Movimientos | Qué hace |
+|---|---|---|
+| 1 contacto | 286 (Placaje, Arañazo, puños...) | el Pokémon se lanza con el ataque (`GolpeaAtack`): 15 steps (0.5 s) a su velocidad + 5 px/step (+150 px/s); el ataque es invisible |
+| 2 proyectil | 408 (Ascuas, Lanzallamas...) | proyectil a 360 px/s |
+| 3 estado | 184 (Danza espada, Rayo solar...) | no viaja ni choca: aplica `SecEffect` y desaparece a los 2 steps |
+| 4 especial | 6 (Vuelo, Excavar, Buceo, Bote, Golpe umbrío, Golpe fantasma) | casos propios |
+
 ### Ataques (`CreateAttack`)
 - 4 teclas de ataque (una por movimiento). Al pulsar, si `canshoot` y la energía alcanza
   (`PossibleAttack`: energía ≥ costo, **o la barra está llena** aunque el costo sea mayor; entonces
@@ -211,9 +219,15 @@ Ids del juego → `Tipos.Tipo`: 1 Normal, 2 Fuego, 3 Agua, 4 Planta, 5 Eléctric
   `ExecuteAtack` (ataques que no son proyectil), estados (`STD`), cambios de stats (`Mod_*`), clima,
   habilidades, objetos, mega/Z, "Yo primero" (MF), precisión (desvío del disparo), críticos,
   rebote en paredes de 9 movimientos, proyectiles de poder 400 (`Ataque1CollitionAt2`), empuje al
-  recibir un golpe (`friction`), sprite y efecto de cada movimiento (`EffectAtack`; ahora es un
-  círculo del color del tipo), sombras, máscaras de colisión por especie (`DefineMaskPokemon`),
+  recibir un golpe (`friction`), sombras, máscaras de colisión por especie (`DefineMaskPokemon`),
   animación en reposo de voladores/levitantes, y cuánto dura la pose de herido (ahora 0.2 s).
+- **Animaciones de ataques**: `tools/gml_visual.py` traduce la parte visual de `EfectoEspecial`,
+  `EffectAtackCreate` y `EffectAtack` (~94 % de sus instrucciones; se omiten las que tocan lógica de
+  batalla) y `AtaqueVisual`/`ParticulasGM`/`EfectoSprite` las ejecutan como GM8. Falta: la lógica
+  previa a los bloques de `EffectAtack` (ataques perseguidores y rápidos que aceleran), mezcla
+  aditiva (`part_type_blend`), partículas de sprite animadas, el modo ESTADO no aplica su efecto
+  (`SecEffect*`, p. ej. Rayo solar carga y dispara) y el modo ESPECIAL (Vuelo, Excavar...) se trata
+  como contacto.
 - **IA nativa (`AIController`)**: se mueve en 8 direcciones (el original en cualquier ángulo); al
   chocar con una pared elige otra dirección (el original no rebota); el maestro no ajusta su
   velocidad a la del jugador; `BattleEstrategia` solo usa el peso base y la efectividad (faltan las

@@ -135,6 +135,13 @@ func recibir_golpe(move: MoveData, danio: int, eficacia: float) -> void:
 	recibir_danio(danio)
 
 
+## Ataque de contacto: el Pokémon va con el ataque (lo mueve el Proyectil) y no responde mientras.
+func embestir(duracion: float) -> void:
+	_bloqueo = maxf(_bloqueo, duracion)
+	direccion = Vector2.ZERO
+	_actualizar_animacion()
+
+
 func recibir_danio(cantidad: int) -> void:
 	if esta_debilitado() or cantidad <= 0:
 		return

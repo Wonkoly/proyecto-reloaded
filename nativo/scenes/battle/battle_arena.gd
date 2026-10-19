@@ -5,6 +5,7 @@ const ESCENA_POKEMON: PackedScene = preload("res://scenes/battle/battle_pokemon.
 const MENU_PRUEBAS: String = "res://scenes/debug/menu_pruebas.tscn"
 
 @onready var pokemons: Node2D = $Pokemon
+var _numeros: Dictionary[BattlePokemon, Variant] = {}
 
 
 func _ready() -> void:
@@ -28,6 +29,8 @@ func _ready() -> void:
 	manager.batalla_terminada.connect(
 		func(ganador: BattlePokemon) -> void: hud.mostrar_resultado("¡Gana %s!" % ganador.pokemon.especie.nombre))
 	manager.iniciar(jugador, rival)
+	for bp: BattlePokemon in [jugador, rival]:
+		bp.golpeado.connect(_mostrar_danio.bind(bp))
 
 
 func _crear_pokemon(nombre: String, id_especie: int, nivel: int, lado: int, posicion: Vector2) -> BattlePokemon:
@@ -41,6 +44,21 @@ func _crear_pokemon(nombre: String, id_especie: int, nivel: int, lado: int, posi
 	bp.configurar(PokemonInstance.crear(especie, nivel))
 	pokemons.add_child(bp)
 	return bp
+
+
+## CreateNumberEffect: el daño flota sobre el Pokémon; si ya hay un número visible, se suma.
+func _mostrar_danio(_move: MoveData, danio: int, _eficacia: float, bp: BattlePokemon) -> void:
+	if danio <= 0:
+		return
+	var actual: Variant = _numeros.get(bp)
+	if is_instance_valid(actual):
+		(actual as NumeroDanio).numero -= danio
+		return
+	var n := NumeroDanio.new()
+	n.objetivo = bp
+	n.numero = -danio
+	$EfectosArriba.add_child(n)
+	_numeros[bp] = n
 
 
 func _unhandled_input(event: InputEvent) -> void:

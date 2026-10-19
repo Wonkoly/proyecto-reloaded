@@ -37,6 +37,7 @@ sobrescribe en la siguiente corrida.
 | fondos | (por defecto) `--fondos-todos` | `gamedata/data/battleback/` | `assets/extraido/sprites/battlebacks/{realistic,traditional}/` (sin el flag: solo los 3 primeros realistas) |
 | ui | (por defecto) | `gamedata/_internal/sprites/` (los del HUD de batalla, `SPRITES_UI`) | `assets/extraido/sprites/ui/<sprite>/N.png` + `<sprite>.tres` (`SpriteOriginal`: frames y origen de GM8) |
 | fuentes | (por defecto) | `gamedata/_internal/fonts/` | `assets/extraido/fonts/<fuente>.png` + `.fnt` (BMFont; Godot lo importa como fuente) |
+| efectos | (por defecto) | `gamedata/_internal/particles.dat`, `extracted/scripts/{EfectoEspecial,EffectAtackCreate,EffectAtack}.gml` | `assets/extraido/sprites/particulas/forma_N.png` (formas `pt_shape_*` de GM8), `data/extraido/visuales/visuales_ataques.gd` (animación de cada movimiento traducida por `gml_visual.py`) y `assets/extraido/sprites/efectos/<id>.tres` (los sprites que usa) |
 | tilesets | `--tilesets` | `gamedata/_internal/backgrounds/` | `assets/extraido/sprites/tilesets/*.png` + un `TileSet` `.tres` de 16×16 por imagen |
 | musica | `--musica` | `gamedata/data/audio/musica/{pk,re}/*.ogg`, `Music_Intro_*.mp3` | `assets/extraido/audio/music/` |
 | gritos | `--gritos` | `gamedata/data/audio/grito/*.wav` | `assets/extraido/audio/sfx/gritos/` |
@@ -66,6 +67,15 @@ sobrescribe en la siguiente corrida.
 - Las tablas del original son cadenas de `if(argument0=N)return(X);`. El script las lee sin ejecutar
   código; las condiciones que dependen del estado del juego (forma de Burmy, `IsBattle`...) se
   ignoran y se avisa por pantalla.
+
+## Animaciones de ataques
+`gml_visual.py` lee la parte visual de tres scripts del original y la traduce a GDScript (un
+parser propio de un subconjunto de GML): `EfectoEspecial` (tipo de partícula de cada movimiento),
+`EffectAtackCreate` (sprite y efectos al lanzarlo) y `EffectAtack` (lo que hace en cada step).
+Traduce asignaciones de variables del ataque, `part_type_*`, `part_emitter_*`, `effect_create_*`,
+`if`, `repeat`; las instrucciones que tocan lógica de batalla (otras instancias, globales) se
+omiten una por una (el script dice cuántas). El código generado llama a `AtaqueVisual`, que tiene
+las mismas variables y funciones de GM8.
 
 ## Sprites de batalla
 Cada Pokémon tiene un `sprite_frames.tres` (para un `AnimatedSprite2D`) y las tiras PNG originales

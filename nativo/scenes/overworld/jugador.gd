@@ -107,7 +107,31 @@ func _saltar(velocidad: float, delta: float) -> void:
 
 ## Está en la hierba si su máscara la toca en su posición y 8 px más abajo (ProtaCheckHierba).
 func en_hierba() -> bool:
-	return _toca_zona(Vector2.ZERO) and _toca_zona(Vector2(0, 8))
+	return metodo_actual() == SubtablaEncuentros.Metodo.HIERBA
+
+
+## El método de encuentro donde está, como ProtaCheckHierba decide global.hierba: hierba invisible
+## (place_meeting); hierba (en su posición y 8 px más abajo); barro; y si no, las zonas de cuevas
+## de ActivacionSalvajes (salvajes sin hierba, con la tabla de hierba). -1 si ninguno.
+func metodo_actual() -> int:
+	var aqui: Array[int] = _metodos_en(Vector2.ZERO)
+	if SubtablaEncuentros.Metodo.HIERBA_INVISIBLE in aqui:
+		return SubtablaEncuentros.Metodo.HIERBA_INVISIBLE
+	if SubtablaEncuentros.Metodo.HIERBA in aqui and SubtablaEncuentros.Metodo.HIERBA in _metodos_en(Vector2(0, 8)):
+		return SubtablaEncuentros.Metodo.HIERBA
+	if SubtablaEncuentros.Metodo.BARRO in aqui:
+		return SubtablaEncuentros.Metodo.BARRO
+	if _tabla and _tabla.en_sin_hierba(global_position):
+		return SubtablaEncuentros.Metodo.HIERBA
+	return -1
+
+
+## La subtabla que vale ahora en su posición (método, hora, historia, zona), o null.
+func subtabla_actual() -> SubtablaEncuentros:
+	var metodo: int = metodo_actual()
+	if _tabla == null or metodo < 0:
+		return null
+	return _tabla.subtabla(metodo as SubtablaEncuentros.Metodo, Reloj.es_de_dia(), global_position, _mapa().cumple)
 
 
 ## ExplorerSalvajes tira el dado en cada step en que el jugador se movió ((18).moving: la posición
@@ -115,20 +139,26 @@ func en_hierba() -> bool:
 ## Aquí: la probabilidad de al menos un acierto en los steps que caben en `delta`, así no depende de
 ## los FPS y correr o ir en bici cubren más distancia con la misma tasa por segundo, como en el original.
 func _revisar_encuentro(delta: float, se_movio: bool) -> void:
-	if _tabla == null or not se_movio or SceneManager.en_transicion or not GameState.dev_encuentros or not en_hierba():
+	if _tabla == null or not se_movio or SceneManager.en_transicion or not GameState.dev_encuentros:
 		return
-	var sub: SubtablaEncuentros = _tabla.subtabla(SubtablaEncuentros.Metodo.HIERBA, true, global_position, _mapa().cumple)
+	var sub: SubtablaEncuentros = subtabla_actual()
 	if sub == null:
 		return
 	if randf() < 1.0 - pow(1.0 - 1.0 / maxf(sub.frecuencia, 1.0), STEPS_POR_SEGUNDO * delta) \
 			and GameState.pokemon_para_combatir() != null:
-		var e: EncuentroSalvaje = sub.sortear(_mapa().cumple)
-		var especie: PokemonData = Datos.especie(e.id_especie) if e else null
-		if especie:
-			SceneManager.ir_a_batalla(PokemonInstance.crear(especie, randi_range(e.nivel_min, e.nivel_max)), self)
+		var salvaje: PokemonInstance = crear_salvaje(sub.sortear(_mapa().cumple))
+		if salvaje:
+			SceneManager.ir_a_batalla(salvaje, self)
 
 
-func _toca_zona(desplazamiento: Vector2) -> bool:
+## IniciaSalvaje: IV y ntv al azar y los ataques por nivel (PokemonInstance.crear). null si el sorteo
+## cayó en el resto (no sale nada) o la especie no está extraída.
+static func crear_salvaje(e: EncuentroSalvaje) -> PokemonInstance:
+	var especie: PokemonData = Datos.especie(e.id_especie) if e else null
+	return PokemonInstance.crear(especie, randi_range(e.nivel_min, e.nivel_max)) if especie else null
+
+
+func _metodos_en(desplazamiento: Vector2) -> Array[int]:
 	var forma: CollisionShape2D = $CollisionShape2D
 	var consulta := PhysicsShapeQueryParameters2D.new()
 	consulta.shape = forma.shape
@@ -136,7 +166,12 @@ func _toca_zona(desplazamiento: Vector2) -> bool:
 	consulta.collision_mask = CAPA_ZONAS
 	consulta.collide_with_areas = true
 	consulta.collide_with_bodies = false
-	return not get_world_2d().direct_space_state.intersect_shape(consulta, 1).is_empty()
+	var out: Array[int] = []
+	for r: Dictionary in get_world_2d().direct_space_state.intersect_shape(consulta, 8):
+		var zona: ZonaHierba = r["collider"] as ZonaHierba
+		if zona and zona.metodo not in out:
+			out.append(zona.metodo)
+	return out
 
 
 ## Bordes y escaleras se activan al entrar; las puertas pulsando arriba y la salida de los interiores

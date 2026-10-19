@@ -39,6 +39,8 @@ IGNORADOS = {"EXPLORER", "variables", "Control", "obj_bloqueado"}
 # global.index_place: el INDEX de la puerta por la que se entró (DoorEnter). Las salidas y NPCs de los
 # interiores compartidos dependen de él: en las condiciones se escribe "lugar" (GameState.indice_lugar).
 LUGAR = ("campo", ("id", "global"), "index_place")
+# Nodo de cada zona de encuentros → SubtablaEncuentros.Metodo (HIERBA 0, BARRO 2, HIERBA_INVISIBLE 7).
+ZONAS_ENCUENTRO = {"ZonaHierba": 0, "ZonaBarro": 2, "ZonaHierbaInvisible": 7}
 # Capa 7: el agua (aparte de las paredes para que Surf pueda dejar de chocar con ella).
 CAPA_AGUA = 64
 # Qué hace falta para pasar por cada tipo de agua (la primera clase que coincide) y por los
@@ -666,9 +668,11 @@ def escena_mapa(room: dict, juego: Juego, tilesets: dict, sprite_tres, snake, re
     tiles(room, tilesets, e, snake, arriba=True)
     e.nodo("Paredes", "StaticBody2D", ".", [f"collision_layer = {CAPA_PAREDES}", "collision_mask = 0"])
     e.nodo("Agua", "StaticBody2D", ".", [f"collision_layer = {CAPA_AGUA}", "collision_mask = 0"])
-    e.nodo("ZonaHierba", "Area2D", ".", [
-        f"script = {e.ref('Script', 'res://scenes/overworld/zona_hierba.gd')}", f"collision_layer = {CAPA_ZONAS}",
-        "collision_mask = 0", "monitoring = false"], grupos=["zona_hierba"])
+    # Zonas de encuentros, cada una con su método (SubtablaEncuentros.Metodo; ProtaCheckHierba).
+    for nodo_zona, metodo in ZONAS_ENCUENTRO.items():
+        e.nodo(nodo_zona, "Area2D", ".", [
+            f"script = {e.ref('Script', 'res://scenes/overworld/zona_hierba.gd')}", f"collision_layer = {CAPA_ZONAS}",
+            "collision_mask = 0", "monitoring = false", f"metodo = {metodo}"], grupos=["zona_hierba"])
     e.nodo("Salidas", "Node2D", ".", [])
     e.nodo("Saltos", "Node2D", ".", [])
     e.nodo("Marcadores", "Node2D", ".", [])
@@ -873,12 +877,17 @@ def escena_mapa(room: dict, juego: Juego, tilesets: dict, sprite_tres, snake, re
             geo["terreno"].append(rect_de(caja(meta, x, y, sx, sy)) + [TERRENO[obj], e.condicion])
             if datos.get("visible") and sprite:
                 decorado(nombre, sprite, x, y, sx, sy, 0.2)
-        elif juego.es(obj, "obj_hierba"):
+        elif juego.es(obj, "obj_hierba") or obj == "obj_barro":
+            # Hierba (obj_hierba), hierba invisible (obj_hierbaInvisible: sin dibujo) y barro (obj_barro).
             n_hierba += 1
-            decorado(f"base_{n_hierba}", "spr_bck_hierba", x - 8, y - 8, padre="BaseHierba")
-            decorado(nombre, sprite, x, y, sx, sy, alfa=0.75)
+            zona = "ZonaHierbaInvisible" if juego.es(obj, "obj_hierbaInvisible") else "ZonaBarro" if obj == "obj_barro" else "ZonaHierba"
+            if zona == "ZonaHierba":
+                decorado(f"base_{n_hierba}", "spr_bck_hierba", x - 8, y - 8, padre="BaseHierba")
+                decorado(nombre, sprite, x, y, sx, sy, alfa=0.75)
+            elif datos.get("visible") and sprite:
+                decorado(nombre, sprite, x, y, sx, sy)
             if meta and (c := caja(meta, x, y, sx, sy)):
-                e.nodo(f"hierba_{n_hierba}", "CollisionShape2D", "ZonaHierba", [
+                e.nodo(f"hierba_{n_hierba}", "CollisionShape2D", zona, [
                     f"position = Vector2({f(c[0])}, {f(c[1])})", f"shape = {e.rect(c[2], c[3])}"])
         elif juego.es(obj, "obj_pared"):
             pared(meta, x, y, sx, sy, next((r for base, r in OBSTACULOS if juego.es(obj, base)), None), obj)

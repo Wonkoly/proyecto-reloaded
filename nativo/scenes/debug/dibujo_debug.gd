@@ -1,11 +1,16 @@
 class_name DibujoDebug
 extends Node2D
 ## Dibuja sobre el mapa (F4 en la consola dev): colisiones (rojo), NPCs (naranja), zonas de hierba
-## (verde), salidas con su destino (azul) y marcadores de instancias sin convertir (amarillo).
+## (verde; barro marrón, hierba invisible cian, zonas de cueva con salvajes sin hierba en verde
+## claro), agua (azul oscuro), salidas con su destino (azul) y marcadores sin convertir (amarillo).
 
 const COLOR_PARED: Color = Color(1, 0.2, 0.2, 0.8)
 const COLOR_NPC: Color = Color(1, 0.6, 0.1, 0.8)
 const COLOR_HIERBA: Color = Color(0.2, 1, 0.3, 0.25)
+const COLOR_BARRO: Color = Color(0.6, 0.4, 0.2, 0.35)
+const COLOR_HIERBA_INVISIBLE: Color = Color(0.2, 0.9, 1, 0.3)
+const COLOR_SIN_HIERBA: Color = Color(0.6, 1, 0.6, 0.12)
+const COLOR_AGUA: Color = Color(0.1, 0.2, 0.8, 0.3)
 const COLOR_SALIDA: Color = Color(0.3, 0.6, 1, 0.35)
 const COLOR_MARCADOR: Color = Color(1, 0.9, 0.1, 0.9)
 const TAMANO_TEXTO: int = 6
@@ -26,7 +31,15 @@ func _draw() -> void:
 		return
 	var fuente: Font = ThemeDB.fallback_font
 	_formas(mapa.get_node("Paredes"), COLOR_PARED, false)
-	_formas(mapa.get_node("ZonaHierba"), COLOR_HIERBA, true)
+	for zona: String in ["ZonaHierba", "ZonaBarro", "ZonaHierbaInvisible"]:
+		if mapa.has_node(zona):
+			_formas(mapa.get_node(zona), {"ZonaHierba": COLOR_HIERBA, "ZonaBarro": COLOR_BARRO}.get(zona, COLOR_HIERBA_INVISIBLE), true)
+	if mapa.has_node("Agua"):
+		_formas(mapa.get_node("Agua"), COLOR_AGUA, true)
+	var tabla: TablaEncuentros = TablaEncuentros.de_mapa(mapa.nombre_original)
+	if tabla:
+		for r: Rect2 in tabla.sin_hierba:
+			draw_rect(r, COLOR_SIN_HIERBA)
 	for n: Node in mapa.objetos().get_children():
 		if n is Npc:
 			_formas(n, COLOR_NPC, false)

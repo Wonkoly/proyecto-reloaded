@@ -106,7 +106,32 @@ evaluar 11 tablas: las ruinas Unown (room 201, según los puzles resueltos) y la
 - 17 tablas no cubren los 1000 valores: en esos tramos no aparece nada. Eso es del original y se
   conserva si la suma de pesos se compara con 1000.
 
-## Propuesta para TablaEncuentros (sin implementar)
+## En el juego
+
+- Zonas de encuentro en los mapas con su método: `ZonaHierba` (obj_hierba), `ZonaHierbaInvisible`
+  (obj_hierbaInvisible) y `ZonaBarro` (obj_barro). `Jugador.metodo_actual()` decide como
+  ProtaCheckHierba: hierba invisible, hierba (en su posición y 8 px más abajo), barro y, si no, las
+  zonas de cueva de la tabla (`sin_hierba`: las 124 rooms con `obj_cueva` y las partes de
+  ActivacionSalvajes) con la tabla de hierba.
+- La subtabla es la primera que coincide en método, horario (`Reloj.es_de_dia()`), condición y zona.
+  El dado se tira por step en movimiento y la especie se sortea de 1 a 1000 (el resto no da nada).
+- El salvaje se crea como IniciaSalvaje: IV y ntv al azar, ataques por nivel.
+- Comandos dev: `encuentros_mapa` y `simular_encuentros <n>`.
+
+## Pendientes
+
+- Surf, pesca y lava (sus subtablas ya están generadas).
+- De IniciaSalvaje: objeto (`ColocaObjeto`), sexo (`PkmnSetSex`), `ISEP` (1-102), shiny (1/800;
+  1/400 con el Amuleto Iris, menos con la Colonia y las cadenas de capturas), Intimidación (+nivel) y
+  Vista Lince (otro objeto).
+- Repelente, Flauta, habilidades que cambian la frecuencia (FrequencySalvajes: REPELEDOR/ATRACTOR),
+  hordas y la Colonia (raros y súper raros).
+- Los climas NIEBLA y TOR_ARENA, que también activan salvajes sin hierba (ActivacionSalvajes).
+- Unown 601-628: sin datos de especie propios (son formas de Unown 201).
+- Los sprites de batalla de las especies fuera de 1-151 no se extraen por defecto (`--pokemon`).
+
+## Diseño (implementado)
+
 
 Una tabla por mapa con varias subtablas, cada una con método, momento, condición y zona:
 

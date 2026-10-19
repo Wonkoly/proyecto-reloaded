@@ -27,6 +27,8 @@ static func registrar_todos(c: Node) -> void:
 	c.registrar("pos", "Mapa y posición del jugador", "pos", _pos.bind(c))
 	c.registrar("codigo", "Mete un código del original (como Shift+F3)", "codigo <texto>", _codigo.bind(c))
 	c.registrar("hora", "Fija la hora del juego (queda quieta) o vuelve a la del sistema", "hora <h>[:mm] | hora real", _hora)
+	c.registrar("encuentros_mapa", "Subtablas de encuentros del mapa, cuál vale ahora y la probabilidad de cada especie", "encuentros_mapa", _encuentros_mapa.bind(c))
+	c.registrar("simular_encuentros", "Sortea n veces en la posición actual y compara con los pesos esperados", "simular_encuentros <n>", _simular_encuentros.bind(c))
 	c.registrar("validar", "Revisa las salidas del mapa actual (destino, llegada, rebote, regreso)", "validar", _validar.bind(c))
 	c.registrar("ir", "Ruta más corta hasta un mapa; con tp va al primer mapa de la ruta", "ir <mapa> [tp]", _ir.bind(c),
 		func(i: int, t: String) -> PackedStringArray: return _filtrar(ConexionesDev.grafo().get("mapas", {}).keys(), t) if i == 0 else PackedStringArray())
@@ -69,6 +71,83 @@ static func _hora(args: PackedStringArray) -> String:
 		return "uso: hora <h>[:mm] | hora real"
 	Reloj.fijar(partes[0].to_int(), partes[1].to_int() if partes.size() > 1 else 0)
 	return "Hora fijada: %s" % Reloj.texto()
+
+
+const NOMBRES_METODO: PackedStringArray = ["hierba", "surf", "barro", "hierba especial", "caña vieja", "caña buena",
+	"supercaña", "hierba invisible", "lava"]
+const NOMBRES_HORARIO: PackedStringArray = ["siempre", "día", "noche"]
+
+
+static func _encuentros_mapa(_args: PackedStringArray, c: Node) -> String:
+	var j: Jugador = c.jugador()
+	if j == null:
+		return "Solo en un mapa del overworld"
+	var mapa: Mapa = c.get_tree().current_scene as Mapa
+	var tabla: TablaEncuentros = TablaEncuentros.de_mapa(mapa.nombre_original)
+	if tabla == null:
+		return "%s no tiene encuentros (no hay tabla en el original)" % mapa.nombre_original
+	var metodo: int = j.metodo_actual()
+	var actual: SubtablaEncuentros = j.subtabla_actual()
+	var lineas: PackedStringArray = ["%s, %s, aquí: %s" % [mapa.nombre_original, Reloj.texto(),
+		NOMBRES_METODO[metodo] if metodo >= 0 else "sin zona de encuentros"]]
+	# Por cada método, la que vale ahora en esta posición (aunque no se esté en esa zona).
+	var vigentes: Dictionary = {}
+	for m: int in NOMBRES_METODO.size():
+		var sub: SubtablaEncuentros = tabla.subtabla(m as SubtablaEncuentros.Metodo, Reloj.es_de_dia(), j.global_position, mapa.cumple)
+		if sub:
+			vigentes[sub] = true
+	for sub: SubtablaEncuentros in tabla.subtablas:
+		var marca: String = "[color=#8f8]► AHORA[/color] " if sub == actual else ("[color=#fd8]vale[/color] " if vigentes.has(sub) else "  ")
+		var extra: PackedStringArray = []
+		if sub.condicion != "":
+			extra.append("si " + sub.condicion)
+		if sub.zona.has_area():
+			extra.append("zona %s" % sub.zona)
+		if sub.codigo_muerto:
+			extra.append("código muerto del original")
+		lineas.append("%s%s, %s, 1/%d %s" % [marca, NOMBRES_METODO[sub.metodo], NOMBRES_HORARIO[sub.horario], sub.frecuencia, " ".join(extra)])
+		if vigentes.has(sub):
+			lineas.append("    " + _texto_probabilidades(sub.probabilidades(mapa.cumple)))
+	return "\n".join(lineas)
+
+
+static func _texto_probabilidades(prob: Dictionary) -> String:
+	var partes: PackedStringArray = []
+	for id: int in prob:
+		if id != 0:
+			var e: PokemonData = Datos.especie(id)
+			partes.append("%s %.1f%%" % [e.nombre if e else "#%d" % id, prob[id] * 100.0])
+	partes.append("sin encuentro %.1f%%" % (prob.get(0, 0.0) * 100.0))
+	return ", ".join(partes)
+
+
+static func _simular_encuentros(args: PackedStringArray, c: Node) -> String:
+	var j: Jugador = c.jugador()
+	if j == null:
+		return "Solo en un mapa del overworld"
+	var n: int = args[0].to_int() if args.size() > 0 and args[0].is_valid_int() else 1000
+	var mapa: Mapa = c.get_tree().current_scene as Mapa
+	var sub: SubtablaEncuentros = j.subtabla_actual()
+	if sub == null:
+		var tabla: TablaEncuentros = TablaEncuentros.de_mapa(mapa.nombre_original)
+		sub = tabla.subtabla(SubtablaEncuentros.Metodo.HIERBA, Reloj.es_de_dia(), j.global_position, mapa.cumple) if tabla else null
+		if sub == null:
+			return "No hay subtabla de encuentros aquí"
+	var cuenta: Dictionary = {}
+	for i: int in n:
+		var e: EncuentroSalvaje = sub.sortear(mapa.cumple)
+		var id: int = e.id_especie if e else 0
+		cuenta[id] = cuenta.get(id, 0) + 1
+	var esperado: Dictionary = sub.probabilidades(mapa.cumple)
+	var lineas: PackedStringArray = ["%d sorteos en %s (%s, %s):" % [n, NOMBRES_METODO[sub.metodo], NOMBRES_HORARIO[sub.horario], Reloj.texto()]]
+	var peor: float = 0.0
+	for id: int in esperado:
+		var obs: float = float(cuenta.get(id, 0)) / n
+		peor = maxf(peor, absf(obs - esperado[id]))
+		var e: PokemonData = Datos.especie(id) if id != 0 else null
+		lineas.append("  %-14s esperado %5.1f%%  salió %5.1f%%" % ["sin encuentro" if id == 0 else (e.nombre if e else "#%d" % id), esperado[id] * 100.0, obs * 100.0])
+	lineas.append("diferencia máxima: %.1f puntos" % (peor * 100.0))
+	return "\n".join(lineas)
 
 
 static func _validar(_args: PackedStringArray, c: Node) -> String:

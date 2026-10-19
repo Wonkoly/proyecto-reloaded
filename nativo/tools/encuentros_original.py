@@ -318,6 +318,11 @@ class Generador:
 
     def sin_hierba(self, ridx: int) -> list[tuple[float, float, float, float]]:
         ancho, alto = self.tamano(self.rooms[ridx])
+        # ActivacionSalvajes: con obj_cueva en la room (las 124 cuevas) hay salvajes en toda la room.
+        # NIEBLA y TOR_ARENA (los crea el clima, que no existe todavía) harían lo mismo.
+        room = json.loads((self.ext / "rooms" / f"{self.rooms[ridx]}.json").read_text())
+        if any(i["object"] == "obj_cueva" for i in room["instances"]):
+            return [(0.0, 0.0, float(ancho), float(alto))]
         out = []
         self.ctx.lugar = float(ridx)
         for rect, punto in _celdas(_de_la_room(self.sin_hierba_arbol, ridx), ancho, alto):

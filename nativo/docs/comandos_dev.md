@@ -30,6 +30,8 @@ Solo en builds de depuración (al correr desde el editor o con `--path`); en un 
 | `pos` | Mapa, posición y dirección del jugador |
 | `codigo <texto>` | Mete un código del original (ver `referencia_original.md`; también Shift+F3) |
 | `hora <h>[:mm]` / `hora real` | Fija la hora del juego (queda quieta) o vuelve a la del sistema (y a avanzar como el original: 30× en el mapa) |
+| `encuentros_mapa` | Las subtablas de encuentros del mapa: cuál vale ahora (► AHORA) y, para las vigentes, la probabilidad de cada especie y el % sin encuentro |
+| `simular_encuentros <n>` | Sortea n veces con la subtabla de la posición actual y compara con los pesos esperados |
 | `validar` | Revisa las salidas del mapa actual con la historia actual: destino, llegada caminable, rebote, regreso; cada una ok / error / requiere X / inactiva ahora |
 | `ir <mapa> [tp]` | Ruta con menos cambios de mapa desde el actual (de `data/extraido/conexiones.json`) con el tipo y requisitos de cada paso; con `tp` va al primer mapa de la ruta |
 

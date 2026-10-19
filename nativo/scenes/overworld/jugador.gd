@@ -15,6 +15,8 @@ const FPS_LENTO: float = 4.5
 const BORDE_VISTA: float = 120.0
 ## Capa de física de las zonas (hierba).
 const CAPA_ZONAS: int = 32
+## Paredes (capa 1) y agua (capa 7: hasta que haya Surf, el agua no se pisa).
+const CAPAS_CHOQUE: int = 1 | 64
 
 @export var sprite_abajo: SpriteOriginal
 @export var sprite_arriba: SpriteOriginal
@@ -52,7 +54,7 @@ func _ready() -> void:
 func _physics_process(delta: float) -> void:
 	if SceneManager.en_transicion:
 		return
-	collision_mask = 0 if GameState.dev_noclip else 1
+	collision_mask = 0 if GameState.dev_noclip else CAPAS_CHOQUE
 	var x: float = Input.get_axis("mover_izquierda", "mover_derecha")
 	var y: float = Input.get_axis("mover_arriba", "mover_abajo")
 	var dir: Vector2 = Vector2(signf(x) if absf(x) > 0.3 else 0.0, signf(y) if absf(y) > 0.3 else 0.0)
@@ -133,7 +135,7 @@ func _revisar_salidas() -> void:
 	var dentro: Array[Salida] = []
 	for nodo: Node in get_tree().get_nodes_in_group("salidas"):
 		var s: Salida = nodo as Salida
-		if s and s.overlaps_body(self):
+		if s and s.contiene(self):
 			dentro.append(s)
 	if _primer_frame:
 		_primer_frame = false
@@ -149,7 +151,7 @@ func _revisar_salidas() -> void:
 			Salida.Activacion.ABAJO:
 				activar = Input.is_action_pressed("mover_abajo")
 		if activar and SceneManager.existe_mapa(s.destino if not s.volver else GameState.mapa_salida):
-			if s.activacion == Salida.Activacion.ARRIBA:
+			if s.activacion == Salida.Activacion.ARRIBA and s.sprite:
 				s.abrir()
 			SceneManager.usar_salida(s, self)
 			break

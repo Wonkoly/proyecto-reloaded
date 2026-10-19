@@ -43,7 +43,8 @@ sobrescribe en la siguiente corrida.
 | musica | `--musica` | `gamedata/data/audio/musica/{pk,re}/*.ogg`, `Music_Intro_*.mp3` | `assets/extraido/audio/music/` |
 | gritos | `--gritos` | `gamedata/data/audio/grito/*.wav` | `assets/extraido/audio/sfx/gritos/` |
 | entrenadores | `--entrenadores` | `gamedata/data/trainer/*.png` | `assets/extraido/sprites/trainers/` |
-| mapas | (por defecto: Home_2, Home_1, PuebloAlba, Ruta_1) `--mapas-lista` | `extracted/rooms/*.json` + `CreateDoors`, `CreateNPC1..5`, `CambiosWorldRooms`, `CambiosSpecialRooms` | `assets/extraido/mapas/nombre.tscn` y `assets/extraido/sprites/overworld/` (también extrae los tilesets; `--todo` extrae los 717 mapas) |
+| mapas | (por defecto: Home_2, Home_1, PuebloAlba, Ruta_1) `--mapas-lista` | `extracted/rooms/*.json` + `CreateDoors`, `CreateNPC1..5`, `CreateDevices`, `SetOnlyWater`, `CambiosWorldRooms`, `CambiosSpecialRooms` | `assets/extraido/mapas/nombre.tscn` y `assets/extraido/sprites/overworld/` (también extrae los tilesets; `--todo` extrae los 717 mapas) |
+| conexiones | (por defecto) | lo mismo que mapas, para los 717 | `data/extraido/conexiones.json` (grafo) y `data/extraido/mapas_geometria.json` (ver Conexiones) |
 
 `NNNN` es el `id_original` del juego con 4 dígitos. Los nombres de archivo pasan a snake_case
 (`Nidoran♀` → `0029_nidoran_hembra.tres`, `PuebloAlba` → `pueblo_alba.tscn`).
@@ -122,20 +123,44 @@ Cada mapa es una escena con:
   teñidos, de tamaño no múltiplo de 16) quedan como `Sprite2D` sueltos (`tile_<id>`).
 - `Objetos` (y-sort, como el `depth = -y/100` del original): `Decorado` (árboles, edificios, flores,
   hierba al 75 %), NPCs (`npc.tscn`) y puertas. `BaseHierba` va debajo.
-- `Paredes`: un `StaticBody2D` con la caja de colisión de cada descendiente de `obj_pared`
-  (y `obj_bloqueado`), del `meta.json` del sprite o de su máscara.
+- `Paredes`: un `StaticBody2D` con la caja de colisión de cada descendiente de `obj_pared`, del
+  `meta.json` del sprite o de su máscara. `obj_bloqueado`/`obj_minibloqueado` no: el jugador no choca
+  con ellos (solo las rocas de Fuerza y los Pokémon del entorno).
+- `Agua`: `StaticBody2D` en la capa 7 con el agua (`obj_agua1` y derivados, incluido lo que crea
+  `SetOnlyWater`), unida en rectángulos; `obj_borradorDeAgua` quita el agua más cercana. Sin Surf no
+  se pisa.
 - `ZonaHierba`: un rectángulo por mata (`obj_hierba`).
 - `Saltos`: `Salto` (Area2D) por cada `obj_saltos`/`obj_saltos_I`/`obj_saltos_D` (colisión de un solo
   sentido que no deja subir el borde + empuje al cruzarlo) y por cada `obj_reversibleHorizontal`/
   `obj_reversibleVertical` (sin bloqueo: empuja a través en el sentido en que se llega).
-- `Salidas`: `Salida` (Area2D) por cada condición de `CambiosWorldRooms`/`CambiosSpecialRooms`
-  (bordes, escaleras) con destino fijo o relativo a la posición del jugador; las puertas de
-  `CreateDoors` se entran pulsando arriba y `obj_out` (salida de interiores) pulsando abajo.
-- NPCs y puertas salen de evaluar los bloques de la room en `CreateNPC1..5` y `CreateDoors`. Los `if`
-  que dependen de banderas de la historia (`(18).x`) no se deciden al extraer: se recorren las dos
-  ramas y cada nodo creado bajo una condición queda en el grupo `historia` con
-  `metadata/condicion` (expresión sobre `h` = `GameState.historia`, p. ej.
-  `h.get("fy_002", 0) == 0`). `Mapa` los activa o desactiva al cargar y cada vez que cambia una
+- `Salidas`: `Salida` (Area2D) con su `tipo`:
+  - `borde`/`escalera`: cada condición de `CambiosWorldRooms`/`CambiosSpecialRooms`, con destino fijo o
+    relativo a la posición del jugador; se activan con el punto del jugador (`por_punto`).
+  - `puerta` (`obj_door` y derivados, `obj_door_inv`) y `entrada` (`obj_NOdoor`): pulsando arriba.
+  - `salida_interior` (`obj_out`): pulsando abajo, vuelve a donde se entró (`regreso`).
+  - `salida_especial` (`obj_out_special`), `teletransporte` (`obj_teleport_suelo` y derivados,
+    `obj_TelePort`), `conducto` (`obj_conducto_tierra`), `brecha` (`obj_brechaTransporte`): al llegar.
+  - Cada una guarda qué hace con el regreso (`regreso`) y el `INDEX` que deja (`indice_lugar` =
+    `global.index_place`).
+- NPCs, puertas y dispositivos salen de evaluar los bloques de la room (`if(room=(N))`, también con
+  `||` o `&&`) en `CreateNPC1..5`, `CreateDoors`, `CreateDevices` y `SetOnlyWater`. Los `if` que
+  dependen de banderas de la historia (`(18).x`) o de `global.index_place` no se deciden al extraer:
+  se recorren las dos ramas y cada nodo creado bajo una condición queda en el grupo `historia` con
+  `metadata/condicion` (expresión sobre `h` = `GameState.historia` y `lugar` =
+  `GameState.indice_lugar`, p. ej. `h.get("fy_002", 0) == 0`). `Mapa` los activa o desactiva al cargar y cada vez que cambia una
   bandera. Los valores de propiedades dentro de esas ramas se toman con `ESTADO_HISTORIA` (el mismo
   estado inicial que `GameState.historia`: ya recibió su primer Pokémon y el móvil).
 - `Marcadores`: `Marker2D` para lo que todavía no se convierte (el script lo lista al terminar).
+
+## Conexiones
+La categoría `conexiones` (por defecto) arma el grafo de los 717 mapas (`tools/conexiones.py`) →
+`data/extraido/conexiones.json`, y guarda la geometría de cada mapa en `mapas_geometria.json`. Cada
+mapa se divide en zonas caminables (rejilla de 8 px con la máscara del protagonista); el agua, los
+obstáculos de MO y lo que tapa la historia son zonas que piden algo para entrar. Las zonas se unen por
+pasos, saltos (un sentido) y conexiones (cada salida, con su condición de la historia).
+
+    python3 tools/validar_conexiones.py                    # resumen + alcanzabilidad desde PuebloAlba
+    python3 tools/validar_conexiones.py --mapa CiudadSpica   # las salidas de un mapa
+    python3 tools/validar_conexiones.py --json r.json        # todo el detalle
+
+El reporte está en `docs/reporte_conexiones.md`. En el juego: comandos `validar` e `ir` de la consola dev.

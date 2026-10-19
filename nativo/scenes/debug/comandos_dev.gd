@@ -26,6 +26,9 @@ static func registrar_todos(c: Node) -> void:
 	c.registrar("energia_infinita", "Tu Pokémon tiene la energía siempre llena", "energia_infinita", _alternar.bind("dev_energia_infinita", "energía infinita"))
 	c.registrar("pos", "Mapa y posición del jugador", "pos", _pos.bind(c))
 	c.registrar("codigo", "Mete un código del original (como Shift+F3)", "codigo <texto>", _codigo.bind(c))
+	c.registrar("validar", "Revisa las salidas del mapa actual (destino, llegada, rebote, regreso)", "validar", _validar.bind(c))
+	c.registrar("ir", "Ruta más corta hasta un mapa; con tp va al primer mapa de la ruta", "ir <mapa> [tp]", _ir.bind(c),
+		func(i: int, t: String) -> PackedStringArray: return _filtrar(ConexionesDev.grafo().get("mapas", {}).keys(), t) if i == 0 else PackedStringArray())
 
 
 static func _ayuda(args: PackedStringArray, c: Node) -> String:
@@ -52,6 +55,45 @@ static func _tp(args: PackedStringArray, c: Node) -> String:
 	SceneManager.ir_a_mapa(mapa, pos)
 	c.call_deferred("cerrar")
 	return "→ %s %s" % [mapa, "" if pos == SceneManager.CENTRO else str(pos)]
+
+
+static func _validar(_args: PackedStringArray, c: Node) -> String:
+	var j: Jugador = c.jugador()
+	if j == null:
+		return "Solo en un mapa del overworld"
+	if ConexionesDev.grafo().is_empty():
+		return "Falta data/extraido/conexiones.json (python3 tools/extraer.py --solo conexiones)"
+	return ConexionesDev.validar(c.get_tree().current_scene as Mapa)
+
+
+static func _ir(args: PackedStringArray, c: Node) -> String:
+	if args.is_empty():
+		return "uso: ir <mapa> [tp]"
+	var destino: String = ConexionesDev.resolver(args[0])
+	if destino == "":
+		return "No hay un mapa \"%s\" en el grafo" % args[0]
+	var camino: Array[Dictionary] = ConexionesDev.ruta(GameState.mapa_actual, destino)
+	if camino.is_empty():
+		return "No hay ruta de %s a %s (o ya estás ahí)" % [GameState.mapa_actual, destino]
+	var lineas: PackedStringArray = ["%s → %s: %d pasos" % [GameState.mapa_actual, destino, camino.size()]]
+	for con: Dictionary in camino:
+		var req: Dictionary = con["requisitos"]
+		var pide: PackedStringArray = []
+		if str(req["historia"]) != "":
+			pide.append("historia")
+		for r: Variant in req["terreno"]:
+			if not str(r).begins_with("no:"):
+				pide.append(str(r))
+			elif not pide.has("historia"):
+				pide.append("historia")
+		lineas.append("  %s → %s por %s%s" % [con["origen"], con["destino"], con["salida"]["tipo"],
+			(" (requiere " + ", ".join(pide) + ")") if not pide.is_empty() else ""])
+	if args.size() > 1 and args[1].to_lower() == "tp":
+		var primero: Dictionary = camino[0]
+		SceneManager.ir_a_mapa(primero["destino"], ConexionesDev.llegada(primero))
+		c.call_deferred("cerrar")
+		lineas.append("→ %s" % primero["destino"])
+	return "\n".join(lineas)
 
 
 static func _listar_mapas(args: PackedStringArray) -> String:

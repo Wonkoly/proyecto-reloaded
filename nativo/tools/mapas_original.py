@@ -36,6 +36,23 @@ SUBIDA_SALTO = 16
 # Objetos que no son nada en el mapa: controladores, y obj_bloqueado (invisible; ProtaMovimiento no
 # choca con él: marca celdas de las guaridas/decoración).
 IGNORADOS = {"EXPLORER", "variables", "Control", "obj_bloqueado"}
+# global.index_place: el INDEX de la puerta por la que se entró (DoorEnter). Las salidas y NPCs de los
+# interiores compartidos dependen de él: en las condiciones se escribe "lugar" (GameState.indice_lugar).
+LUGAR = ("campo", ("id", "global"), "index_place")
+# Capa 7: el agua (aparte de las paredes para que Surf pueda dejar de chocar con ella).
+CAPA_AGUA = 64
+# Qué hace falta para pasar por cada tipo de agua (la primera clase que coincide) y por los
+# obstáculos que se quitan con un movimiento (siguen siendo paredes en el mapa).
+AGUA = [("obj_lava", "lava"), ("obj_lava_undertiles", "lava"), ("obj_agua1", "surf")]
+OBSTACULOS = [("obj_arbusto", "corte"), ("obj_roca_redonda", "fuerza"), ("obj_roca", "golpe_roca"),
+              ("obj_torbellino", "torbellino"), ("obj_rocatrepable", "trepa")]
+# Zonas sin colisión que piden algo para cruzarlas (ProtaStartsCascada: Surf + Cascada para subir).
+TERRENO = {o: "surf+cascada" for o in ("obj_cascada", "obj_cascadaPlata", "obj_cascadaVerde", "obj_cascadaLeon",
+                                         "obj_cascadaSpec", "obj_cascadaLunar", "obj_cascadaLunarXL",
+                                         "obj_cascadaCristalino")}
+# obj_out en estas rooms vuelve a una posición fija y no a outx/outy (OutDoorStepActions).
+VOLVER_FIJO = {78: (624, 180), 441: (313, 432), 445: (840, 408), 450: (1368, 472), 510: (416, 456),
+               541: (360, 952), 546: (400, 624)}
 
 
 class Juego:
@@ -106,6 +123,9 @@ def _menciona_room(cond, room: int) -> bool:
         return cond[3] == ("num", str(room))
     if cond[0] == "bin" and cond[1] in ("||", "or"):
         return _menciona_room(cond[2], room) or _menciona_room(cond[3], room)
+    if cond[0] == "bin" and cond[1] in ("&&", "and"):
+        # if(room=(N) && global.index_place=0): el resto de la condición la decide el Evaluador.
+        return _menciona_room(cond[2], room) or _menciona_room(cond[3], room)
     return False
 
 
@@ -116,9 +136,12 @@ class Evaluador:
     objetos) vale lo inicial (0). Los valores de propiedades y variables dentro de ramas de la historia
     se toman como en ESTADO_HISTORIA."""
 
-    def __init__(self, juego: Juego, room: int):
+    def __init__(self, juego: Juego, room: int, ancho: int = 0, alto: int = 0, instancias_room: list | None = None):
         self.juego = juego
         self.room = room
+        self.ancho, self.alto = ancho, alto
+        # Para instance_position (SetOnlyWater no pone agua sobre la playa).
+        self.instancias_room = instancias_room or []
         self.instancias: list[dict] = []
         self.locales: dict[str, object] = {}
         # Condiciones de la historia de lo que se ejecuta ahora (se cumplen todas).
@@ -162,6 +185,10 @@ class Evaluador:
             return f'h.get("{e[2]}", 0)'
         if k == "indice" and e[1][0] == "campo" and e[1][1] == ("num", "18") and e[2][0] == "num":
             return f'h.get("{e[1][2]}_{int(float(e[2][1]))}", 0)'
+        if e == LUGAR:
+            return "lugar"
+        if e == ("id", "room"):
+            return str(self.room)
         if k == "campo" and (e[1][0] == "num" or e[1] == ("id", "global")):
             return "0"
         if k == "un":
@@ -204,10 +231,23 @@ class Evaluador:
                 self.ejecutar(i[3])
         elif k == "exit":
             raise _Salir()
+        elif k == "for":
+            self.ejecutar(i[1])
+            for _ in range(100000):
+                try:
+                    if not self.valor(i[2]):
+                        break
+                except _Desconocido:
+                    break
+                self.ejecutar(i[4])
+                self.ejecutar(i[3])
         elif k == "asig":
             try:
                 v = self.valor(i[3])
-            except _Desconocido:
+                if i[2] in ("+=", "-=", "*=") and i[1][0] == "id":
+                    actual = self.valor(i[1])
+                    v = actual + v if i[2] == "+=" else actual - v if i[2] == "-=" else actual * v
+            except (_Desconocido, TypeError):
                 return
             lv = i[1]
             if lv[0] == "id":
@@ -238,6 +278,8 @@ class Evaluador:
                 return float(c) if not isinstance(c, str) else 3.14159
             if e[1] == "room":
                 return float(self.room)
+            if e[1] in ("room_width", "room_height") and self.ancho:
+                return float(self.ancho if e[1] == "room_width" else self.alto)
             if e[1] in self.locales:
                 return self.locales[e[1]]
             raise _Desconocido(e[1])
@@ -294,6 +336,19 @@ class Evaluador:
                     elif self.concreto or self._del_contexto(inst):
                         inst["destruida"] = True
                 return 0.0
+            if nombre == "create_water_rectangle":
+                # for(i=a; i*16<=c; i+=1) for(j=b; j*16<=d; j+=1) instance_create(i*16, j*16, obj)
+                a, b, c, d, obj = (self.valor(x) for x in args)
+                for ci in range(int(a), int(c // 16) + 1):
+                    for cj in range(int(b), int(d // 16) + 1):
+                        self.instancias.append({"objeto": self.juego.objetos[int(obj)], "x": ci * 16.0, "y": cj * 16.0,
+                                                "condicion": list(self.condicion), "destruir_si": []})
+                return 0.0
+            if nombre in ("instance_position", "position_meeting"):
+                x, y, obj = (self.valor(a) for a in args)
+                nombre_obj = self.juego.objetos[int(obj)] if isinstance(obj, float) else None
+                return float(any(self.juego.es(i["object"], nombre_obj) and i["x"] <= x < i["x"] + 16 and i["y"] <= y < i["y"] + 16
+                                 for i in self.instancias_room))
             if nombre == "TextDialog":
                 return {"dialogo": int(self.valor(args[0]))}
             if nombre in ("TextoPar1", "TextoPar2", "TextoPar3"):
@@ -306,7 +361,7 @@ class Evaluador:
 
 def _usa_historia(e) -> bool:
     if isinstance(e, tuple):
-        if e[:2] == ("campo", ("num", "18")):
+        if e[:2] == ("campo", ("num", "18")) or e == LUGAR:
             return True
         return any(_usa_historia(x) for x in e[1:] if isinstance(x, (tuple, list)))
     if isinstance(e, list):
@@ -323,14 +378,15 @@ def condicion_final(inst: dict) -> str:
 
 
 def activa_al_inicio(condicion: str) -> bool:
-    return not condicion or bool(eval(condicion, {"__builtins__": {}}, {"h": dict(ESTADO_HISTORIA)}))
+    return not condicion or bool(eval(condicion, {"__builtins__": {}}, {"h": dict(ESTADO_HISTORIA), "lugar": 0}))
 
 
-def instancias_por_script(juego: Juego, room: int, scripts: list[str]) -> list[dict]:
+def instancias_por_script(juego: Juego, room: int, scripts: list[str], ancho: int = 0, alto: int = 0,
+                          instancias_room: list | None = None) -> list[dict]:
     out = []
     for nombre in scripts:
         for bloque in bloques_room(juego.arbol(nombre), room):
-            ev = Evaluador(juego, room)
+            ev = Evaluador(juego, room, ancho, alto, instancias_room)
             ev.correr(bloque)
             out += [i for i in ev.instancias if not i.get("destruida")]
     return out
@@ -404,7 +460,8 @@ def _salida(inst, ancho: int, alto: int, juego: Juego) -> dict | None:
             asig[a[1][2]] = a[3]
     if "lugar" not in asig or asig["lugar"][0] != "num":
         return None
-    sal = {"rect": rect, "destino": juego.rooms[int(asig["lugar"][1])]}
+    sal = {"rect": rect, "destino": juego.rooms[int(asig["lugar"][1])],
+           "indice": int(float(asig["index_place"][1])) if asig.get("index_place", ("",))[0] == "num" else -1}
     for eje, clave in (("x", "xx"), ("y", "yy")):
         v = _coordenada(asig.get(clave))
         if v is None:
@@ -588,36 +645,50 @@ def tiles(room: dict, tilesets: dict, e: Escena, snake, arriba: bool) -> None:
 
 
 def escena_mapa(room: dict, juego: Juego, tilesets: dict, sprite_tres, snake, res,
-                tabla_npc: dict) -> tuple[str, list[str]]:
-    """Devuelve (texto .tscn, objetos no convertidos). sprite_tres(nombre) → ruta res:// del SpriteOriginal."""
+                tabla_npc: dict) -> tuple[str, list[str], dict]:
+    """Devuelve (texto .tscn, objetos no convertidos, geometría para el grafo de conexiones).
+    sprite_tres(nombre) → ruta res:// del SpriteOriginal."""
     ridx = juego.rooms.index(room["name"])
+    ancho, alto = room["width"], room["height"]
     e = Escena(res)
     no_convertidos: list[str] = []
+    # Geometría (rectángulos x0, y0, x1, y1 en px del mapa) para tools/conexiones.py.
+    geo: dict = {"ancho": ancho, "alto": alto, "paredes": [], "agua": [], "obstaculos": [], "saltos": [],
+                 "salidas": [], "terreno": []}
     e.nodo(snake(room["name"]), "Node2D", None, [
         f"script = {e.ref('Script', 'res://scenes/overworld/mapa.gd')}",
         f"nombre_original = {gd_str(room['name'])}",
-        f"tamano = Vector2i({room['width']}, {room['height']})"])
+        f"tamano = Vector2i({ancho}, {alto})"])
     fondos(room, tilesets, e)
     tiles(room, tilesets, e, snake, arriba=False)
     e.nodo("BaseHierba", "Node2D", ".", [])
     e.nodo("Objetos", "Node2D", ".", ["y_sort_enabled = true"])
     tiles(room, tilesets, e, snake, arriba=True)
     e.nodo("Paredes", "StaticBody2D", ".", [f"collision_layer = {CAPA_PAREDES}", "collision_mask = 0"])
+    e.nodo("Agua", "StaticBody2D", ".", [f"collision_layer = {CAPA_AGUA}", "collision_mask = 0"])
     e.nodo("ZonaHierba", "Area2D", ".", [
         f"script = {e.ref('Script', 'res://scenes/overworld/zona_hierba.gd')}", f"collision_layer = {CAPA_ZONAS}",
         "collision_mask = 0", "monitoring = false"], grupos=["zona_hierba"])
     e.nodo("Salidas", "Node2D", ".", [])
     e.nodo("Saltos", "Node2D", ".", [])
     e.nodo("Marcadores", "Node2D", ".", [])
-    n_pared = n_hierba = 0
+    n_pared = n_hierba = n_salida = 0
+    agua_fija: list[tuple] = []
 
-    def pared(meta, x, y, sx=1.0, sy=1.0):
+    def rect_de(c) -> list[float]:
+        return [c[0] - c[2] / 2, c[1] - c[3] / 2, c[0] + c[2] / 2, c[1] + c[3] / 2]
+
+    def pared(meta, x, y, sx=1.0, sy=1.0, requisito=None, obj=""):
         nonlocal n_pared
         c = caja(meta, x, y, sx, sy) if meta else None
         if c:
             n_pared += 1
             e.nodo(f"pared_{n_pared}", "CollisionShape2D", "Paredes", [
                 f"position = Vector2({f(c[0])}, {f(c[1])})", f"shape = {e.rect(c[2], c[3])}"])
+            if requisito:
+                geo["obstaculos"].append(rect_de(c) + [requisito, e.condicion, obj])
+            else:
+                geo["paredes"].append(rect_de(c) + [e.condicion, obj])
 
     def decorado(nombre, sprite, x, y, sx=1.0, sy=1.0, velocidad=0.0, alfa=1.0, padre="Objetos"):
         props = [f"position = Vector2({f(x)}, {f(y)})", f"script = {e.ref('Script', 'res://scenes/overworld/decorado.gd')}",
@@ -630,13 +701,54 @@ def escena_mapa(room: dict, juego: Juego, tilesets: dict, sprite_tres, snake, re
             props.append(f"escala = Vector2({f(sx)}, {f(sy)})")
         e.nodo(nombre, "Node2D", padre, props)
 
+    def salida(nombre: str, padre: str, x: float, y: float, rect: list[float], destino: str, llegada: tuple,
+               tipo: str, activacion: int = 0, regreso: int = 0, por_punto: bool = False,
+               relativa: tuple = (False, False), volver: bool = False, sprite: str | None = None,
+               volver_posicion: tuple | None = None, indice: int = -1) -> None:
+        """Una Salida (Area2D) en (x, y) que se activa en rect (coordenadas del mapa)."""
+        props = [f"position = Vector2({f(x)}, {f(y)})", f"script = {e.ref('Script', 'res://scenes/overworld/salida.gd')}",
+                 "collision_layer = 0", f"collision_mask = {CAPA_JUGADOR}", "monitorable = false",
+                 f"destino = {gd_str(destino)}", f"destino_posicion = Vector2({f(llegada[0])}, {f(llegada[1])})",
+                 f"tipo = {gd_str(tipo)}"]
+        for prop, valor, defecto in (("relativa_x", relativa[0], False), ("relativa_y", relativa[1], False),
+                                     ("activacion", activacion, 0), ("regreso", regreso, 0),
+                                     ("por_punto", por_punto, False), ("volver", volver, False)):
+            if valor != defecto:
+                props.append(f"{prop} = {('true' if valor else 'false') if isinstance(valor, bool) else valor}")
+        if indice >= 0:
+            props.append(f"indice_lugar = {indice}")
+        if volver_posicion:
+            props.append(f"volver_posicion = Vector2({f(volver_posicion[0])}, {f(volver_posicion[1])})")
+        if sprite:
+            props.append(f"sprite = {e.ref('Resource', sprite_tres(sprite))}")
+        e.nodo(nombre, "Area2D", padre, props)
+        e.nodo("CollisionShape2D", "CollisionShape2D", f"{padre}/{nombre}", [
+            f"position = Vector2({f((rect[0] + rect[2]) / 2 - x)}, {f((rect[1] + rect[3]) / 2 - y)})",
+            f"shape = {e.rect(rect[2] - rect[0], rect[3] - rect[1])}"])
+        geo["salidas"].append({
+            "nodo": nombre, "tipo": tipo, "x": x, "y": y, "rect": [round(v, 2) for v in rect], "destino": destino,
+            "llegada": [llegada[0], llegada[1]], "relativa": list(relativa), "activacion": activacion,
+            "regreso": regreso, "por_punto": por_punto, "volver": volver, "condicion": e.condicion, "indice": indice,
+            "volver_posicion": list(volver_posicion) if volver_posicion else None})
+
+    def room_de(v) -> str:
+        return juego.rooms[int(v)] if isinstance(v, (int, float)) and 0 <= int(v) < len(juego.rooms) else ""
+
     instancias = [dict(i, origen="room") for i in room["instances"]]
+    scripts = ["CreateDoors", "CreateNPC1", "CreateNPC2", "CreateNPC3", "CreateNPC4", "CreateNPC5", "CreateDevices"]
+    if any(i["object"] == "ONLYWATER" for i in room["instances"]):
+        scripts.append("SetOnlyWater")
     instancias += [dict(i, origen="script", xscale=1.0, yscale=1.0, id=f"s{k}")
-                   for k, i in enumerate(instancias_por_script(juego, ridx, ["CreateDoors", "CreateNPC1", "CreateNPC2",
-                                                                               "CreateNPC3", "CreateNPC4", "CreateNPC5"]))]
+                   for k, i in enumerate(instancias_por_script(juego, ridx, scripts, ancho, alto, room["instances"]))]
+    # obj_borradorDeAgua (BorradorAguaActua): borra el agua más cercana (puentes, muelles).
+    aguas = [i for i in instancias if juego.es(i.get("objeto") or i.get("object"), "obj_agua1")]
+    for b in [i for i in instancias if (i.get("objeto") or i.get("object")) == "obj_borradorDeAgua"]:
+        vivas = [a for a in aguas if not a.get("borrada")]
+        if vivas:
+            min(vivas, key=lambda a: (a["x"] - b["x"]) ** 2 + (a["y"] - b["y"]) ** 2)["borrada"] = True
     for inst in instancias:
         obj = inst["objeto"] if "objeto" in inst else inst["object"]
-        if not obj or obj in IGNORADOS:
+        if not obj or obj in IGNORADOS or juego.es(obj, "obj_bloqueado") or obj in ("obj_borradorDeAgua", "ONLYWATER"):
             continue
         datos = juego.objeto(obj)
         sprite = datos.get("sprite")
@@ -645,25 +757,57 @@ def escena_mapa(room: dict, juego: Juego, tilesets: dict, sprite_tres, snake, re
         sx, sy = float(inst.get("xscale", 1.0)), float(inst.get("yscale", 1.0))
         nombre = f"{obj}_{inst['id']}"
         e.condicion = condicion_final(inst)
+        c_rel = caja(meta, 0, 0, sx, sy) if meta else (8, 8, 16, 16)
+        rect_obj = [x + c_rel[0] - c_rel[2] / 2, y + c_rel[1] - c_rel[3] / 2, x + c_rel[0] + c_rel[2] / 2, y + c_rel[1] + c_rel[3] / 2]
         if juego.es(obj, "obj_door"):
-            props = [f"position = Vector2({f(x)}, {f(y)})", f"script = {e.ref('Script', 'res://scenes/overworld/salida.gd')}",
-                     "collision_layer = 0", f"collision_mask = {CAPA_JUGADOR}", "monitorable = false",
-                     f"destino = {gd_str(juego.rooms[int(inst.get('ROOM', -1))] if inst.get('ROOM', -1) >= 0 else '')}",
-                     f"destino_posicion = Vector2({f(inst.get('X', 0))}, {f(inst.get('Y', 0))})", "activacion = 1"]
+            # DoorStepActions/DoorEnter: pulsando arriba con la máscara encima; guarda el regreso.
+            destino = room_de(inst.get("ROOM", -1))
+            salida(nombre, "Objetos", x, y, rect_obj, destino, (inst.get("X", 0), inst.get("Y", 0)), "puerta",
+                   activacion=1, regreso=1, sprite=sprite, indice=int(inst.get("INDEX", 0)))
+        elif obj == "obj_door_inv":
+            # Puerta invisible (InvisibleDoorStepActions): igual que obj_door; arriba=true salvo que se cambie.
+            salida(nombre, "Salidas", x, y, rect_obj, room_de(inst.get("ROOM", -1)), (inst.get("X", 0), inst.get("Y", 0)),
+                   "puerta", activacion=1 if inst.get("arriba", True) else 0, regreso=1, indice=int(inst.get("INDEX", 0)))
+        elif obj == "obj_NOdoor":
+            # Entrada sin puerta (NoDoorStepActions/NoDoorEnter): pulsando arriba (o abajo) con la máscara
+            # encima; entrada=true guarda el regreso si no había uno, salida=true lo borra.
+            arriba, abajo = inst.get("arriba", True), inst.get("abajo", False)
+            regreso = 3 if inst.get("salida", False) else 2 if inst.get("entrada", True) else 0
+            salida(nombre, "Salidas", x, y, rect_obj, room_de(inst.get("ROOM", -1)), (inst.get("X", -1), inst.get("Y", -1)),
+                   "entrada", activacion=1 if arriba else 2 if abajo else 0, regreso=regreso,
+                   indice=int(inst.get("INDEX", 0)))
+        elif obj == "obj_out_special":
+            # OutSpecialEnter: al tocarla, a roomOUT (xOUT, yOUT); borra el regreso.
+            salida(nombre, "Salidas", x, y, rect_obj, room_de(inst.get("roomOUT", -1)),
+                   (inst.get("xOUT", -1), inst.get("yOUT", -1)), "salida_especial", regreso=3)
+        elif juego.es(obj, "obj_teleport_suelo"):
+            # TeleportSueloStepActions: el punto del jugador en (x+2..x+14, y-6..y+2); DST_ROOM = esta room.
+            destino = room_de(inst.get("DST_ROOM", ridx))
+            salida(nombre, "Salidas", x, y, [x + 2, y - 6, x + 14, y + 2], destino,
+                   (inst.get("DST_X", -1), inst.get("DST_Y", -1)), "teletransporte", por_punto=True)
+            if datos.get("visible") and sprite:
+                decorado(f"{nombre}_sprite", sprite, x, y)
+        elif obj == "obj_TelePort":
+            # TeleportDeviceCheckProta: con la máscara encima 60 pasos (2 s) lleva a XX, YY de ROOM (esta room).
+            # En nativo se activa al llegar, sin la espera.
+            salida(nombre, "Salidas", x, y, rect_obj, room_de(inst.get("ROOM", ridx)), (inst.get("XX", 0), inst.get("YY", 0)),
+                   "teletransporte")
+        elif obj == "obj_conducto_tierra":
+            # ConductoTierraStepActions: el punto del jugador en (x+4..x+12, y-8..y+8).
+            salida(nombre, "Salidas", x, y, [x + 4, y - 8, x + 12, y + 8], room_de(inst.get("D_ROOM", -1)),
+                   (inst.get("D_X", -1), inst.get("D_Y", -1)), "conducto", por_punto=True)
             if sprite:
-                props.append(f"sprite = {e.ref('Resource', sprite_tres(sprite))}")
-            e.nodo(nombre, "Area2D", "Objetos", props)
-            c = caja(juego.meta(sprite), 0, 0, 1, 1) if juego.meta(sprite) else (0, 0, 16, 16)
-            e.nodo("CollisionShape2D", "CollisionShape2D", f"Objetos/{nombre}", [
-                f"position = Vector2({f(c[0])}, {f(c[1])})", f"shape = {e.rect(c[2], c[3])}"])
+                decorado(f"{nombre}_sprite", sprite, x, y)
+        elif obj == "obj_brechaTransporte":
+            # BrechaTransporteStepActions: el jugador a 12 px o menos.
+            salida(nombre, "Salidas", x, y, [x - 12, y - 12, x + 12, y + 12], room_de(inst.get("ROOM", -1)),
+                   (inst.get("X", -1), inst.get("Y", -1)), "brecha", por_punto=True)
+            if sprite:
+                decorado(f"{nombre}_sprite", sprite, x, y, 0.7, 0.7, alfa=0.6)
         elif obj == "obj_out":
-            e.nodo(nombre, "Area2D", "Objetos", [
-                f"position = Vector2({f(x)}, {f(y)})", f"script = {e.ref('Script', 'res://scenes/overworld/salida.gd')}",
-                "collision_layer = 0", f"collision_mask = {CAPA_JUGADOR}", "monitorable = false",
-                "activacion = 2", "volver = true"])
-            c = caja(meta, 0, 0, sx, sy) if meta else (0, 0, 16, 16)
-            e.nodo("CollisionShape2D", "CollisionShape2D", f"Objetos/{nombre}", [
-                f"position = Vector2({f(c[0])}, {f(c[1])})", f"shape = {e.rect(c[2], c[3])}"])
+            fija = VOLVER_FIJO.get(ridx)
+            salida(nombre, "Objetos", x, y, rect_obj if meta else [x, y, x + 16, y + 16], "", (0, 0), "salida_interior",
+                   activacion=2, volver=True, volver_posicion=fija)
             if sprite:
                 decorado(f"{nombre}_sprite", sprite, x, y)
         elif juego.es(obj, "obj_people"):
@@ -684,6 +828,8 @@ def escena_mapa(room: dict, juego: Juego, tilesets: dict, sprite_tres, snake, re
             if meta and (c := caja(meta, 0, 0, 1, 1)):
                 e.nodo("CollisionShape2D", "CollisionShape2D", f"Objetos/{nombre}", [
                     f"position = Vector2({f(c[0])}, {f(c[1])})", f"shape = {e.rect(c[2], c[3])}"])
+                if not inst.get("MOVE"):  # los que caminan no tapan un paso para siempre
+                    geo["paredes"].append([x + c[0] - c[2] / 2, y + c[1] - c[3] / 2, x + c[0] + c[2] / 2, y + c[1] + c[3] / 2, e.condicion, obj])
         elif juego.es(obj, "obj_saltos") and meta:
             clase = next(k for k in SALTOS if juego.es(obj, k))
             (dx, dy), rot = SALTOS[clase]
@@ -699,6 +845,7 @@ def escena_mapa(room: dict, juego: Juego, tilesets: dict, sprite_tres, snake, re
             e.nodo("CollisionShape2D", "CollisionShape2D", f"Saltos/{nombre}/Bloqueo", [
                 f"position = Vector2({f(c[0])}, {f(c[1] - subida)})", f"rotation = {rot}",
                 f"shape = {e.rect(c[2], c[3]) if dy else e.rect(c[3], c[2])}", "one_way_collision = true"])
+            geo["saltos"].append(rect_de((x + c[0], y + c[1], c[2], c[3])) + [dx, dy, e.condicion])
         elif obj in ("obj_reversibleHorizontal", "obj_reversibleVertical") and meta:
             c = caja(meta, 0, 0, sx, sy)
             e.nodo(nombre, "Area2D", "Saltos", [
@@ -707,6 +854,25 @@ def escena_mapa(room: dict, juego: Juego, tilesets: dict, sprite_tres, snake, re
                 f"reversible = {1 if obj == 'obj_reversibleHorizontal' else 2}"])
             e.nodo("CollisionShape2D", "CollisionShape2D", f"Saltos/{nombre}", [
                 f"position = Vector2({f(c[0])}, {f(c[1])})", f"shape = {e.rect(c[2], c[3])}"])
+        elif juego.es(obj, "obj_agua1"):
+            # Agua (ProtaMovimiento: place_meeting con obj_agua1 y derivados): no se pisa sin Surf.
+            if not inst.get("borrada"):
+                c = caja(meta, x, y, sx, sy) if meta else (x + 8, y + 8, 16, 16)
+                requisito = next((r for base, r in AGUA if juego.es(obj, base)), "surf")
+                if e.condicion:
+                    n_pared += 1
+                    e.nodo(f"agua_{n_pared}", "CollisionShape2D", "Agua", [
+                        f"position = Vector2({f(c[0])}, {f(c[1])})", f"shape = {e.rect(c[2], c[3])}"])
+                else:
+                    agua_fija.append((*rect_de(c), requisito))
+                geo["agua"].append(rect_de(c) + [requisito, e.condicion])
+                if datos.get("visible") and sprite:
+                    decorado(nombre, sprite, x, y, sx, sy)
+        elif obj in TERRENO and meta:
+            # Cascadas: sin colisión en el mapa, pero para subirlas hace falta Surf y Cascada.
+            geo["terreno"].append(rect_de(caja(meta, x, y, sx, sy)) + [TERRENO[obj], e.condicion])
+            if datos.get("visible") and sprite:
+                decorado(nombre, sprite, x, y, sx, sy, 0.2)
         elif juego.es(obj, "obj_hierba"):
             n_hierba += 1
             decorado(f"base_{n_hierba}", "spr_bck_hierba", x - 8, y - 8, padre="BaseHierba")
@@ -715,7 +881,7 @@ def escena_mapa(room: dict, juego: Juego, tilesets: dict, sprite_tres, snake, re
                 e.nodo(f"hierba_{n_hierba}", "CollisionShape2D", "ZonaHierba", [
                     f"position = Vector2({f(c[0])}, {f(c[1])})", f"shape = {e.rect(c[2], c[3])}"])
         elif juego.es(obj, "obj_pared"):
-            pared(meta, x, y, sx, sy)
+            pared(meta, x, y, sx, sy, next((r for base, r in OBSTACULOS if juego.es(obj, base)), None), obj)
             if datos.get("visible") and sprite:
                 decorado(nombre, sprite, x, y, sx, sy)
         elif datos.get("visible") and sprite:
@@ -726,18 +892,41 @@ def escena_mapa(room: dict, juego: Juego, tilesets: dict, sprite_tres, snake, re
             e.nodo(nombre, "Marker2D", "Marcadores", [f"position = Vector2({f(x)}, {f(y)})", f"metadata/objeto = {gd_str(obj)}"])
 
     e.condicion = ""
-    salidas, raras = salidas_room(juego, ridx, room["width"], room["height"])
-    for k, s in enumerate(salidas, start=1):
+    for k, (x0, y0, x1, y1) in enumerate(unir_rectangulos([r[:4] for r in agua_fija]), start=1):
+        e.nodo(f"agua_fija_{k}", "CollisionShape2D", "Agua", [
+            f"position = Vector2({f((x0 + x1) / 2)}, {f((y0 + y1) / 2)})", f"shape = {e.rect(x1 - x0, y1 - y0)}"])
+    salidas, raras = salidas_room(juego, ridx, ancho, alto)
+    for s in salidas:
         r = s["rect"]
-        nombre = f"salida_{k}_{snake(s['destino'])}"
-        e.nodo(nombre, "Area2D", "Salidas", [
-            f"script = {e.ref('Script', 'res://scenes/overworld/salida.gd')}", "collision_layer = 0",
-            f"collision_mask = {CAPA_JUGADOR}", "monitorable = false", f"destino = {gd_str(s['destino'])}",
-            f"destino_posicion = Vector2({f(s['x'])}, {f(s['y'])})",
-            f"relativa_x = {'true' if s['relativa_x'] else 'false'}", f"relativa_y = {'true' if s['relativa_y'] else 'false'}"])
-        e.nodo("CollisionShape2D", "CollisionShape2D", f"Salidas/{nombre}", [
-            f"position = Vector2({f((r['x0'] + r['x1']) / 2)}, {f((r['y0'] + r['y1']) / 2)})",
-            f"shape = {e.rect(r['x1'] - r['x0'], r['y1'] - r['y0'])}"])
+        n_salida += 1
+        rect = [r["x0"], r["y0"], r["x1"], r["y1"]]
+        borde = rect[0] < 0 or rect[1] < 0 or rect[2] > ancho or rect[3] > alto
+        salida(f"salida_{n_salida}_{snake(s['destino'])}", "Salidas", 0, 0, rect, s["destino"], (s["x"], s["y"]),
+               "borde" if borde else "escalera", por_punto=True, relativa=(s["relativa_x"], s["relativa_y"]),
+               indice=s["indice"])
     if raras:
         no_convertidos.append(f"{raras} salidas con condiciones de la historia")
-    return e.texto(), no_convertidos
+    return e.texto(), no_convertidos, geo
+
+
+def unir_rectangulos(rects: list) -> list[tuple]:
+    """Junta rectángulos que se tocan (el agua son miles de celdas de 16×16): primero en filas, luego
+    las filas iguales que se apilan."""
+    filas: list[list[float]] = []
+    for x0, y0, x1, y1 in sorted(set(map(tuple, rects)), key=lambda r: (r[1], r[3], r[0])):
+        u = filas[-1] if filas else None
+        if u and u[1] == y0 and u[3] == y1 and x0 <= u[2]:
+            u[2] = max(u[2], x1)
+        else:
+            filas.append([x0, y0, x1, y1])
+    out: list[list[float]] = []
+    abiertas: dict[tuple, list[float]] = {}
+    for x0, y0, x1, y1 in sorted(filas, key=lambda r: (r[1], r[0])):
+        u = abiertas.get((x0, x1))
+        if u and u[3] == y0:
+            u[3] = y1
+        else:
+            u = [x0, y0, x1, y1]
+            abiertas[(x0, x1)] = u
+            out.append(u)
+    return [tuple(r) for r in out]

@@ -52,13 +52,27 @@ func ir_a_mapa(nombre_original: String, posicion: Vector2, mira: int = -1) -> vo
 ## Usa una salida del mapa actual desde la posición del jugador.
 func usar_salida(salida: Salida, jugador: Jugador) -> void:
 	if salida.volver:
+		# OutDoorStepActions: a global.room_out (outx, outy o la posición fija de esa room) y se borra.
 		if GameState.mapa_salida != "":
-			ir_a_mapa(GameState.mapa_salida, GameState.posicion_salida, jugador.mira)
+			var mapa: String = GameState.mapa_salida
+			var pos: Vector2 = salida.volver_posicion if salida.volver_posicion != Vector2(-1, -1) else GameState.posicion_salida
+			GameState.mapa_salida = ""
+			ir_a_mapa(mapa, pos, jugador.mira)
 		return
-	if salida.activacion == Salida.Activacion.ARRIBA:
-		# Al salir del interior se vuelve frente a la puerta (DoorEnter: outx = puerta, outy = jugador).
-		GameState.mapa_salida = GameState.mapa_actual
-		GameState.posicion_salida = Vector2(salida.global_position.x, jugador.global_position.y)
+	# DoorEnter / NoDoorEnter: outx = la puerta, outy = el jugador.
+	var aqui := Vector2(salida.global_position.x, jugador.global_position.y)
+	match salida.regreso:
+		Salida.Regreso.GUARDAR:
+			GameState.mapa_salida = GameState.mapa_actual
+			GameState.posicion_salida = aqui
+		Salida.Regreso.GUARDAR_SI_VACIO:
+			if GameState.mapa_salida == "":
+				GameState.mapa_salida = GameState.mapa_actual
+				GameState.posicion_salida = aqui
+		Salida.Regreso.BORRAR:
+			GameState.mapa_salida = ""
+	if salida.indice_lugar >= 0:
+		GameState.indice_lugar = salida.indice_lugar
 	ir_a_mapa(salida.destino, salida.posicion_destino(jugador.global_position), jugador.mira)
 
 

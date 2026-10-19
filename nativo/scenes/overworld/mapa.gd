@@ -23,17 +23,17 @@ func _ready() -> void:
 func aplicar_historia() -> void:
 	for n: Node in find_children("*", "", true, false):
 		if n.is_in_group("historia"):
-			_activar(n, _cumple(str(n.get_meta("condicion", ""))))
+			_activar(n, cumple(str(n.get_meta("condicion", ""))))
 
 
-func _cumple(condicion: String) -> bool:
+func cumple(condicion: String) -> bool:
 	if condicion == "":
 		return true
 	var e := Expression.new()
-	if e.parse(condicion, ["h"]) != OK:
+	if e.parse(condicion, ["h", "lugar"]) != OK:
 		push_warning("Condición de historia inválida: %s" % condicion)
 		return true
-	return bool(e.execute([GameState.historia]))
+	return bool(e.execute([GameState.historia, GameState.indice_lugar]))
 
 
 func _activar(n: Node, activo: bool) -> void:

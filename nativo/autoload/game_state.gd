@@ -35,6 +35,9 @@ var salvaje: PokemonInstance
 ## Empieza tras recibir el primer Pokémon y el móvil (igual que ESTADO_HISTORIA en
 ## tools/mapas_original.py, con el que se toman los valores iniciales de los mapas).
 var historia: Dictionary[String, int] = {"fy_002": 1, "movil": 1}
+## global.index_place: el INDEX de la última puerta usada (los interiores compartidos lo usan para
+## saber a qué isla o calle devolver al jugador).
+var indice_lugar: int = 0
 
 var dinero: int = 0
 ## Identificador del jugador (global.prota_ID): el código SELUE depende de él.

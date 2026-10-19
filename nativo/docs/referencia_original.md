@@ -246,44 +246,43 @@ Ids del juego → `Tipos.Tipo`: 1 Normal, 2 Fuego, 3 Agua, 4 Planta, 5 Eléctric
   bici, saltos, hablar con NPCs y sus diálogos, elección de personaje (siempre Ash), curar al
   equipo (si todos están debilitados no hay encuentros) y guardar/cargar partida.
 - **Mapas nativos** (`tools/mapas_original.py`): los 717 se extraen (`--mapas todos`). Instancias que
-  todavía quedan como `Marker2D` (las más frecuentes; 118 tipos en total, 88 más con pocas apariciones):
+  todavía quedan como `Marker2D` (7468 de 125 tipos; las más frecuentes):
 
   | Veces | Objeto | Mapas |
   |---|---|---|
   | 5246 | `obj_patina` | 16 |
-  | 2040 | `obj_borradorDeAgua` | 15 |
   | 759 | `obj_puente3D_ABAJO` | 30 |
   | 510 | `obj_puente3D_ARRIBA` | 30 |
-  | 485 | `obj_minibloqueado` | 6 |
-  | 400 | `obj_aguainvisible` | 11 |
-  | 397 | `obj_NOdoor` | 199 |
   | 276 | `obj_TopeRocaInverso` | 3 |
   | 124 | `obj_cueva` | 124 |
-  | 85 | `obj_out_special` | 64 |
-  | 65 | `ONLYWATER` | 65 |
   | 48 | `obj_GIGA_NONE` | 1 |
   | 47 | `NIEBLA_P` | 15 |
   | 39 | `obj_superficie` | 15 |
   | 35 | `obj_arenadesliza` | 6 |
-  | 32 | `obj_CloseDoor1` | 8 |
   | 32 | `obj_CloseDoor7` | 8 |
+  | 32 | `obj_CloseDoor1` | 8 |
   | 30 | `obj_base` | 30 |
-  | 24 | `obj_CloseDoor3` | 8 |
-  | 24 | `obj_CloseDoor5` | 8 |
   | 24 | `obj_CloseDoor9` | 8 |
-  | 22 | `obj_tenderoSecreta` | 8 |
+  | 24 | `obj_CloseDoor5` | 8 |
+  | 24 | `obj_CloseDoor3` | 8 |
+  | 23 | `obj_tenderoSecreta` | 9 |
   | 15 | `BUCEO` | 15 |
-  | 11 | `obj_CAMARA` | 11 |
   | 11 | `REFLEJO` | 11 |
+  | 11 | `obj_CAMARA` | 11 |
   | 8 | `obj_CloseDoor0` | 8 |
   | 7 | `obj_curator` | 7 |
   | 7 | `HUMEJOS` | 7 |
   | 5 | `obj_PERRO_huye` | 1 |
   | 5 | `obj_PantallaRecord` | 1 |
+  | 4 | `obj_MeteoritoLuna` | 1 |
 
-  Tampoco se convierten las sombras de los edificios
-  (`obj_shadowFixed`), el movimiento de los NPCs (`MOVE`), las salidas de `CambiosWorldRooms` que dependen
-  de la historia (los NPCs y puertas sí son dinámicos) y las instancias giradas. `EXPLORER` (encuentros) no es un nodo: lo hace el jugador.
+  `obj_patina` es el hielo (se resbala), `obj_puente3D_*` los puentes que se cruzan por arriba y por
+  abajo, `obj_cueva` la oscuridad de las cuevas, `obj_CloseDoorN` puertas que se cierran. Tampoco se
+  convierten las sombras de los edificios (`obj_shadowFixed`), el movimiento de los NPCs (`MOVE`), la
+  dirección de `obj_out_special` (`arriba`/`abajo`, una sola instancia la usa), la espera de 2 s de
+  `obj_TelePort`, Surf/MO (el agua y los obstáculos solo bloquean) y las instancias giradas. `EXPLORER`
+  (encuentros) no es un nodo: lo hace el jugador. Las barreras que dependen de cosas que no son
+  banderas de la historia (`global.capturados`, objetos, hora) quedan como en una partida nueva.
 - **Batalla nativa (`scenes/battle/`)**: solo daño genérico. Faltan los casos especiales de
   `Ataque1GolpeaPokemon2` (movimientos con efectos propios, contacto, absorber, multigolpe...),
   `ExecuteAtack` (ataques que no son proyectil), estados (`STD`), cambios de stats (`Mod_*`), clima,

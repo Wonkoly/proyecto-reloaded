@@ -29,6 +29,8 @@ Solo en builds de depuración (al correr desde el editor o con `--path`); en un 
 | `energia_infinita` | Tu Pokémon tiene siempre la energía llena |
 | `pos` | Mapa, posición y dirección del jugador |
 | `codigo <texto>` | Mete un código del original (ver `referencia_original.md`; también Shift+F3) |
+| `validar` | Revisa las salidas del mapa actual con la historia actual: destino, llegada caminable, rebote, regreso; cada una ok / error / requiere X / inactiva ahora |
+| `ir <mapa> [tp]` | Ruta con menos cambios de mapa desde el actual (de `data/extraido/conexiones.json`) con el tipo y requisitos de cada paso; con `tp` va al primer mapa de la ruta |
 
 Para agregar un comando, una línea en `scenes/debug/comandos_dev.gd`:
 `c.registrar("nombre", "descripción", "uso", funcion)` (la función recibe los argumentos como

@@ -26,6 +26,7 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 import gml_eval  # noqa: E402  (módulos propios, al lado de este script)
 import gml_visual  # noqa: E402
+import conexiones
 import mapas_original  # noqa: E402
 
 NATIVO = Path(__file__).resolve().parent.parent
@@ -49,8 +50,9 @@ DIRECCIONES_MOVER = ["1", "2", "3", "4", "6", "7", "8", "9"]
 # En las tiras A (ataque) y H (herido) cada frame es una dirección (Renew_Sprite_Atack).
 DIRECCION_POR_FRAME = ["8", "9", "6", "3", "2", "1", "4", "7"]
 
-CATEGORIAS = ["datos", "sprites", "fondos", "ui", "fuentes", "efectos", "tilesets", "musica", "gritos", "entrenadores", "mapas"]
-POR_DEFECTO = ["datos", "sprites", "fondos", "ui", "fuentes", "efectos", "mapas"]
+CATEGORIAS = ["datos", "sprites", "fondos", "ui", "fuentes", "efectos", "tilesets", "musica", "gritos", "entrenadores", "mapas",
+              "conexiones"]
+POR_DEFECTO = ["datos", "sprites", "fondos", "ui", "fuentes", "efectos", "mapas", "conexiones"]
 
 # Sprites internos que usa el HUD de batalla (DrawEventBattle1, DrawBattleAttacks, DrawPanelInformativo).
 SPRITES_UI = [
@@ -71,6 +73,7 @@ CARPETAS = {
     "gritos": [ASSETS / "audio" / "sfx" / "gritos"],
     "entrenadores": [ASSETS / "sprites" / "trainers"],
     "mapas": [ASSETS / "mapas", ASSETS / "sprites" / "overworld", DATA / "personajes.json"],
+    "conexiones": [DATA / "conexiones.json", DATA / "mapas_geometria.json"],
 }
 
 
@@ -664,8 +667,10 @@ MAPAS_POR_DEFECTO = ["Home_2", "Home_1", "PuebloAlba", "Ruta_1"]
 SPRITES_PROTAGONISTA = ["Ash_D", "Ash_U", "Ash_R", "ProtaMaskSprite"]
 
 
-def extraer_mapas(plan: Plan, juego: Path, ext: Path, tilesets: dict, filtro: list[str] | None) -> list[str]:
-    """Escenas de los mapas (mapas_original.py) y los sprites que usan. Devuelve los objetos no convertidos."""
+def extraer_mapas(plan: Plan, juego: Path, ext: Path, tilesets: dict, filtro: list[str] | None,
+                  geometrias: dict[str, dict]) -> list[str]:
+    """Escenas de los mapas (mapas_original.py) y los sprites que usan; guarda la geometría de cada uno
+    en `geometrias` (para el grafo de conexiones). Devuelve los objetos no convertidos."""
     rooms = sorted((ext / "rooms").glob("*.json"))
     if filtro:
         rooms = [r for r in rooms if r.stem in filtro]
@@ -696,7 +701,8 @@ def extraer_mapas(plan: Plan, juego: Path, ext: Path, tilesets: dict, filtro: li
     for ruta in rooms:
         room = json.loads(ruta.read_text(encoding="utf-8"))
         try:
-            texto, no_convertidos = mapas_original.escena_mapa(room, original, tilesets, sprite_tres, snake, res, tabla_npc)
+            texto, no_convertidos, geometrias[room["name"]] = mapas_original.escena_mapa(
+                room, original, tilesets, sprite_tres, snake, res, tabla_npc)
         except Exception as error:  # un mapa raro no frena al resto
             avisar(f"{room['name']}: no se pudo convertir ({type(error).__name__}: {error})")
             continue
@@ -712,6 +718,28 @@ def extraer_mapas(plan: Plan, juego: Path, ext: Path, tilesets: dict, filtro: li
     for linea in resumen:
         print("  sin convertir:", linea)
     return resumen
+
+
+def extraer_conexiones(plan: Plan, juego: Path, ext: Path, tilesets: dict, geometrias: dict[str, dict]) -> None:
+    """El grafo de todos los mapas (tools/conexiones.py) → conexiones.json, y su geometría →
+    mapas_geometria.json (la usa tools/validar_conexiones.py). Si el paso de mapas no los convirtió
+    todos, se convierten aquí sin escribir las escenas."""
+    original = mapas_original.Juego(ext, juego)
+    tabla_npc = mapas_original.sprites_entrenador(original)
+    for ruta in sorted((ext / "rooms").glob("*.json")):
+        if ruta.stem in geometrias:
+            continue
+        room = json.loads(ruta.read_text(encoding="utf-8"))
+        try:
+            geometrias[room["name"]] = mapas_original.escena_mapa(
+                room, original, tilesets, lambda n: "res://" + n, snake, res, tabla_npc)[2]
+        except Exception as error:
+            avisar(f"{room['name']}: sin geometría ({type(error).__name__}: {error})")
+    grafo = conexiones.construir(geometrias, original.rooms)
+    plan.escribir(DATA / "conexiones.json", json.dumps(grafo, ensure_ascii=False, separators=(",", ":")))
+    plan.escribir(DATA / "mapas_geometria.json", json.dumps(geometrias, ensure_ascii=False, separators=(",", ":")))
+    print(f"  {len(grafo['mapas'])} mapas, {len(grafo['zonas'])} zonas, {len(grafo['pasos'])} pasos, "
+          f"{len(grafo['conexiones'])} conexiones")
 
 
 def _chunks_wav(b: bytes, con_relleno: bool) -> list[tuple[bytes, bytes]] | None:
@@ -799,7 +827,7 @@ def main() -> None:
             ap.error("categorías desconocidas: " + ", ".join(malas))
     else:
         categorias = POR_DEFECTO + [c for c in CATEGORIAS if c not in POR_DEFECTO and getattr(args, c)]
-    if "mapas" in categorias and "tilesets" not in categorias:
+    if ("mapas" in categorias or "conexiones" in categorias) and "tilesets" not in categorias:
         categorias.append("tilesets")  # los mapas usan los TileSet
     for carpeta in (args.juego, args.extraido):
         if not carpeta.is_dir():
@@ -809,6 +837,7 @@ def main() -> None:
     # sprites antes que datos: PokemonData.sprite apunta al sprite si se extrajo
     orden.sort(key=lambda c: (c != "sprites", c != "tilesets"))
     tilesets = {}
+    geometrias: dict[str, dict] = {}
     for cat in orden:
         print(f"[{cat}]")
         plan = Plan()
@@ -834,7 +863,9 @@ def main() -> None:
                 filtro = None
             else:
                 filtro = [m.strip() for m in lista.split(",") if m.strip()] or MAPAS_POR_DEFECTO
-            extraer_mapas(plan, args.juego, EXT, tilesets, filtro)
+            extraer_mapas(plan, args.juego, EXT, tilesets, filtro, geometrias)
+        elif cat == "conexiones":
+            extraer_conexiones(plan, args.juego, EXT, tilesets, geometrias)
         elif cat == "musica":
             musica = args.juego / "data" / "audio"
             extraer_simple(plan, musica / "musica", ASSETS / "audio" / "music", ["*/*.ogg"])

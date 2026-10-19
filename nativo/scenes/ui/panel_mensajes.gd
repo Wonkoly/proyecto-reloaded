@@ -24,6 +24,13 @@ var _fuente: Font = load("res://assets/extraido/fonts/fuente1.fnt")
 func agregar(texto: String) -> void:
 	if texto != "" and _buffer.size() <= TAM_BUFFER:
 		_buffer.append(texto)
+		if GameState.guardar_log_batalla:
+			# Código LOGBATTLE del original: cada mensaje se agrega a LogBattle.txt.
+			var f: FileAccess = FileAccess.open("user://LogBattle.txt", FileAccess.READ_WRITE)
+			if f == null:
+				f = FileAccess.open("user://LogBattle.txt", FileAccess.WRITE)
+			f.seek_end()
+			f.store_line(texto)
 
 
 ## Un Pokémon por debajo de y = 270 queda detrás del panel: el panel se vuelve translúcido.

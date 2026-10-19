@@ -8,7 +8,7 @@ Solo en builds de depuración (al correr desde el editor o con `--path`); en un 
 | **F1** | Abre/cierra la consola (pausa el juego mientras está abierta) |
 | ↑ / ↓ | Historial de comandos |
 | Tab | Completa el comando o su argumento (mapas, especies) |
-| **F3** | Overlay: FPS, mapa, posición, banderas de la historia, tamaño del equipo |
+| **F3** | Overlay (Shift+F3: pantalla de códigos del original): FPS, mapa, posición, banderas de la historia, tamaño del equipo |
 | **F4** | Dibuja colisiones (rojo), NPCs (naranja), hierba (verde), salidas con su destino (azul) y marcadores sin convertir (amarillo) |
 
 | Comando | Qué hace |
@@ -28,6 +28,7 @@ Solo en builds de depuración (al correr desde el editor o con `--path`); en un 
 | `god` | Tu Pokémon no recibe daño |
 | `energia_infinita` | Tu Pokémon tiene siempre la energía llena |
 | `pos` | Mapa, posición y dirección del jugador |
+| `codigo <texto>` | Mete un código del original (ver `referencia_original.md`; también Shift+F3) |
 
 Para agregar un comando, una línea en `scenes/debug/comandos_dev.gd`:
 `c.registrar("nombre", "descripción", "uso", funcion)` (la función recibe los argumentos como

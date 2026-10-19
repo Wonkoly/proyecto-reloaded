@@ -33,6 +33,7 @@ var _tabla: TablaEncuentros
 
 
 func _ready() -> void:
+	_aplicar_personaje()
 	var mapa: Mapa = _mapa()
 	if mapa:
 		_tabla = TablaEncuentros.de_mapa(mapa.nombre_original)
@@ -129,6 +130,23 @@ func _revisar_salidas() -> void:
 			SceneManager.usar_salida(s, self)
 			break
 	_salidas_dentro = dentro
+
+
+## Sprites del personaje elegido (código Q/CARA): data/extraido/personajes.json.
+func _aplicar_personaje() -> void:
+	if GameState.personaje == 0 and sprite_abajo:
+		return
+	var f: FileAccess = FileAccess.open("res://data/extraido/personajes.json", FileAccess.READ)
+	if f == null:
+		return
+	var tabla: Dictionary = JSON.parse_string(f.get_as_text())
+	var nombres: Variant = tabla["entrenadores"].get(str(GameState.personaje_entrenador)) if GameState.personaje == 10 \
+		else tabla["protagonistas"].get(str(GameState.personaje))
+	if nombres is Array and (nombres as Array).size() == 3:
+		var cargar: Callable = func(n: String) -> SpriteOriginal: return load("res://assets/extraido/sprites/overworld/%s.tres" % n)
+		sprite_abajo = cargar.call(nombres[0])
+		sprite_arriba = cargar.call(nombres[1])
+		sprite_derecha = cargar.call(nombres[2])
 
 
 func _sprite() -> SpriteOriginal:

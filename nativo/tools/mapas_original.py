@@ -225,6 +225,24 @@ def instancias_por_script(juego: Juego, room: int, scripts: list[str]) -> list[d
     return out
 
 
+def personajes(juego: Juego, funciones) -> dict:
+    """Los sprites de personaje del código Q/CARA (ExecuteCheat): 0-9 los protagonistas y 10 el sprite
+    de un entrenador (1-351 → ValorTrainerTrucado → sprINDEX → SpriteTrainer)."""
+    gml = juego.script("ExecuteCheat")
+    protas = {}
+    for n, cuerpo in re.findall(r"if\(char=(\d+)\)\{(global\.sprD=.*?)\}", gml):
+        ids = dict(re.findall(r"global\.spr([DUR])=\((\d+)\)", cuerpo))
+        protas[int(n)] = [juego.sprites[int(ids[k])] for k in "DUR"]
+    tabla = sprites_entrenador(juego)
+    entrenadores = {}
+    for n in range(0, 352):
+        indice = funciones.llamar("ValorTrainerTrucado", float(n))
+        sprs = tabla.get(int(indice), {}) if isinstance(indice, float) else {}
+        if all(k in sprs for k in ("sprD", "sprU", "sprR")):
+            entrenadores[n] = [juego.sprites[sprs[k]] for k in ("sprD", "sprU", "sprR")]
+    return {"protagonistas": protas, "entrenadores": entrenadores}
+
+
 def sprites_entrenador(juego: Juego) -> dict[int, dict[str, int]]:
     """SpriteTrainer: sprINDEX → ids de sprD, sprU, sprR."""
     tabla = {}

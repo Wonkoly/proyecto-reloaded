@@ -25,6 +25,7 @@ static func registrar_todos(c: Node) -> void:
 	c.registrar("god", "No recibes daño en batalla", "god", _alternar.bind("dev_god", "god"))
 	c.registrar("energia_infinita", "Tu Pokémon tiene la energía siempre llena", "energia_infinita", _alternar.bind("dev_energia_infinita", "energía infinita"))
 	c.registrar("pos", "Mapa y posición del jugador", "pos", _pos.bind(c))
+	c.registrar("codigo", "Mete un código del original (como Shift+F3)", "codigo <texto>", _codigo.bind(c))
 
 
 static func _ayuda(args: PackedStringArray, c: Node) -> String:
@@ -134,6 +135,15 @@ static func _historia(args: PackedStringArray) -> String:
 	elif args.size() == 1:
 		return "%s = %d" % [args[0], GameState.bandera(args[0])]
 	return "historia: %s" % str(GameState.historia)
+
+
+static func _codigo(args: PackedStringArray, c: Node) -> String:
+	if args.is_empty():
+		return "uso: codigo <texto> (los del original: guarderia, cara, mote, cheats, me rindo...)"
+	c.call_deferred("_alternar_consola")  # los códigos abren sus propios cuadros
+	var trucos: Node = c.get_node("/root/Trucos")
+	trucos.call_deferred("ejecutar", " ".join(args))
+	return "código %s" % " ".join(args).to_upper()
 
 
 static func _pos(_args: PackedStringArray, c: Node) -> String:

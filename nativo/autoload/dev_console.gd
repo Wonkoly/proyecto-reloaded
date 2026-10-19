@@ -86,6 +86,8 @@ func _input(evento: InputEvent) -> void:
 		KEY_F1:
 			_alternar_consola()
 		KEY_F3:
+			if tecla.shift_pressed:
+				return  # Shift+F3: la pantalla de códigos del original (autoload Trucos)
 			_overlay_activo = not _overlay_activo
 			_overlay.visible = _overlay_activo
 			_ajustar_tamano()

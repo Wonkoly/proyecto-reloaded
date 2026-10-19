@@ -24,7 +24,8 @@ import zlib
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
-import gml_visual  # noqa: E402  (módulos propios, al lado de este script)
+import gml_eval  # noqa: E402  (módulos propios, al lado de este script)
+import gml_visual  # noqa: E402
 import mapas_original  # noqa: E402
 
 NATIVO = Path(__file__).resolve().parent.parent
@@ -69,7 +70,7 @@ CARPETAS = {
     "musica": [ASSETS / "audio" / "music"],
     "gritos": [ASSETS / "audio" / "sfx" / "gritos"],
     "entrenadores": [ASSETS / "sprites" / "trainers"],
-    "mapas": [ASSETS / "mapas", ASSETS / "sprites" / "overworld"],
+    "mapas": [ASSETS / "mapas", ASSETS / "sprites" / "overworld", DATA / "personajes.json"],
 }
 
 
@@ -147,6 +148,11 @@ def sincronizar(plan: Plan, raices: list[Path]) -> None:
     borrados = 0
     for raiz in raices:
         if not raiz.exists():
+            continue
+        if raiz.is_file():
+            if raiz not in plan.archivos:
+                raiz.unlink()
+                borrados += 1
             continue
         for f in sorted(raiz.rglob("*"), reverse=True):
             if f.is_dir():
@@ -490,6 +496,7 @@ def extraer_datos(plan: Plan, ext: Path, indice: dict) -> None:
     orden_dex = Tabla(gml("GetOrdenDex"))
     crecimiento = Tabla(gml("GetCrecimiento"), var="PK")
     aprendizaje = leer_aprendizaje(gml("Ataque_Nivel"))
+    funciones = gml_eval.Funciones(scripts)  # para las funciones de cría (MYSON, GrupoHuevo, OneSex)
     mts, mt_mov = leer_switch(gml("Ataque_MT"), "MK"), Tabla(gml("MTAtack"))
     tutores, dts = leer_switch(gml("Ataque_Tutor"), "MV"), leer_dt(gml("Ataque_DT"))
     total = 0
@@ -514,6 +521,10 @@ def extraer_datos(plan: Plan, ext: Path, indice: dict) -> None:
                 props.append(f"{campo} = {int(tabla.valor(pk, 1) or 1)}")
             props.append(f"exp_base = {int(exp_base.valor(pk, 0) or 0)}")
             props.append(f"crecimiento = {int(crecimiento.valor(dex, 0) or 0)}")
+            for campo, funcion, defecto in (("cria", "MYSON", pk), ("grupo_huevo_1", "GrupoHuevo1", 0),
+                                            ("grupo_huevo_2", "GrupoHuevo2", 0), ("sexo_unico", "OneSex", -1)):
+                v = funciones.llamar(funcion, float(pk))
+                props.append(f"{campo} = {int(v) if isinstance(v, float) else defecto}")
             frente = ASSETS / "sprites" / "pokemon" / f"{pk:04d}" / "2.png"
             if frente.exists():  # la categoría sprites ya se sincronizó antes que datos
                 w, h = png_size(frente)
@@ -669,9 +680,18 @@ def extraer_mapas(plan: Plan, juego: Path, ext: Path, tilesets: dict, filtro: li
         usados.add(nombre)
         return res(ASSETS / "sprites" / "overworld" / f"{snake(nombre)}.tres")
 
-    # El protagonista por defecto (Ash: global.sprD/U/R = 21/22/23) y su máscara.
+    # El protagonista por defecto (Ash: global.sprD/U/R = 21/22/23), su máscara y los personajes del
+    # código Q/CARA (protagonistas 0-9 y sprites de entrenador) → data/extraido/personajes.json.
     for nombre in SPRITES_PROTAGONISTA:
         sprite_tres(nombre)
+    tabla_personajes = mapas_original.personajes(original, gml_eval.Funciones(ext / "scripts"))
+    for grupo in tabla_personajes.values():
+        for nombres in grupo.values():
+            for nombre in nombres:
+                sprite_tres(nombre)
+    plan.escribir(DATA / "personajes.json", json.dumps({
+        g: {str(k): [snake(n) for n in v] for k, v in grupo.items()} for g, grupo in tabla_personajes.items()},
+        ensure_ascii=False, indent=1))
     resumen = []
     for ruta in rooms:
         room = json.loads(ruta.read_text(encoding="utf-8"))

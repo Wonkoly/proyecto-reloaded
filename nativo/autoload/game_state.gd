@@ -32,6 +32,19 @@ var salvaje: PokemonInstance
 ## Empieza tras recibir el primer Pokémon y el móvil, como los mapas extraídos.
 var historia: Dictionary[String, int] = {"fy_002": 1, "movil": 1}
 
+var dinero: int = 0
+## Identificador del jugador (global.prota_ID): el código SELUE depende de él.
+var prota_id: int = randi_range(0, 99999)
+## Apodo del protagonista (código MOTE) y personaje (código CARA: 0-9, 10 = sprite de entrenador).
+var apodo_jugador: String = ""
+var personaje: int = 0
+var personaje_entrenador: int = 1
+# Opciones del original que cambian algunos códigos (global.numcheats, saveLogBattle, vel_text...).
+var trucos_usados: int = 0
+var guardar_log_batalla: bool = false
+var velocidad_texto: int = 1
+var transicion_especial: bool = false
+
 # Opciones de desarrollo (las cambia la consola dev).
 var dev_god: bool = false
 var dev_energia_infinita: bool = false

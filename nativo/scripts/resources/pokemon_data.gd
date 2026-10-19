@@ -24,6 +24,15 @@ enum Crecimiento { MEDIO, RAPIDO, LENTO, PARABOLICO, ERRATICO, FLUCTUANTE }
 @export var exp_base: int = 0
 @export var crecimiento: Crecimiento = Crecimiento.MEDIO
 
+@export_group("Cría")
+## id_original de la especie que nace del huevo (MYSON).
+@export var cria: int = 0
+## Grupos huevo (GrupoHuevo1/2; 0 = ninguno).
+@export var grupo_huevo_1: int = 0
+@export var grupo_huevo_2: int = 0
+## OneSex: -1 machos y hembras, 1 solo macho, 2 solo hembra, 0 sin sexo.
+@export var sexo_unico: int = -1
+
 @export_group("")
 @export var sprite: Texture2D
 ## Por nivel (ordenados por nivel), luego MT, tutor y DT.

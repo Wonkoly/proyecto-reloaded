@@ -186,6 +186,32 @@ treparrocas y gran ojo.
   (`CreateDevices`).
 - Cámara: vista de 320×180 que sigue a `obj_Prota` con bordes de 120×90 px.
 
+## Códigos (`ExecuteCheat`)
+Con **F3** (`key_global_code`) se abre un cuadro "Introduce un Cheat..." (13 letras como máximo; se
+compara en mayúsculas). En nativo: autoload `Trucos` (F3, o Shift+F3 cuando está la consola dev) y el
+comando `codigo <texto>`.
+
+| Código | Qué hace | Nativo |
+|---|---|---|
+| `GUARDERIA` | Pide macho y hembra (números) y dice qué huevo darían; con uno vacío recorre los 1034 | sí (`Cria.huevo`, port de `EGG`; cría y grupos huevo extraídos con `gml_eval.py`) |
+| `TORBELLINOS` / `ENTRENADORES` | Lista los torbellinos sin despejar (1-200) / entrenadores sin vencer (1-1050) | sí (banderas `estorbo_torbellino_N` / `trainer_N` de `GameState.historia`) |
+| `ME RINDO` (en batalla) / `INCONSCIENTE` (en el mapa) | Pregunta y te deja debilitado: al último Centro (o a la cama de casa), curado, sin dinero, `ev_1429 += 1` | sí (a la cama de Home_2: no hay Centros todavía) |
+| `SELUE<99999 − prota_ID>` | Antitrampas: cuenta Pokémon con la suma de control alterada | sí (siempre 0) |
+| `CHEATS` | Cuántos trucos usaste | sí |
+| `MOTE` / `APODO` | Cambia el apodo del protagonista | sí |
+| `Q` / `CARA` | Personaje 0-9, o 10 = sprite de un entrenador (1-351, `ValorTrainerTrucado`) | sí |
+| `QQ` / `VESTUARIO` | Abre el vestuario | no (no hay vestuario) |
+| `LOGBATTLE` / `BATTLELOG` | Guarda los mensajes de batalla en `LogBattle.txt` | sí (`user://LogBattle.txt`) |
+| `PRISA` | Texto rápido (`vel_text = 2`) | solo el ajuste (no hay diálogos todavía) |
+| `TRANSITION` | Transición especial entre mapas | solo el ajuste |
+| `CLEANBATTLE` | Oculta el HUD de batalla | sí |
+| `LLAMAME` | Te llama un contacto al azar | no (no hay teléfono) |
+| `GIGAMAX`, `GIGAMAX1`, `GIGAMAX2` | Efecto gigamax en batalla | no |
+| `GUARDIAN` | Un Pokémon guardián en batalla | no |
+| `SHINY` | Muestra la contraseña del Mega-Inductor si se cumplen condiciones de la historia | no (las condiciones no se dan) |
+| `ABOUT`, `VERSION`, `HELP`, `INFO`, `AYUDA`, `INFORMACION`, `BETA` | Versión del juego ("Pokémon Reloaded Last Beta 1.9.2.1") | sí |
+| `MIERDA`, `JODER`, `VIOLENCIA`, `DIOS`, `PAZ`, `JUSTICIA`, `VERDAD`, `FUCK`, `GOD`, `PEACE` | Los 10 consejos de Fer | sí |
+
 ## Datos
 
 ### Experiencia (`CrecimientoPokemon`, `GetCrecimiento`, `ExpBase`)

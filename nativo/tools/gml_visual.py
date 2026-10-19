@@ -138,7 +138,12 @@ class Parser:
             self.tomar()
             self.fin()
             return ("exit",)
-        if tok[1] in ("switch", "return", "break", "continue"):
+        if tok[1] == "return":
+            self.tomar()
+            valor = None if self.es(";") or self.es("}") else self.expresion()
+            self.fin()
+            return ("return", valor)
+        if tok[1] in ("switch", "break", "continue"):
             raise SyntaxError(tok[1])
         inst = self.simple()
         self.fin()
@@ -368,7 +373,7 @@ class Traductor:
         k = i[0]
         if k == "nada" or k == "var":
             return []
-        if k == "error":
+        if k in ("error", "return"):
             self.omitidas += 1
             return []
         if k == "bloque":

@@ -23,6 +23,16 @@ enum Activacion { AL_ENTRAR, ARRIBA, ABAJO }
 var abierta: bool = false
 
 
+func _ready() -> void:
+	add_to_group("salidas")
+
+
+## La puerta se abre (DoorOpening) antes de entrar.
+func abrir() -> void:
+	abierta = true
+	queue_redraw()
+
+
 ## Posición en el mapa de destino para un jugador que sale desde `posicion_jugador`.
 func posicion_destino(posicion_jugador: Vector2) -> Vector2:
 	return Vector2(

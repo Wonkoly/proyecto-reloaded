@@ -4,8 +4,8 @@
 - Instancias según su objeto: paredes (descendientes de obj_pared) → colisión; las visibles además
   se dibujan con y-sort (árboles, edificios); obj_hierba → zona de hierba; flores y otros objetos
   visibles → decorado; lo demás → Marker2D (se lista en el resumen).
-- Puertas (CreateDoors) y NPCs (CreateNPC1..5): se evalúan sus bloques de la room como en una
-  partida nueva (banderas de la historia en 0).
+- Puertas (CreateDoors) y NPCs (CreateNPC1..5): se evalúan sus bloques de la room con el estado de
+  la historia de ESTADO_HISTORIA (el resto de banderas en 0).
 - Salidas por los bordes y escaleras (CambiosWorldRooms, CambiosSpecialRooms) → Area2D con destino.
 """
 
@@ -23,8 +23,13 @@ CAPA_PAREDES = 1
 CAPA_JUGADOR = 16
 # Tiles con depth menor que esto se dibujan encima de los objetos (los objetos usan -y/100).
 DEPTH_TILES_ARRIBA = -10
-# Objetos que no son nada en el mapa (controladores).
-IGNORADOS = {"EXPLORER", "variables", "Control"}
+# Estado de la historia con el que se evalúan CreateDoors/CreateNPC* (las banderas del objeto
+# "variables"; las que no están valen 0). Por defecto: ya recibió su primer Pokémon (fy_002) y el
+# móvil (movil), así el camino de PuebloAlba a la Ruta 1 está abierto.
+ESTADO_HISTORIA = {"fy_002": 1, "movil": 1}
+# Objetos que no son nada en el mapa: controladores, y obj_bloqueado (invisible; ProtaMovimiento no
+# choca con él: marca celdas de las guaridas/decoración).
+IGNORADOS = {"EXPLORER", "variables", "Control", "obj_bloqueado"}
 
 
 class Juego:
@@ -158,8 +163,10 @@ class Evaluador:
             raise _Desconocido(e[1])
         if k == "campo":
             base = e[1]
+            if base == ("num", "18"):
+                return float(ESTADO_HISTORIA.get(e[2], 0))  # banderas de la historia
             if base[0] == "num" or base == ("id", "global"):
-                return 0.0  # banderas de la historia y globales: partida nueva
+                return 0.0  # globales y otros objetos: valor inicial
             if base[0] == "id" and isinstance(self.locales.get(base[1]), dict):
                 return self.locales[base[1]].get(e[2], 0.0)
             raise _Desconocido("campo")
@@ -546,7 +553,7 @@ def escena_mapa(room: dict, juego: Juego, tilesets: dict, sprite_tres, snake, re
             if meta and (c := caja(meta, x, y, sx, sy)):
                 e.nodo(f"hierba_{n_hierba}", "CollisionShape2D", "ZonaHierba", [
                     f"position = Vector2({f(c[0])}, {f(c[1])})", f"shape = {e.rect(c[2], c[3])}"])
-        elif juego.es(obj, "obj_pared") or obj == "obj_bloqueado":
+        elif juego.es(obj, "obj_pared"):
             pared(meta, x, y, sx, sy)
             if datos.get("visible") and sprite:
                 decorado(nombre, sprite, x, y, sx, sy)

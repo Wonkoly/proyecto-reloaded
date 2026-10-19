@@ -22,6 +22,9 @@ const BORDE_VISTA: float = 120.0
 var mira: int = 2
 var _frame: float = 1.0
 var _moviendose: bool = false
+## Salidas que ya tocaba en el frame anterior (las de "al entrar" se activan al llegar, no al aparecer).
+var _salidas_dentro: Array[Salida] = []
+var _primer_frame: bool = true
 
 @onready var camara: Camera2D = $Camera2D
 
@@ -39,6 +42,8 @@ func _ready() -> void:
 
 
 func _physics_process(delta: float) -> void:
+	if SceneManager.en_transicion:
+		return
 	var x: float = Input.get_axis("mover_izquierda", "mover_derecha")
 	var y: float = Input.get_axis("mover_arriba", "mover_abajo")
 	var dir: Vector2 = Vector2(signf(x) if absf(x) > 0.3 else 0.0, signf(y) if absf(y) > 0.3 else 0.0)
@@ -61,6 +66,36 @@ func _physics_process(delta: float) -> void:
 	velocity = dir.normalized() * velocidad
 	move_and_slide()
 	queue_redraw()
+	_revisar_salidas()
+
+
+## Bordes y escaleras se activan al entrar; las puertas pulsando arriba y la salida de los interiores
+## pulsando abajo (DoorStepActions, OutDoorStepActions).
+func _revisar_salidas() -> void:
+	var dentro: Array[Salida] = []
+	for nodo: Node in get_tree().get_nodes_in_group("salidas"):
+		var s: Salida = nodo as Salida
+		if s and s.overlaps_body(self):
+			dentro.append(s)
+	if _primer_frame:
+		_primer_frame = false
+		_salidas_dentro = dentro
+		return
+	for s: Salida in dentro:
+		var activar: bool = false
+		match s.activacion:
+			Salida.Activacion.AL_ENTRAR:
+				activar = s not in _salidas_dentro
+			Salida.Activacion.ARRIBA:
+				activar = Input.is_action_pressed("mover_arriba")
+			Salida.Activacion.ABAJO:
+				activar = Input.is_action_pressed("mover_abajo")
+		if activar and SceneManager.existe_mapa(s.destino if not s.volver else GameState.mapa_salida):
+			if s.activacion == Salida.Activacion.ARRIBA:
+				s.abrir()
+			SceneManager.usar_salida(s, self)
+			break
+	_salidas_dentro = dentro
 
 
 func _sprite() -> SpriteOriginal:

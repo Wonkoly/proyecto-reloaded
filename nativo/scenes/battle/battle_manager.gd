@@ -39,5 +39,9 @@ func _unhandled_input(event: InputEvent) -> void:
 
 
 func _volver() -> void:
-	if is_inside_tree():
+	if not is_inside_tree():
+		return
+	if GameState.salvaje != null:
+		SceneManager.volver_de_batalla()
+	else:
 		get_tree().change_scene_to_file(MENU_PRUEBAS)

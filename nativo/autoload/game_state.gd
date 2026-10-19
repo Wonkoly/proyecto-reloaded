@@ -17,6 +17,33 @@ const POW_DIF: Dictionary[Dificultad, Vector2i] = {
 
 var dificultad: Dificultad = Dificultad.NORMAL
 
+## El equipo del jugador (el primero que no esté debilitado sale a combatir).
+var equipo: Array[PokemonInstance] = []
+## Room del original donde está el jugador y su posición (global.lugar, global.xx/yy, global.mira).
+var mapa_actual: String = "PuebloAlba"
+var posicion_jugador: Vector2 = Vector2(417, 214)
+var mira: int = 2
+## Al entrar por una puerta: a dónde vuelve la salida del interior (global.room_out, outx/outy).
+var mapa_salida: String = ""
+var posicion_salida: Vector2 = Vector2.ZERO
+## El Pokémon salvaje de la batalla en curso (null si la batalla no viene del overworld).
+var salvaje: PokemonInstance
+
+
+func _ready() -> void:
+	if equipo.is_empty():
+		var charmander: PokemonData = Datos.especie(4)
+		if charmander:
+			equipo.append(PokemonInstance.crear(charmander, 5))
+
+
+## El primero del equipo que puede combatir, o null si todos están debilitados.
+func pokemon_para_combatir() -> PokemonInstance:
+	for p: PokemonInstance in equipo:
+		if p.hp_actual > 0:
+			return p
+	return null
+
 
 ## PowDif del daño que hace un lado de la batalla (1 = jugador, 2 = rival).
 func pow_dif(lado: int) -> int:

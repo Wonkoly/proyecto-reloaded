@@ -127,6 +127,7 @@ Cada mapa es una escena con:
 - `Salidas`: `Salida` (Area2D) por cada condición de `CambiosWorldRooms`/`CambiosSpecialRooms`
   (bordes, escaleras) con destino fijo o relativo a la posición del jugador; las puertas de
   `CreateDoors` se entran pulsando arriba y `obj_out` (salida de interiores) pulsando abajo.
-- NPCs y puertas salen de evaluar los bloques de la room en `CreateNPC1..5` y `CreateDoors` como en
-  una **partida nueva** (todas las banderas de la historia en 0).
+- NPCs y puertas salen de evaluar los bloques de la room en `CreateNPC1..5` y `CreateDoors` con el
+  estado de la historia de `ESTADO_HISTORIA` en `mapas_original.py` (por defecto: ya recibió su
+  primer Pokémon y el móvil, así el camino a la Ruta 1 está abierto; el resto de banderas en 0).
 - `Marcadores`: `Marker2D` para lo que todavía no se convierte (el script lo lista al terminar).

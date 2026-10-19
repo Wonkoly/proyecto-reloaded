@@ -1,5 +1,7 @@
 extends Node2D
-## Arena de batalla de pruebas: el BattleROOM del original (576×324, zona jugable 416×240).
+## Arena de batalla: el BattleROOM del original (576×324, zona jugable 416×240). Si viene del
+## overworld (GameState.salvaje), pelea el equipo contra el salvaje y al final vuelve al mapa; si no,
+## usa lo elegido en el menú de pruebas.
 
 const ESCENA_POKEMON: PackedScene = preload("res://scenes/battle/battle_pokemon.tscn")
 const MENU_PRUEBAS: String = "res://scenes/debug/menu_pruebas.tscn"
@@ -12,23 +14,30 @@ var _numeros: Dictionary[BattlePokemon, Variant] = {}
 
 func _ready() -> void:
 	get_window().content_scale_size = RESOLUCION
-	var jugador: BattlePokemon = _crear_pokemon("Jugador", ConfigPruebas.especie_jugador,
-		ConfigPruebas.nivel_jugador, 1, $PosicionJugador.position)
-	var rival: BattlePokemon = _crear_pokemon("Rival", ConfigPruebas.especie_rival,
-		ConfigPruebas.nivel_rival, 2, $PosicionRival.position)
-	if jugador == null or rival == null:
+	var desde_overworld: bool = GameState.salvaje != null
+	var p_jugador: PokemonInstance
+	var p_rival: PokemonInstance
+	if desde_overworld:
+		p_jugador = GameState.pokemon_para_combatir()
+		p_rival = GameState.salvaje
+	else:
+		p_jugador = _pokemon_de_prueba(ConfigPruebas.especie_jugador, ConfigPruebas.nivel_jugador)
+		p_rival = _pokemon_de_prueba(ConfigPruebas.especie_rival, ConfigPruebas.nivel_rival)
+	if p_jugador == null or p_rival == null:
 		return
+	var jugador: BattlePokemon = _crear_pokemon("Jugador", p_jugador, 1, $PosicionJugador.position)
+	var rival: BattlePokemon = _crear_pokemon("Rival", p_rival, 2, $PosicionRival.position)
 	jugador.add_child(PlayerController.new())
 	var ia := AIController.new()
-	ia.entrenador = ConfigPruebas.rival_entrenador
-	ia.crack = ConfigPruebas.rival_crack
-	ia.maestro = ConfigPruebas.rival_maestro
+	ia.entrenador = ConfigPruebas.rival_entrenador and not desde_overworld
+	ia.crack = ConfigPruebas.rival_crack and not desde_overworld
+	ia.maestro = ConfigPruebas.rival_maestro and not desde_overworld
 	rival.add_child(ia)
 	jugador.objetivo = rival
 	rival.objetivo = jugador
 	var manager: BattleManager = $BattleManager
 	var hud: BattleHud = $BattleHud
-	hud.conectar(jugador, rival, ConfigPruebas.rival_entrenador)
+	hud.conectar(jugador, rival, ia.entrenador)
 	manager.batalla_terminada.connect(
 		func(ganador: BattlePokemon) -> void: hud.mostrar_resultado("¡Gana %s!" % ganador.pokemon.especie.nombre))
 	manager.iniciar(jugador, rival)
@@ -36,15 +45,17 @@ func _ready() -> void:
 		bp.golpeado.connect(_mostrar_danio.bind(bp))
 
 
-func _crear_pokemon(nombre: String, id_especie: int, nivel: int, lado: int, posicion: Vector2) -> BattlePokemon:
+func _pokemon_de_prueba(id_especie: int, nivel: int) -> PokemonInstance:
 	var especie: PokemonData = Datos.especie(id_especie)
-	if especie == null:
-		return null
+	return PokemonInstance.crear(especie, nivel) if especie else null
+
+
+func _crear_pokemon(nombre: String, p: PokemonInstance, lado: int, posicion: Vector2) -> BattlePokemon:
 	var bp: BattlePokemon = ESCENA_POKEMON.instantiate()
 	bp.name = nombre
 	bp.lado = lado
 	bp.position = posicion
-	bp.configurar(PokemonInstance.crear(especie, nivel))
+	bp.configurar(p)
 	pokemons.add_child(bp)
 	return bp
 
@@ -66,4 +77,7 @@ func _mostrar_danio(_move: MoveData, danio: int, _eficacia: float, bp: BattlePok
 
 func _unhandled_input(event: InputEvent) -> void:
 	if event.is_action_pressed("ui_cancel"):
-		get_tree().change_scene_to_file(MENU_PRUEBAS)
+		if GameState.salvaje != null:
+			SceneManager.volver_de_batalla()  # huir
+		else:
+			get_tree().change_scene_to_file(MENU_PRUEBAS)

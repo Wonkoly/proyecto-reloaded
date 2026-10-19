@@ -1,0 +1,29 @@
+[gd_resource type="Resource" script_class="TablaEncuentros" format=3]
+
+[ext_resource type="Script" path="res://scripts/resources/tabla_encuentros.gd" id="1"]
+[ext_resource type="Script" path="res://scripts/resources/encuentro_salvaje.gd" id="2"]
+
+[sub_resource type="Resource" id="pidgey"]
+script = ExtResource("2")
+id_especie = 16
+nivel_min = 2
+nivel_max = 4
+peso = 3
+
+[sub_resource type="Resource" id="rattata"]
+script = ExtResource("2")
+id_especie = 19
+nivel_min = 2
+nivel_max = 4
+peso = 3
+
+[sub_resource type="Resource" id="caterpie"]
+script = ExtResource("2")
+id_especie = 10
+nivel_min = 3
+nivel_max = 3
+peso = 1
+
+[resource]
+script = ExtResource("1")
+encuentros = Array[ExtResource("2")]([SubResource("pidgey"), SubResource("rattata"), SubResource("caterpie")])

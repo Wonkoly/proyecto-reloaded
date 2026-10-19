@@ -24,7 +24,7 @@ func _ready() -> void:
 
 
 static func ruta_mapa(nombre_original: String) -> String:
-	return RUTA_MAPAS % _snake(nombre_original)
+	return RUTA_MAPAS % snake(nombre_original)
 
 
 func existe_mapa(nombre_original: String) -> bool:
@@ -97,7 +97,7 @@ func _con_fundido(cambio: Callable) -> void:
 
 
 ## Mismo criterio que tools/extraer.py: PuebloAlba → pueblo_alba.
-static func _snake(nombre: String) -> String:
+static func snake(nombre: String) -> String:
 	var r := RegEx.new()
 	r.compile("([a-z0-9])([A-Z])")
 	return r.sub(nombre, "$1_$2", true).to_lower()

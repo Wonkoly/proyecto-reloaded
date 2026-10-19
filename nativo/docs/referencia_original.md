@@ -214,6 +214,11 @@ Ids del juego → `Tipos.Tipo`: 1 Normal, 2 Fuego, 3 Agua, 4 Planta, 5 Eléctric
 `numero_pokedex` sale de `GetOrdenDex` (los ids internos no siguen la Pokédex nacional a partir del 494).
 
 ## Pendiente de revisar
+- **Overworld nativo**: los encuentros usan `TablaEncuentros` (`data/encuentros/<mapa>.tres`, a
+  mano) en lugar de `AparicionSalvajes`; la probabilidad de `FrequencySalvajes` se aplica por
+  distancia (paso de referencia 3 px). Falta: hordas, repelente/atractor, hierba especial, surf,
+  bici, saltos, hablar con NPCs y sus diálogos, elección de personaje (siempre Ash), curar al
+  equipo (si todos están debilitados no hay encuentros) y guardar/cargar partida.
 - **Mapas nativos** (`tools/mapas_original.py`): no se convierten los saltos (`obj_saltos`,
   `obj_saltos_I`: bordes que se bajan saltando; quedan como `Marker2D`), las sombras de los edificios
   (`obj_shadowFixed`), el movimiento de los NPCs (`MOVE`), las salidas que dependen de la historia y

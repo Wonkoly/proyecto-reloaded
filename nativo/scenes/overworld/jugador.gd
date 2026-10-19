@@ -13,6 +13,8 @@ const FPS_CORRER: float = 7.5
 const FPS_LENTO: float = 4.5
 ## Vista del original: 320×180 y la sigue con un borde horizontal de 120 px (hborder).
 const BORDE_VISTA: float = 120.0
+## Capa de física de las zonas (hierba).
+const CAPA_ZONAS: int = 32
 
 @export var sprite_abajo: SpriteOriginal
 @export var sprite_arriba: SpriteOriginal
@@ -25,6 +27,7 @@ var _moviendose: bool = false
 ## Salidas que ya tocaba en el frame anterior (las de "al entrar" se activan al llegar, no al aparecer).
 var _salidas_dentro: Array[Salida] = []
 var _primer_frame: bool = true
+var _tabla: TablaEncuentros
 
 @onready var camara: Camera2D = $Camera2D
 
@@ -32,6 +35,7 @@ var _primer_frame: bool = true
 func _ready() -> void:
 	var mapa: Mapa = _mapa()
 	if mapa:
+		_tabla = TablaEncuentros.de_mapa(mapa.nombre_original)
 		camara.limit_left = 0
 		camara.limit_top = 0
 		camara.limit_right = mapa.tamano.x
@@ -64,9 +68,37 @@ func _physics_process(delta: float) -> void:
 	else:
 		_frame = 1.0
 	velocity = dir.normalized() * velocidad
+	var antes: Vector2 = global_position
 	move_and_slide()
 	queue_redraw()
 	_revisar_salidas()
+	_revisar_encuentro(global_position.distance_to(antes))
+
+
+## Está en la hierba si su máscara la toca en su posición y 8 px más abajo (ProtaCheckHierba).
+func en_hierba() -> bool:
+	return _toca_zona(Vector2.ZERO) and _toca_zona(Vector2(0, 8))
+
+
+## Caminando por la hierba: encuentro con la probabilidad de FrequencySalvajes según la distancia.
+func _revisar_encuentro(distancia: float) -> void:
+	if _tabla == null or distancia <= 0.0 or SceneManager.en_transicion or not en_hierba():
+		return
+	if randf() < _tabla.probabilidad(distancia) and GameState.pokemon_para_combatir() != null:
+		var salvaje: PokemonInstance = _tabla.elegir()
+		if salvaje:
+			SceneManager.ir_a_batalla(salvaje, self)
+
+
+func _toca_zona(desplazamiento: Vector2) -> bool:
+	var forma: CollisionShape2D = $CollisionShape2D
+	var consulta := PhysicsShapeQueryParameters2D.new()
+	consulta.shape = forma.shape
+	consulta.transform = Transform2D(0.0, global_position + forma.position + desplazamiento)
+	consulta.collision_mask = CAPA_ZONAS
+	consulta.collide_with_areas = true
+	consulta.collide_with_bodies = false
+	return not get_world_2d().direct_space_state.intersect_shape(consulta, 1).is_empty()
 
 
 ## Bordes y escaleras se activan al entrar; las puertas pulsando arriba y la salida de los interiores

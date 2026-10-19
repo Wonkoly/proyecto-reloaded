@@ -18,9 +18,10 @@ from pathlib import Path
 
 import gml_visual
 
-# Capas de física (project.godot): 1 paredes, 5 jugador.
+# Capas de física (project.godot): 1 paredes, 5 jugador, 6 zonas (hierba).
 CAPA_PAREDES = 1
 CAPA_JUGADOR = 16
+CAPA_ZONAS = 32
 # Tiles con depth menor que esto se dibujan encima de los objetos (los objetos usan -y/100).
 DEPTH_TILES_ARRIBA = -10
 # Estado de la historia con el que se evalúan CreateDoors/CreateNPC* (las banderas del objeto
@@ -468,8 +469,8 @@ def escena_mapa(room: dict, juego: Juego, tilesets: dict, sprite_tres, snake, re
     tiles(room, tilesets, e, snake, arriba=True)
     e.nodo("Paredes", "StaticBody2D", ".", [f"collision_layer = {CAPA_PAREDES}", "collision_mask = 0"])
     e.nodo("ZonaHierba", "Area2D", ".", [
-        f"script = {e.ref('Script', 'res://scenes/overworld/zona_hierba.gd')}", "collision_layer = 0",
-        f"collision_mask = {CAPA_JUGADOR}", "monitorable = false"], grupos=["zona_hierba"])
+        f"script = {e.ref('Script', 'res://scenes/overworld/zona_hierba.gd')}", f"collision_layer = {CAPA_ZONAS}",
+        "collision_mask = 0", "monitoring = false"], grupos=["zona_hierba"])
     e.nodo("Salidas", "Node2D", ".", [])
     e.nodo("Marcadores", "Node2D", ".", [])
     n_pared = n_hierba = 0

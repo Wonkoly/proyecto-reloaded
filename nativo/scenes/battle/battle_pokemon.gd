@@ -143,7 +143,7 @@ func embestir(duracion: float) -> void:
 
 
 func recibir_danio(cantidad: int) -> void:
-	if esta_debilitado() or cantidad <= 0:
+	if esta_debilitado() or cantidad <= 0 or (lado == 1 and GameState.dev_god):
 		return
 	pokemon.hp_actual = maxi(0, pokemon.hp_actual - cantidad)
 	_herido = DURACION_HERIDO
@@ -159,6 +159,8 @@ func _physics_process(delta: float) -> void:
 	_cooldown = maxf(0.0, _cooldown - delta)
 	_bloqueo = maxf(0.0, _bloqueo - delta)
 	_herido = maxf(0.0, _herido - delta)
+	if lado == 1 and GameState.dev_energia_infinita:
+		_set_energia(energia_max)
 	if puede_moverse() and _energia < energia_max:
 		_set_energia(minf(_energia + RECARGA_ENERGIA * delta, energia_max))
 	if estaba_bloqueado and _bloqueo <= 0.0 and _herido <= 0.0:

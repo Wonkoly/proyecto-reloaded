@@ -28,6 +28,17 @@ var mapa_salida: String = ""
 var posicion_salida: Vector2 = Vector2.ZERO
 ## El Pokémon salvaje de la batalla en curso (null si la batalla no viene del overworld).
 var salvaje: PokemonInstance
+## Banderas de la historia (las del objeto "variables" del original; las que no están valen 0).
+## Empieza tras recibir el primer Pokémon y el móvil, como los mapas extraídos.
+var historia: Dictionary[String, int] = {"fy_002": 1, "movil": 1}
+
+# Opciones de desarrollo (las cambia la consola dev).
+var dev_god: bool = false
+var dev_energia_infinita: bool = false
+var dev_noclip: bool = false
+var dev_encuentros: bool = true
+## PowDif forzado para los dos lados (0 = el de la dificultad).
+var dev_pow_dif: int = 0
 
 
 func _ready() -> void:
@@ -47,4 +58,10 @@ func pokemon_para_combatir() -> PokemonInstance:
 
 ## PowDif del daño que hace un lado de la batalla (1 = jugador, 2 = rival).
 func pow_dif(lado: int) -> int:
+	if dev_pow_dif > 0:
+		return dev_pow_dif
 	return POW_DIF[dificultad].x if lado == 1 else POW_DIF[dificultad].y
+
+
+func bandera(nombre: String) -> int:
+	return historia.get(nombre, 0)

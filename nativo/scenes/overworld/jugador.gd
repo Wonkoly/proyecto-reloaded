@@ -48,6 +48,7 @@ func _ready() -> void:
 func _physics_process(delta: float) -> void:
 	if SceneManager.en_transicion:
 		return
+	collision_mask = 0 if GameState.dev_noclip else 1
 	var x: float = Input.get_axis("mover_izquierda", "mover_derecha")
 	var y: float = Input.get_axis("mover_arriba", "mover_abajo")
 	var dir: Vector2 = Vector2(signf(x) if absf(x) > 0.3 else 0.0, signf(y) if absf(y) > 0.3 else 0.0)
@@ -82,7 +83,7 @@ func en_hierba() -> bool:
 
 ## Caminando por la hierba: encuentro con la probabilidad de FrequencySalvajes según la distancia.
 func _revisar_encuentro(distancia: float) -> void:
-	if _tabla == null or distancia <= 0.0 or SceneManager.en_transicion or not en_hierba():
+	if _tabla == null or distancia <= 0.0 or SceneManager.en_transicion or not GameState.dev_encuentros or not en_hierba():
 		return
 	if randf() < _tabla.probabilidad(distancia) and GameState.pokemon_para_combatir() != null:
 		var salvaje: PokemonInstance = _tabla.elegir()

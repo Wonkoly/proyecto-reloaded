@@ -1,0 +1,199 @@
+class_name ComandosDev
+## Los comandos de la consola dev. Cada uno es una línea de registrar(): nombre, descripción, uso,
+## acción (recibe los argumentos y devuelve el texto a mostrar) y, opcional, autocompletado.
+
+const CARPETA_MAPAS: String = "res://assets/extraido/mapas"
+
+
+static func registrar_todos(c: Node) -> void:
+	c.registrar("ayuda", "Lista los comandos o explica uno", "ayuda [comando]", _ayuda.bind(c),
+		func(_i: int, t: String) -> PackedStringArray: return _filtrar(c.comandos().map(func(x: Variant) -> String: return x.nombre), t))
+	c.registrar("tp", "Va a un mapa (al centro, o a x y)", "tp <mapa> [x y]", _tp.bind(c),
+		func(i: int, t: String) -> PackedStringArray: return _filtrar(_mapas(), t) if i == 0 else PackedStringArray())
+	c.registrar("mapas", "Lista los mapas extraídos", "mapas [filtro]", _listar_mapas)
+	c.registrar("noclip", "Atravesar paredes en el overworld", "noclip", _alternar.bind("dev_noclip", "noclip"))
+	c.registrar("velocidad", "Velocidad del juego (1 = normal)", "velocidad <factor>", _velocidad)
+	c.registrar("dar", "Agrega un Pokémon al equipo", "dar <especie> <nivel>", _dar,
+		func(i: int, t: String) -> PackedStringArray: return _filtrar(_especies(), t) if i == 0 else PackedStringArray())
+	c.registrar("curar", "Cura HP y energía del equipo", "curar", _curar)
+	c.registrar("nivel", "Cambia el nivel del primer Pokémon del equipo", "nivel <n>", _nivel)
+	c.registrar("encuentro", "Batalla ya contra un salvaje", "encuentro <especie> <nivel>", _encuentro.bind(c),
+		func(i: int, t: String) -> PackedStringArray: return _filtrar(_especies(), t) if i == 0 else PackedStringArray())
+	c.registrar("encuentros", "Activa o desactiva los Pokémon salvajes", "encuentros on|off", _encuentros)
+	c.registrar("dificultad", "Fuerza el divisor de daño (PowDif) de los dos lados; 0 = normal", "dificultad <1|2|4|0>", _dificultad)
+	c.registrar("historia", "Muestra o cambia banderas de la historia (recarga el mapa para verlo)", "historia [bandera] [valor]", _historia)
+	c.registrar("god", "No recibes daño en batalla", "god", _alternar.bind("dev_god", "god"))
+	c.registrar("energia_infinita", "Tu Pokémon tiene la energía siempre llena", "energia_infinita", _alternar.bind("dev_energia_infinita", "energía infinita"))
+	c.registrar("pos", "Mapa y posición del jugador", "pos", _pos.bind(c))
+
+
+static func _ayuda(args: PackedStringArray, c: Node) -> String:
+	if args.size() > 0:
+		for x: Variant in c.comandos():
+			if x.nombre == args[0].to_lower():
+				return "%s — %s\n  uso: %s" % [x.nombre, x.descripcion, x.uso]
+		return "No existe el comando \"%s\"" % args[0]
+	var lineas: PackedStringArray = []
+	for x: Variant in c.comandos():
+		lineas.append("[b]%s[/b] — %s" % [x.uso, x.descripcion])
+	return "\n".join(lineas)
+
+
+static func _tp(args: PackedStringArray, c: Node) -> String:
+	if args.is_empty():
+		return "uso: tp <mapa> [x y]"
+	var mapa: String = _resolver_mapa(args[0])
+	if mapa == "":
+		return "No hay un mapa \"%s\" (mapas para ver la lista)" % args[0]
+	var pos: Vector2 = SceneManager.CENTRO
+	if args.size() >= 3:
+		pos = Vector2(args[1].to_float(), args[2].to_float())
+	SceneManager.ir_a_mapa(mapa, pos)
+	c.call_deferred("_alternar_consola")
+	return "→ %s %s" % [mapa, "" if pos == SceneManager.CENTRO else str(pos)]
+
+
+static func _listar_mapas(args: PackedStringArray) -> String:
+	var filtro: String = _normalizar(args[0]) if args.size() > 0 else ""
+	var lista: PackedStringArray = []
+	for m: String in _mapas():
+		if filtro == "" or filtro in _normalizar(m):
+			lista.append(m)
+	return "%d mapas: %s" % [lista.size(), "  ".join(lista)]
+
+
+static func _alternar(_args: PackedStringArray, propiedad: String, nombre: String) -> String:
+	GameState.set(propiedad, not GameState.get(propiedad))
+	return "%s: %s" % [nombre, "sí" if GameState.get(propiedad) else "no"]
+
+
+static func _velocidad(args: PackedStringArray) -> String:
+	if args.size() > 0 and args[0].is_valid_float():
+		Engine.time_scale = clampf(args[0].to_float(), 0.1, 16.0)
+	return "velocidad: x%s" % Engine.time_scale
+
+
+static func _dar(args: PackedStringArray) -> String:
+	var especie: PokemonData = _especie(args[0] if args.size() > 0 else "")
+	if especie == null:
+		return "uso: dar <especie> <nivel> (id o nombre)"
+	if GameState.equipo.size() >= 6:
+		return "El equipo ya tiene 6 Pokémon"
+	var p: PokemonInstance = PokemonInstance.crear(especie, clampi(args[1].to_int() if args.size() > 1 else 5, 1, 100))
+	GameState.equipo.append(p)
+	return "%s nivel %d agregado al equipo (%d/6)" % [especie.nombre, p.nivel, GameState.equipo.size()]
+
+
+static func _curar(_args: PackedStringArray) -> String:
+	for p: PokemonInstance in GameState.equipo:
+		p.hp_actual = p.calcular_stats()["hp"]
+		p.energia_actual = p.calcular_energia_maxima()
+	return "Equipo curado"
+
+
+static func _nivel(args: PackedStringArray) -> String:
+	if GameState.equipo.is_empty() or args.is_empty() or not args[0].is_valid_int():
+		return "uso: nivel <n>"
+	var p: PokemonInstance = GameState.equipo[0]
+	p.nivel = clampi(args[0].to_int(), 1, 100)
+	p.hp_actual = p.calcular_stats()["hp"]
+	p.energia_actual = p.calcular_energia_maxima()
+	return "%s ahora es nivel %d" % [p.especie.nombre, p.nivel]
+
+
+static func _encuentro(args: PackedStringArray, c: Node) -> String:
+	var especie: PokemonData = _especie(args[0] if args.size() > 0 else "")
+	if especie == null:
+		return "uso: encuentro <especie> <nivel>"
+	if not get_tree_static().current_scene is Mapa:
+		return "Hay que estar en el overworld"
+	if GameState.pokemon_para_combatir() == null:
+		return "No tienes Pokémon que puedan combatir (curar)"
+	var salvaje: PokemonInstance = PokemonInstance.crear(especie, clampi(args[1].to_int() if args.size() > 1 else 5, 1, 100))
+	SceneManager.ir_a_batalla(salvaje, c.jugador())
+	c.call_deferred("_alternar_consola")
+	return "¡%s salvaje nivel %d!" % [especie.nombre, salvaje.nivel]
+
+
+static func _encuentros(args: PackedStringArray) -> String:
+	if args.size() > 0:
+		GameState.dev_encuentros = args[0].to_lower() in ["on", "si", "sí", "1"]
+	return "encuentros: %s" % ("sí" if GameState.dev_encuentros else "no")
+
+
+static func _dificultad(args: PackedStringArray) -> String:
+	if args.size() > 0 and args[0].is_valid_int() and args[0].to_int() in [0, 1, 2, 4]:
+		GameState.dev_pow_dif = args[0].to_int()
+	return "PowDif: %s" % ("el de la dificultad (%d/%d)" % [GameState.pow_dif(1), GameState.pow_dif(2)]
+		if GameState.dev_pow_dif == 0 else str(GameState.dev_pow_dif))
+
+
+static func _historia(args: PackedStringArray) -> String:
+	if args.size() >= 2 and args[1].is_valid_int():
+		GameState.historia[args[0]] = args[1].to_int()
+	elif args.size() == 1:
+		return "%s = %d" % [args[0], GameState.bandera(args[0])]
+	return "historia: %s" % str(GameState.historia)
+
+
+static func _pos(_args: PackedStringArray, c: Node) -> String:
+	var j: Jugador = c.jugador()
+	if j == null:
+		return "No estás en el overworld (escena %s)" % get_tree_static().current_scene.name
+	return "%s %s mira %d" % [GameState.mapa_actual, str(j.global_position.round()), j.mira]
+
+
+# Ayudantes -----------------------------------------------------------------------------------
+
+static func get_tree_static() -> SceneTree:
+	return Engine.get_main_loop() as SceneTree
+
+
+static func _mapas() -> PackedStringArray:
+	var lista: PackedStringArray = []
+	for f: String in DirAccess.get_files_at(CARPETA_MAPAS):
+		if f.ends_with(".tscn"):
+			lista.append(f.get_basename())
+	return lista
+
+
+static func _resolver_mapa(texto: String) -> String:
+	var buscado: String = _normalizar(texto)
+	var parecidos: PackedStringArray = []
+	for m: String in _mapas():
+		if _normalizar(m) == buscado:
+			return m
+		if _normalizar(m).begins_with(buscado):
+			parecidos.append(m)
+	return parecidos[0] if parecidos.size() == 1 else ""
+
+
+static func _especies() -> PackedStringArray:
+	var lista: PackedStringArray = []
+	for f: String in DirAccess.get_files_at(Datos.CARPETA_POKEMON):
+		if f.ends_with(".tres"):
+			lista.append(f.get_basename().substr(5))  # 0016_pidgey → pidgey
+	return lista
+
+
+## Especie por id (16) o por nombre (pidgey).
+static func _especie(texto: String) -> PokemonData:
+	if texto.is_valid_int():
+		return Datos.especie(texto.to_int())
+	var buscado: String = _normalizar(texto)
+	for f: String in DirAccess.get_files_at(Datos.CARPETA_POKEMON):
+		if f.ends_with(".tres") and _normalizar(f.get_basename().substr(5)) == buscado:
+			return load(Datos.CARPETA_POKEMON.path_join(f)) as PokemonData
+	return null
+
+
+static func _normalizar(texto: String) -> String:
+	return texto.to_lower().replace("_", "").replace(" ", "")
+
+
+static func _filtrar(lista: Array, texto: String) -> PackedStringArray:
+	var out: PackedStringArray = []
+	for x: Variant in lista:
+		if _normalizar(str(x)).begins_with(_normalizar(texto)):
+			out.append(str(x))
+	return out

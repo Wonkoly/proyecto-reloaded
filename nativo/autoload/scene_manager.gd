@@ -12,6 +12,7 @@ var _velo: ColorRect
 
 
 func _ready() -> void:
+	process_mode = Node.PROCESS_MODE_ALWAYS  # la consola dev pausa el juego mientras está abierta
 	var capa := CanvasLayer.new()
 	capa.layer = 128
 	add_child(capa)
@@ -29,6 +30,10 @@ static func ruta_mapa(nombre_original: String) -> String:
 
 func existe_mapa(nombre_original: String) -> bool:
 	return ResourceLoader.exists(ruta_mapa(nombre_original))
+
+
+## Posición especial: el centro del mapa (la consola dev la usa con "tp <mapa>").
+const CENTRO: Vector2 = Vector2(-1, -1)
 
 
 ## Lleva al jugador a un mapa (nombre de la room del original) en esa posición.
@@ -58,11 +63,12 @@ func usar_salida(salida: Salida, jugador: Jugador) -> void:
 
 
 ## Del overworld a una batalla contra un salvaje; al terminar se vuelve con volver_de_batalla().
-func ir_a_batalla(salvaje: PokemonInstance, jugador: Jugador) -> void:
+func ir_a_batalla(salvaje: PokemonInstance, jugador: Jugador = null) -> void:
 	if en_transicion:
 		return
-	GameState.posicion_jugador = jugador.global_position
-	GameState.mira = jugador.mira
+	if jugador:
+		GameState.posicion_jugador = jugador.global_position
+		GameState.mira = jugador.mira
 	GameState.salvaje = salvaje
 	await _con_fundido(func() -> void: get_tree().change_scene_to_file(ESCENA_BATALLA))
 
@@ -76,8 +82,11 @@ func volver_de_batalla() -> void:
 func _cargar_mapa() -> void:
 	var mapa: Mapa = (load(ruta_mapa(GameState.mapa_actual)) as PackedScene).instantiate()
 	var jugador: Jugador = (load(ESCENA_JUGADOR) as PackedScene).instantiate()
+	if GameState.posicion_jugador == CENTRO:
+		GameState.posicion_jugador = Vector2(mapa.tamano) / 2.0
 	jugador.position = GameState.posicion_jugador
 	jugador.mira = GameState.mira
+	GameState.mapa_actual = mapa.nombre_original
 	mapa.objetos().add_child(jugador)
 	get_tree().change_scene_to_node(mapa)
 

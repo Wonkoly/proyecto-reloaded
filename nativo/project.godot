@@ -11,7 +11,7 @@ config_version=5
 [application]
 
 config/name="Proyecto Reloaded (nativo)"
-run/main_scene="res://scenes/debug/menu_pruebas.tscn"
+run/main_scene="res://scenes/titulo/intro.tscn"
 config/features=PackedStringArray("4.7")
 
 [autoload]

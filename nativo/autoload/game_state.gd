@@ -61,11 +61,46 @@ var dev_encuentros: bool = true
 var dev_pow_dif: int = 0
 
 
+## Dónde empieza una partida nueva (InitialGlobal: global.lugar = Home_2, xx/yy, mira, y room_out/
+## outx/outy: a dónde lleva la puerta de la casa).
+const INICIO_MAPA: String = "Home_2"
+const INICIO_POSICION: Vector2 = Vector2(89, 147)
+const INICIO_SALIDA_MAPA: String = "PuebloAlba"
+const INICIO_SALIDA_POSICION: Vector2 = Vector2(417, 199)
+
+
 func _ready() -> void:
 	if equipo.is_empty():
-		var charmander: PokemonData = Datos.especie(4)
-		if charmander:
-			equipo.append(PokemonInstance.crear(charmander, 5))
+		_equipo_inicial()
+
+
+## Deja todo como al empezar una partida (el estado de prueba de siempre: ya con su primer Pokémon
+## y el móvil, porque la presentación del profesor aún no existe) en la casa del protagonista.
+func nueva_partida() -> void:
+	dificultad = Dificultad.NORMAL
+	equipo.clear()
+	_equipo_inicial()
+	mapa_actual = INICIO_MAPA
+	posicion_jugador = INICIO_POSICION
+	mira = 2
+	mapa_salida = INICIO_SALIDA_MAPA
+	posicion_salida = INICIO_SALIDA_POSICION
+	salvaje = null
+	historia = {"fy_002": 1, "movil": 1}
+	indice_lugar = 0
+	dinero = 0
+	prota_id = randi_range(0, 99999)
+	apodo_jugador = ""
+	personaje = 0
+	personaje_entrenador = 1
+	trucos_usados = 0
+	historia_cambiada.emit()
+
+
+func _equipo_inicial() -> void:
+	var charmander: PokemonData = Datos.especie(4)
+	if charmander:
+		equipo.append(PokemonInstance.crear(charmander, 5))
 
 
 ## El primero del equipo que puede combatir, o null si todos están debilitados.

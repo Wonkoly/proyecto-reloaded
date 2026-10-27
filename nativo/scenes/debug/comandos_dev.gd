@@ -30,6 +30,8 @@ static func registrar_todos(c: Node) -> void:
 	c.registrar("encuentros_mapa", "Subtablas de encuentros del mapa, cuál vale ahora y la probabilidad de cada especie", "encuentros_mapa", _encuentros_mapa.bind(c))
 	c.registrar("simular_encuentros", "Sortea n veces en la posición actual y compara con los pesos esperados", "simular_encuentros <n>", _simular_encuentros.bind(c))
 	c.registrar("validar", "Revisa las salidas del mapa actual (destino, llegada, rebote, regreso)", "validar", _validar.bind(c))
+	c.registrar("pruebas", "Abre el menú de pruebas (batalla con especies elegidas, overworld)", "pruebas", _escena.bind(c, "res://scenes/debug/menu_pruebas.tscn"))
+	c.registrar("titulo", "Vuelve a la pantalla de título", "titulo", _escena.bind(c, "res://scenes/titulo/titulo.tscn"))
 	c.registrar("ir", "Ruta más corta hasta un mapa; con tp va al primer mapa de la ruta", "ir <mapa> [tp]", _ir.bind(c),
 		func(i: int, t: String) -> PackedStringArray: return _filtrar(ConexionesDev.grafo().get("mapas", {}).keys(), t) if i == 0 else PackedStringArray())
 
@@ -218,6 +220,13 @@ static func _dar(args: PackedStringArray) -> String:
 	var p: PokemonInstance = PokemonInstance.crear(especie, clampi(args[1].to_int() if args.size() > 1 else 5, 1, 100))
 	GameState.equipo.append(p)
 	return "%s nivel %d agregado al equipo (%d/6)" % [especie.nombre, p.nivel, GameState.equipo.size()]
+
+
+static func _escena(_args: PackedStringArray, c: Node, ruta: String) -> String:
+	c.cerrar()
+	AudioManager.detener_musica()
+	c.get_tree().change_scene_to_file.call_deferred(ruta)
+	return "Abriendo " + ruta.get_file().get_basename()
 
 
 static func _curar(_args: PackedStringArray) -> String:

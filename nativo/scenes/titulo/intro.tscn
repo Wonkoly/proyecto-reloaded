@@ -1,0 +1,7 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://scenes/titulo/intro.gd" id="1"]
+
+[node name="Intro" type="Node2D"]
+texture_repeat = 2
+script = ExtResource("1")

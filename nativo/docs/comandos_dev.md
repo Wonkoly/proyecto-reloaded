@@ -14,6 +14,8 @@ Solo en builds de depuración (al correr desde el editor o con `--path`); en un 
 | Comando | Qué hace |
 |---|---|
 | `ayuda [comando]` | Lista los comandos o explica uno |
+| `pruebas` | Abre el menú de pruebas (batalla con especies elegidas, overworld); antes era la pantalla inicial |
+| `titulo` | Vuelve a la pantalla de título |
 | `tp <mapa> [x y]` | Va a un mapa (al centro si no se da posición) |
 | `mapas [filtro]` | Lista los mapas extraídos |
 | `noclip` | Atravesar paredes |

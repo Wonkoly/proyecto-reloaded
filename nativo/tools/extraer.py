@@ -61,12 +61,19 @@ SPRITES_UI = [
     "spr_barra_gray", "spr_barra_green", "spr_barra_yellow", "spr_barra_red", "spr_barra_blue",
     "spr_barra_purple", "spr_barra_silver", "spr_gotype", "spr_pkmnsex", "spr_stat",
     "spr_simbolito_atfs", "spr_simbolito_atsp", "spr_simbolito_atst",
+    # Intro y título (obj_blackIntro, InicioROOM) y los cuadros de pregunta (ShowDialogQuestion).
+    "spr_credits_intro", "spr_title", "spr_title2", "spr_title3", "spr_lineafreak",
+    "spr_bckConfirm", "spr_bckConfirmImportant", "spr_bckMessage",
 ]
+# Fondos de la intro y el título (IntroROOM, InicioROOM) → sprites/ui/fondos/.
+FONDOS_UI = ["BackIntro", "BackIntroLetras", "GradienteNight", "BackFerProductions"]
+# Sonidos de los menús → audio/sfx/ui/.
+SONIDOS_UI = ["snd_click"]
 CARPETAS = {
     "datos": [DATA / "pokemon", DATA / "moves", DATA / "textos"],
     "sprites": [ASSETS / "sprites" / "pokemon"],
     "fondos": [ASSETS / "sprites" / "battlebacks"],
-    "ui": [ASSETS / "sprites" / "ui"],
+    "ui": [ASSETS / "sprites" / "ui", ASSETS / "audio" / "sfx" / "ui", ASSETS / "audio" / "intro"],
     "fuentes": [ASSETS / "fonts"],
     "efectos": [ASSETS / "sprites" / "particulas", ASSETS / "sprites" / "efectos", DATA / "visuales"],
     "tilesets": [ASSETS / "sprites" / "tilesets"],
@@ -908,6 +915,14 @@ def main() -> None:
         elif cat == "ui":
             for nombre in SPRITES_UI:
                 extraer_sprite_original(plan, args.juego, nombre, ASSETS / "sprites" / "ui")
+            for nombre in FONDOS_UI:
+                plan.copiar(args.juego / "_internal" / "backgrounds" / f"{nombre}.png",
+                            ASSETS / "sprites" / "ui" / "fondos" / f"{snake(nombre)}.png")
+            for nombre in SONIDOS_UI:
+                plan.copiar(args.juego / "_internal" / "sounds" / f"{nombre}.wav",
+                            ASSETS / "audio" / "sfx" / "ui" / f"{snake(nombre)}.wav")
+            # La música del título (BlackConfiguration: Music_Intro_N.mp3).
+            extraer_simple(plan, args.juego / "data" / "audio", ASSETS / "audio" / "intro", ["Music_Intro_*.mp3"])
         elif cat == "fuentes":
             extraer_fuentes(plan, args.juego)
         elif cat == "efectos":
@@ -929,7 +944,6 @@ def main() -> None:
         elif cat == "musica":
             musica = args.juego / "data" / "audio"
             extraer_simple(plan, musica / "musica", ASSETS / "audio" / "music", ["*/*.ogg"])
-            extraer_simple(plan, musica, ASSETS / "audio" / "music" / "intro", ["*.mp3"])
         elif cat == "gritos":
             extraer_gritos(plan, args.juego / "data" / "audio" / "grito", ASSETS / "audio" / "sfx" / "gritos")
         elif cat == "entrenadores":

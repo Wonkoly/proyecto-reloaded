@@ -36,11 +36,11 @@ sobrescribe en la siguiente corrida.
 | datos | (por defecto) | `extracted/scripts/*.gml` (tablas) + `extracted/text/es/` | `data/extraido/moves/NNNN_nombre.tres` (MoveData), `data/extraido/pokemon/NNNN_nombre.tres` (PokemonData), `data/extraido/textos/es/*.txt` (textos del juego; `Textos.batalla(n)` = `TextBattle(n)`) |
 | sprites | (por defecto) `--pokemon` | `extracted/pkmnbattle/` | `assets/extraido/sprites/pokemon/NNNN/*.png` + `sprite_frames.tres` |
 | fondos | (por defecto) `--fondos-todos` | `gamedata/data/battleback/` | `assets/extraido/sprites/battlebacks/{realistic,traditional}/` (sin el flag: solo los 3 primeros realistas) |
-| ui | (por defecto) | `gamedata/_internal/sprites/` (los del HUD de batalla, `SPRITES_UI`) | `assets/extraido/sprites/ui/<sprite>/N.png` + `<sprite>.tres` (`SpriteOriginal`: frames y origen de GM8) |
+| ui | (por defecto) | `gamedata/_internal/sprites/` (HUD de batalla, intro, título y cuadros de pregunta: `SPRITES_UI`), `backgrounds/` (`FONDOS_UI`), `sounds/` (`SONIDOS_UI`), `gamedata/data/audio/Music_Intro_*.mp3` | `assets/extraido/sprites/ui/<sprite>/N.png` + `<sprite>.tres` (`SpriteOriginal`: frames y origen de GM8), `sprites/ui/fondos/`, `audio/sfx/ui/`, `audio/intro/` (música del título) |
 | fuentes | (por defecto) | `gamedata/_internal/fonts/` | `assets/extraido/fonts/<fuente>.png` + `.fnt` (BMFont; Godot lo importa como fuente) |
 | efectos | (por defecto) | `gamedata/_internal/particles.dat`, `extracted/scripts/{EfectoEspecial,EffectAtackCreate,EffectAtack}.gml` | `assets/extraido/sprites/particulas/forma_N.png` (formas `pt_shape_*` de GM8), `data/extraido/visuales/visuales_ataques.gd` (animación de cada movimiento traducida por `gml_visual.py`) y `assets/extraido/sprites/efectos/<id>.tres` (los sprites que usa) |
 | tilesets | `--tilesets` | `gamedata/_internal/backgrounds/` | `assets/extraido/sprites/tilesets/*.png` + un `TileSet` `.tres` de 16×16 por imagen |
-| musica | `--musica` | `gamedata/data/audio/musica/{pk,re}/*.ogg`, `Music_Intro_*.mp3` | `assets/extraido/audio/music/` |
+| musica | `--musica` | `gamedata/data/audio/musica/{pk,re}/*.ogg` | `assets/extraido/audio/music/` (la del título va en `ui`) |
 | gritos | `--gritos` | `gamedata/data/audio/grito/*.wav` | `assets/extraido/audio/sfx/gritos/` |
 | entrenadores | `--entrenadores` | `gamedata/data/trainer/*.png` | `assets/extraido/sprites/trainers/` |
 | mapas | (por defecto: Home_2, Home_1, PuebloAlba, Ruta_1) `--mapas-lista` | `extracted/rooms/*.json` + `CreateDoors`, `CreateNPC1..5`, `CreateDevices`, `SetOnlyWater`, `CambiosWorldRooms`, `CambiosSpecialRooms` | `assets/extraido/mapas/nombre.tscn` y `assets/extraido/sprites/overworld/` (también extrae los tilesets; `--todo` extrae los 717 mapas) |

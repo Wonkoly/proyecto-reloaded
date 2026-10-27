@@ -2,7 +2,7 @@
 
 ## Guardar y cargar (`autoload/save_manager.gd`)
 - **9 slots**, como el original (`global.Slot`). Cada uno es `user://partidas/partida_N.json`
-  (en Linux: `~/.local/share/godot/app_userdata/Proyecto Reloaded/partidas/`).
+  (en Linux: `~/.local/share/godot/app_userdata/Proyecto Reloaded (nativo)/partidas/`).
 - **En el juego: F5** (como `key_global_guardar`): con el jugador quieto, sin cruzar un salto y dentro
   del mapa, pregunta "¿Deseas guardar el juego?" y guarda en el slot de la partida. Una partida nueva
   toma el primer slot libre al guardar por primera vez; con los 9 ocupados, Nueva partida avisa

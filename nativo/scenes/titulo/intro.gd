@@ -25,6 +25,7 @@ var _terminado: bool = false
 
 func _ready() -> void:
 	get_window().content_scale_size = RESOLUCION
+	GameState.en_partida = false
 	AudioManager.reproducir_intro()
 
 

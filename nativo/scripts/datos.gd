@@ -2,18 +2,37 @@ class_name Datos
 ## Acceso a los datos extraídos (data/extraido/, ver tools/README.md).
 
 const CARPETA_POKEMON: String = "res://data/extraido/pokemon"
+const CARPETA_MOVIMIENTOS: String = "res://data/extraido/moves"
 
 static var _especies_con_sprites: Dictionary[int, String] = {}
 
 
 ## La especie con ese id_original, o null si no está extraída.
 static func especie(id_original: int) -> PokemonData:
+	var ruta: String = _buscar(CARPETA_POKEMON, id_original)
+	if ruta == "":
+		push_error("No hay datos de la especie %d: corre tools/extraer.py" % id_original)
+		return null
+	return load(ruta) as PokemonData
+
+
+## El movimiento con ese id_original, o null si no está extraído.
+static func movimiento(id_original: int) -> MoveData:
+	var ruta: String = _buscar(CARPETA_MOVIMIENTOS, id_original)
+	if ruta == "":
+		push_error("No hay datos del movimiento %d: corre tools/extraer.py" % id_original)
+		return null
+	return load(ruta) as MoveData
+
+
+## Los archivos de datos se llaman NNNN_nombre.tres (NNNN = id_original).
+static func _buscar(carpeta: String, id_original: int) -> String:
 	var prefijo: String = "%04d_" % id_original
-	for archivo: String in DirAccess.get_files_at(CARPETA_POKEMON):
+	for archivo: String in DirAccess.get_files_at(carpeta):
+		archivo = archivo.trim_suffix(".remap")  # en un export, los .tres aparecen como .tres.remap
 		if archivo.begins_with(prefijo) and archivo.ends_with(".tres"):
-			return load(CARPETA_POKEMON.path_join(archivo)) as PokemonData
-	push_error("No hay datos de la especie %d: corre tools/extraer.py" % id_original)
-	return null
+			return carpeta.path_join(archivo)
+	return ""
 
 
 

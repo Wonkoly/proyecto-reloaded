@@ -12,10 +12,32 @@ const RESOLUCION: Vector2i = Vector2i(320, 180)
 @export var tamano: Vector2i = Vector2i(320, 180)
 
 
+var _guardando: bool = false
+
+
 func _ready() -> void:
 	get_window().content_scale_size = RESOLUCION
+	GameState.en_partida = true
 	aplicar_historia()
 	GameState.historia_cambiada.connect(aplicar_historia)
+
+
+## F5 (key_global_guardar, KeyActionsExplorer): con el jugador quieto pregunta y guarda.
+func _unhandled_input(evento: InputEvent) -> void:
+	var tecla := evento as InputEventKey
+	if tecla == null or not tecla.pressed or tecla.echo or tecla.physical_keycode != KEY_F5:
+		return
+	get_viewport().set_input_as_handled()
+	var jugador: Jugador = get_node_or_null("Objetos/Jugador") as Jugador
+	if _guardando or SceneManager.en_transicion or jugador == null or not jugador.quieto():
+		return
+	_guardando = true
+	if await CuadroOriginal.preguntar(self, Textos.linea("txt_menu", 39)):
+		GameState.posicion_jugador = jugador.global_position
+		GameState.mira = jugador.mira
+		var error: String = SaveManager.guardar()
+		await CuadroOriginal.mensaje(self, Textos.linea("txt_menu", 44) if error == "" else error)
+	_guardando = false
 
 
 ## Activa o desactiva lo que depende de la historia (grupo "historia", con metadata/condicion: una

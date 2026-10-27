@@ -35,6 +35,43 @@ static func crear(especie_: PokemonData, nivel_: int) -> PokemonInstance:
 	return p
 
 
+## El Pokémon como datos para la partida guardada (SaveManager): especie y movimientos por id_original.
+func a_dict() -> Dictionary:
+	return {
+		"especie": especie.id_original if especie else 0,
+		"apodo": apodo,
+		"nivel": nivel,
+		"experiencia": experiencia,
+		"hp": hp_actual,
+		"energia": energia_actual,
+		"iv": iv,
+		"ntv": ntv,
+		"movimientos": movimientos.filter(func(m: MoveData) -> bool: return m != null).map(
+			func(m: MoveData) -> int: return m.id_original),
+	}
+
+
+## Lo contrario de a_dict(); null si la especie no existe en los datos extraídos.
+static func desde_dict(d: Dictionary) -> PokemonInstance:
+	var datos_especie: PokemonData = Datos.especie(int(d.get("especie", 0)))
+	if datos_especie == null:
+		return null
+	var p := PokemonInstance.new()
+	p.especie = datos_especie
+	p.apodo = str(d.get("apodo", ""))
+	p.nivel = int(d.get("nivel", 1))
+	p.experiencia = int(d.get("experiencia", 0))
+	p.iv = int(d.get("iv", 0))
+	p.ntv = int(d.get("ntv", 0))
+	for id: Variant in d.get("movimientos", []):
+		var m: MoveData = Datos.movimiento(int(id))
+		if m:
+			p.movimientos.append(m)
+	p.hp_actual = clampi(int(d.get("hp", 0)), 0, p.calcular_stats()["hp"])
+	p.energia_actual = clampi(int(d.get("energia", 0)), 0, p.calcular_energia_maxima())
+	return p
+
+
 ## Pone los movimientos como ColocaAtaques del original: los 4 últimos distintos aprendidos por
 ## nivel hasta el nivel actual (el más reciente primero). Si no hay ninguno, el primero que
 ## aprendería al subir de nivel.

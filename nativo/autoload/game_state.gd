@@ -40,6 +40,14 @@ var historia: Dictionary[String, int] = {"fy_002": 1, "movil": 1}
 var indice_lugar: int = 0
 
 var dinero: int = 0
+## Nombre del protagonista (global.protaname); al empezar, el del perfil.
+var nombre_jugador: String = ""
+## Slot de la partida (1-9, como global.Slot); 0 = todavía no se guardó.
+var slot: int = 0
+## Segundos jugados (cuenta mientras hay partida y el juego no está en pausa).
+var tiempo_juego: float = 0.0
+## Hay una partida en curso (no en el título).
+var en_partida: bool = false
 ## Identificador del jugador (global.prota_ID): el código SELUE depende de él.
 var prota_id: int = randi_range(0, 99999)
 ## Apodo del protagonista (código MOTE) y personaje (código CARA: 0-9, 10 = sprite de entrenador).
@@ -76,8 +84,12 @@ func _ready() -> void:
 
 ## Deja todo como al empezar una partida (el estado de prueba de siempre: ya con su primer Pokémon
 ## y el móvil, porque la presentación del profesor aún no existe) en la casa del protagonista.
-func nueva_partida() -> void:
+func nueva_partida(nombre: String = "") -> void:
 	dificultad = Dificultad.NORMAL
+	nombre_jugador = nombre
+	slot = 0
+	tiempo_juego = 0.0
+	en_partida = true
 	equipo.clear()
 	_equipo_inicial()
 	mapa_actual = INICIO_MAPA
@@ -95,6 +107,75 @@ func nueva_partida() -> void:
 	personaje_entrenador = 1
 	trucos_usados = 0
 	historia_cambiada.emit()
+
+
+func _process(delta: float) -> void:
+	if en_partida:
+		tiempo_juego += delta
+
+
+## Lo que se guarda de la partida (SaveManager). Las opciones de desarrollo no se guardan.
+func a_dict() -> Dictionary:
+	return {
+		"nombre_jugador": nombre_jugador,
+		"dificultad": dificultad,
+		"equipo": equipo.map(func(p: PokemonInstance) -> Dictionary: return p.a_dict()),
+		"mapa_actual": mapa_actual,
+		"posicion_jugador": [posicion_jugador.x, posicion_jugador.y],
+		"mira": mira,
+		"mapa_salida": mapa_salida,
+		"posicion_salida": [posicion_salida.x, posicion_salida.y],
+		"historia": historia.duplicate(),
+		"indice_lugar": indice_lugar,
+		"dinero": dinero,
+		"prota_id": prota_id,
+		"apodo_jugador": apodo_jugador,
+		"personaje": personaje,
+		"personaje_entrenador": personaje_entrenador,
+		"trucos_usados": trucos_usados,
+		"guardar_log_batalla": guardar_log_batalla,
+		"velocidad_texto": velocidad_texto,
+		"transicion_especial": transicion_especial,
+		"tiempo_juego": tiempo_juego,
+	}
+
+
+## Restaura una partida guardada (lo que falte queda como en una partida nueva).
+func desde_dict(d: Dictionary, slot_: int) -> void:
+	nueva_partida(str(d.get("nombre_jugador", "")))
+	slot = slot_
+	dificultad = clampi(int(d.get("dificultad", Dificultad.NORMAL)), Dificultad.FACIL, Dificultad.SEXTA) as Dificultad
+	if d.has("equipo"):
+		equipo.clear()
+		for p: Variant in d.equipo:
+			var pokemon: PokemonInstance = PokemonInstance.desde_dict(p) if p is Dictionary else null
+			if pokemon:
+				equipo.append(pokemon)
+	mapa_actual = str(d.get("mapa_actual", mapa_actual))
+	posicion_jugador = _vector(d.get("posicion_jugador"), posicion_jugador)
+	mira = int(d.get("mira", mira))
+	mapa_salida = str(d.get("mapa_salida", mapa_salida))
+	posicion_salida = _vector(d.get("posicion_salida"), posicion_salida)
+	if d.get("historia") is Dictionary:
+		historia.clear()
+		for k: Variant in d.historia:
+			historia[str(k)] = int(d.historia[k])
+	indice_lugar = int(d.get("indice_lugar", 0))
+	dinero = int(d.get("dinero", 0))
+	prota_id = int(d.get("prota_id", prota_id))
+	apodo_jugador = str(d.get("apodo_jugador", ""))
+	personaje = int(d.get("personaje", 0))
+	personaje_entrenador = int(d.get("personaje_entrenador", 1))
+	trucos_usados = int(d.get("trucos_usados", 0))
+	guardar_log_batalla = bool(d.get("guardar_log_batalla", false))
+	velocidad_texto = int(d.get("velocidad_texto", 1))
+	transicion_especial = bool(d.get("transicion_especial", false))
+	tiempo_juego = float(d.get("tiempo_juego", 0.0))
+	historia_cambiada.emit()
+
+
+static func _vector(v: Variant, si_no: Vector2) -> Vector2:
+	return Vector2(float(v[0]), float(v[1])) if v is Array and v.size() == 2 else si_no
 
 
 func _equipo_inicial() -> void:

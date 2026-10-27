@@ -53,6 +53,13 @@ func _ready() -> void:
 	camara.reset_smoothing()
 
 
+## Quieto, sin cruzar un salto y dentro del mapa (lo que pide el original para guardar).
+func quieto() -> bool:
+	var mapa: Mapa = _mapa()
+	var dentro: bool = mapa == null or Rect2(Vector2.ZERO, Vector2(mapa.tamano)).has_point(global_position)
+	return not _moviendose and _salto == null and dentro
+
+
 func _physics_process(delta: float) -> void:
 	if SceneManager.en_transicion:
 		return

@@ -16,6 +16,8 @@ import re
 import struct
 from pathlib import Path
 
+import capas_tiles
+
 import gml_visual
 
 # Capas de física (project.godot): 1 paredes, 5 jugador, 6 zonas (hierba).
@@ -67,6 +69,10 @@ class Juego:
         self.objetos: list[str] = indice["objects"]
         self.sprites: list[str] = indice["sprites"]
         self.rooms: list[str] = indice["rooms"]
+        # Número de fuente de cada tileset en los TileSet de los mapas (el mismo en todos).
+        self.fondos: list[str | None] = indice["backgrounds"]
+        self._mascaras: capas_tiles.Mascaras | None = None
+        self._tiles_ref: set[int] | None = None
         self._obj: dict[str, dict] = {}
         self._meta: dict[str, dict | None] = {}
         self._arboles: dict[str, list] = {}
@@ -83,6 +89,19 @@ class Juego:
                 return True
             nombre = self.objeto(nombre).get("parent")
         return False
+
+    @property
+    def mascaras(self) -> capas_tiles.Mascaras:
+        if self._mascaras is None:
+            self._mascaras = capas_tiles.Mascaras(self.juego / "_internal" / "backgrounds")
+        return self._mascaras
+
+    @property
+    def tiles_ref(self) -> set[int]:
+        """Tiles que el código del juego borra o aclara por id: se conservan siempre y sueltos."""
+        if self._tiles_ref is None:
+            self._tiles_ref = capas_tiles.tiles_referenciados(self.ext / "scripts")
+        return self._tiles_ref
 
     def meta(self, sprite: str | None) -> dict | None:
         if not sprite:
@@ -588,62 +607,77 @@ def fondos(room: dict, tilesets: dict, e: Escena) -> None:
         e.nodo(f"fondo_{i}", "Sprite2D", "Fondos", props)
 
 
-def tiles(room: dict, tilesets: dict, e: Escena, snake, arriba: bool) -> None:
-    """Tiles por profundidad (mayor depth = más al fondo = primero). Los de depth < DEPTH_TILES_ARRIBA
-    van encima de los objetos (TilesArriba), el resto debajo (TilesDebajo). Una TileMapLayer por
-    tileset y desfase de la rejilla de 16; los que no caben en una rejilla quedan como Sprite2D."""
+def tiles(room: dict, tilesets: dict, e: Escena, juego: Juego, arriba: bool, usados: dict) -> None:
+    """Tiles por función (capas_tiles.py): Suelo, Agua, Obstaculos, Hierba, Detalles y, si algo tiene
+    que dibujarse encima de lo anterior, <Función>Encima. Los de depth < DEPTH_TILES_ARRIBA van encima
+    de los objetos (TilesArriba), el resto debajo (TilesDebajo). Todas las capas usan el TileSet del
+    mapa; `usados` junta los tiles de cada tileset para armarlo (tileset_del_mapa)."""
     raiz = "TilesArriba" if arriba else "TilesDebajo"
     e.nodo(raiz, "Node2D", ".", [])
-    por_depth: dict[int, list[dict]] = {}
-    for t in room["tiles"]:
-        if (t["depth"] < DEPTH_TILES_ARRIBA) == arriba:
-            por_depth.setdefault(t["depth"], []).append(t)
-    for depth in sorted(por_depth, reverse=True):
-        padre = f"profundidad_{depth}".replace("-", "m")
-        e.nodo(padre, "Node2D", raiz, [])
-        capas: dict[tuple[str, int, int], dict[tuple[int, int], tuple[int, int]]] = {}
-        sueltos: list[dict] = []
-        for t in por_depth[depth]:
-            if t["bg"] not in tilesets:
-                continue
-            _, _, tw, th = tilesets[t["bg"]]
-            en_rejilla = (t["xscale"] == 1 and t["yscale"] == 1 and t["blend"] == 0xFFFFFFFF
-                          and all(v % 16 == 0 for v in (t["tx"], t["ty"], t["w"], t["h"]))
-                          and t["tx"] + t["w"] <= tw - tw % 16 and t["ty"] + t["h"] <= th - th % 16)
-            celdas = {}
-            if en_rejilla:
-                fx, fy = t["x"] % 16, t["y"] % 16
-                capa = capas.setdefault((t["bg"], fx, fy), {})
-                for dy in range(0, t["h"], 16):
-                    for dx in range(0, t["w"], 16):
-                        celda = ((t["x"] - fx + dx) // 16, (t["y"] - fy + dy) // 16)
-                        if celda in capa or celda in celdas:
-                            en_rejilla = False
-                        celdas[celda] = ((t["tx"] + dx) // 16, (t["ty"] + dy) // 16)
-            if en_rejilla:
-                capa.update(celdas)
-            else:
-                sueltos.append(t)
-        for (bg, fx, fy), celdas in sorted(capas.items()):
+    ocultos = invisibles_room(room, tilesets, juego)
+    grupo = [t for t in sorted(room["tiles"], key=lambda t: -t["depth"])  # estable: respeta el orden dentro de cada depth
+             if (t["depth"] < DEPTH_TILES_ARRIBA) == arriba and t["bg"] in tilesets and t["id"] not in ocultos]
+    capas = capas_tiles.repartir(juego.mascaras, juego, room["instances"], grupo, juego.tiles_ref, caja)
+    for capa in capas:
+        if capa.celdas:
             datos = bytearray(struct.pack("<H", 0))
-            for (x, y), (ax, ay) in sorted(celdas.items(), key=lambda c: (c[0][1], c[0][0])):
-                datos += struct.pack("<hhHHHH", x, y, 0, ax, ay, 0)
-            props = [] if (fx, fy) == (0, 0) else [f"position = Vector2({fx}, {fy})"]
-            nombre = snake(bg) + ("" if (fx, fy) == (0, 0) else f"_desfase_{fx}_{fy}")
-            e.nodo(nombre, "TileMapLayer", f"{raiz}/{padre}", props + [
+            for (x, y), (bg, ax, ay, alt) in sorted(capa.celdas.items(), key=lambda c: (c[0][1], c[0][0])):
+                datos += struct.pack("<hhHHHH", x, y, juego.fondos.index(bg), ax, ay, alt)
+                usados.setdefault(bg, set()).add((ax, ay, alt))
+            e.nodo(capa.nombre, "TileMapLayer", raiz, [
                 "tile_map_data = PackedByteArray(%s)" % ", ".join(str(b) for b in datos),
-                f"tile_set = {e.ref('TileSet', e.res(tilesets[bg][1]))}"])
-        for t in sueltos:
-            props = [f"texture = {e.ref('Texture2D', e.res(tilesets[t['bg']][0]))}", "centered = false",
-                     f"position = Vector2({t['x']}, {t['y']})",
-                     "region_enabled = true", f"region_rect = Rect2({t['tx']}, {t['ty']}, {t['w']}, {t['h']})"]
-            if t["xscale"] != 1 or t["yscale"] != 1:
-                props.append(f"scale = Vector2({f(t['xscale'])}, {f(t['yscale'])})")
-            if t["blend"] != 0xFFFFFFFF:
-                c = t["blend"]
-                props.append("modulate = Color(%s, %s, %s, %s)" % tuple(
-                    f(round(v / 255, 4)) for v in (c & 255, (c >> 8) & 255, (c >> 16) & 255, (c >> 24) & 255)))
-            e.nodo(f"tile_{t['id']}", "Sprite2D", f"{raiz}/{padre}", props)
+                'tile_set = SubResource("tileset_mapa")'])
+        if capa.sueltos:
+            padre = f"{raiz}/{capa.nombre}Sueltos"
+            e.nodo(f"{capa.nombre}Sueltos", "Node2D", raiz, [])
+            for t in capa.sueltos:
+                props = [f"texture = {e.ref('Texture2D', e.res(tilesets[t['bg']][0]))}", "centered = false",
+                         f"position = Vector2({f(t['x'])}, {f(t['y'])})",
+                         "region_enabled = true", f"region_rect = Rect2({t['tx']}, {t['ty']}, {t['w']}, {t['h']})"]
+                if t["xscale"] != 1 or t["yscale"] != 1:
+                    props.append(f"scale = Vector2({f(t['xscale'])}, {f(t['yscale'])})")
+                if t["blend"] != 0xFFFFFFFF:
+                    c = t["blend"]
+                    props.append("modulate = Color(%s, %s, %s, %s)" % tuple(
+                        f(round(v / 255, 4)) for v in (c & 255, (c >> 8) & 255, (c >> 16) & 255, (c >> 24) & 255)))
+                e.nodo(f"tile_{t['id']}", "Sprite2D", padre, props)
+
+
+_ocultos: dict[str, set[int]] = {}
+
+
+def invisibles_room(room: dict, tilesets: dict, juego: Juego) -> set[int]:
+    """Tiles del mapa que nunca se ven (tapados por completo); se calcula sobre todas las profundidades."""
+    if room["name"] not in _ocultos:
+        todos = [t for t in sorted(room["tiles"], key=lambda t: -t["depth"]) if t["bg"] in tilesets]
+        _ocultos[room["name"]] = capas_tiles.invisibles(juego.mascaras, todos, juego.tiles_ref)
+    return _ocultos[room["name"]]
+
+
+def tileset_del_mapa(e: Escena, juego: Juego, tilesets: dict, usados: dict) -> None:
+    """El TileSet del mapa (sub_resource "tileset_mapa"): una fuente por tileset que usa, con todos sus
+    tiles de 16x16 para pintar y, en los tiles que el mapa pone desplazados, el alternativo con ese
+    desplazamiento (capas_tiles.alt_desfase)."""
+    fuentes = []
+    for bg in sorted(usados, key=juego.fondos.index):
+        _, _, w, h = tilesets[bg]
+        alts = {}
+        for ax, ay, alt in usados[bg]:
+            if alt:
+                alts.setdefault((ax, ay), set()).add(alt)
+        props = [f"resource_name = {gd_str(bg)}", f"texture = {e.ref('Texture2D', e.res(tilesets[bg][0]))}"]
+        for y in range(h // 16):
+            for x in range(w // 16):
+                props.append(f"{x}:{y}/0 = 0")
+                for alt in sorted(alts.get((x, y), ())):
+                    dx, dy = (alt - 1) % 16, (alt - 1) // 16
+                    props += [f"{x}:{y}/{alt} = {alt}", f"{x}:{y}/{alt}/texture_origin = Vector2i({-dx}, {-dy})"]
+                if (x, y) in alts:
+                    props.append(f"{x}:{y}/next_alternative_id = {max(alts[(x, y)]) + 1}")
+        sid = f"fuente_{juego.fondos.index(bg)}"
+        e.subs.append(f'[sub_resource type="TileSetAtlasSource" id="{sid}"]\n' + "\n".join(props) + "\n")
+        fuentes.append(f'sources/{juego.fondos.index(bg)} = SubResource("{sid}")')
+    e.subs.append('[sub_resource type="TileSet" id="tileset_mapa"]\n' + "\n".join(fuentes) + "\n")
 
 
 def escena_mapa(room: dict, juego: Juego, tilesets: dict, sprite_tres, snake, res,
@@ -662,10 +696,12 @@ def escena_mapa(room: dict, juego: Juego, tilesets: dict, sprite_tres, snake, re
         f"nombre_original = {gd_str(room['name'])}",
         f"tamano = Vector2i({ancho}, {alto})"])
     fondos(room, tilesets, e)
-    tiles(room, tilesets, e, snake, arriba=False)
+    usados: dict[str, set] = {}
+    tiles(room, tilesets, e, juego, arriba=False, usados=usados)
     e.nodo("BaseHierba", "Node2D", ".", [])
     e.nodo("Objetos", "Node2D", ".", ["y_sort_enabled = true"])
-    tiles(room, tilesets, e, snake, arriba=True)
+    tiles(room, tilesets, e, juego, arriba=True, usados=usados)
+    tileset_del_mapa(e, juego, tilesets, usados)
     e.nodo("Paredes", "StaticBody2D", ".", [f"collision_layer = {CAPA_PAREDES}", "collision_mask = 0"])
     e.nodo("Agua", "StaticBody2D", ".", [f"collision_layer = {CAPA_AGUA}", "collision_mask = 0"])
     # Zonas de encuentros, cada una con su método (SubtablaEncuentros.Metodo; ProtaCheckHierba).

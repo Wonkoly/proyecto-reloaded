@@ -118,10 +118,26 @@ Se ignoran sufijos raros que aparecen en muy pocos Pokémon (`A2`, `B`, `C`, `H 
 ## Mapas
 Cada mapa es una escena con:
 - `Fondos`: los fondos de la room (`Sprite2D`, repetidos si el original los repite).
-- `Tiles/profundidad_N`: de atrás hacia adelante (en GM mayor depth = más al fondo). Dentro, un
-  `TileMapLayer` por tileset; si hay tiles puestos fuera de la rejilla de 16 (p. ej. en x = 8) van en
-  otra capa `<tileset>_desfase_X_Y` desplazada. Los que no caben en ninguna rejilla (escalados,
-  teñidos, de tamaño no múltiplo de 16) quedan como `Sprite2D` sueltos (`tile_<id>`).
+- `TilesDebajo` / `TilesArriba` (los de depth < -10 van encima de los objetos): los tiles **por función**
+  (`tools/capas_tiles.py`), cada uno según el objeto del original que lo cubre:
+
+  | Capa | Qué tiene |
+  |---|---|
+  | `Suelo` | el paisaje: el primer tile en cada lugar |
+  | `Agua` | tiles bajo objetos de agua (`obj_agua*`) |
+  | `Obstaculos` | tiles bajo lo que no se pisa (`obj_pared` y descendientes, las `vpared`) |
+  | `Hierba` | tiles bajo hierba alta (`obj_hierba*`) |
+  | `Detalles` | lo que va encima de otro tile: bordes, caminos, flores |
+  | `<Función>Encima`, `<Función>Encima2`… | lo que tiene que dibujarse encima de una capa posterior (p. ej. el borde de un acantilado sobre otro acantilado) |
+  | `<Capa>Sueltos` | `Sprite2D` de lo que no cabe en una TileMapLayer (escalado, teñido, recorte no múltiplo de 16) y de los tiles que el juego borra o aclara por id (`tile_<id>`) |
+
+  El orden de dibujo es exactamente el del original (lo comprueban `render_mapa.gd` + `comparar_mapas.py`).
+  Todas las capas usan el **TileSet del mapa**: una fuente por cada tileset que usa (el número de fuente es
+  el índice del tileset en el juego, igual en todos los mapas) con todos sus tiles para pintar. Los tiles
+  puestos fuera de la rejilla de 16 (p. ej. en x = 8) van en la misma capa como tile alternativo con ese
+  desplazamiento (id `1 + dx + 16·dy`). Los tiles que nunca se ven (tapados por completo por otros, ~7 %)
+  no se exportan; `tools/reporte_tiles.py` los lista junto con lo raro de los mapas originales
+  (`docs/reporte_tiles.md`).
 - `Objetos` (y-sort, como el `depth = -y/100` del original): `Decorado` (árboles, edificios, flores,
   hierba al 75 %), NPCs (`npc.tscn`) y puertas. `BaseHierba` va debajo.
 - `Paredes`: un `StaticBody2D` con la caja de colisión de cada descendiente de `obj_pared`, del
@@ -152,6 +168,16 @@ Cada mapa es una escena con:
   bandera. Los valores de propiedades dentro de esas ramas se toman con `ESTADO_HISTORIA` (el mismo
   estado inicial que `GameState.historia`: ya recibió su primer Pokémon y el móvil).
 - `Marcadores`: `Marker2D` para lo que todavía no se convierte (el script lo lista al terminar).
+
+## Comprobar que los mapas se ven como el original
+```sh
+../tools/Godot_v4.7.2-stable_linux.x86_64 --path . --script res://tools/render_mapa.gd -- /tmp/renders todos
+../tools/.venv/bin/python -I tools/comparar_mapas.py /tmp/renders --diff /tmp/diffs   # Pillow, del venv del repo
+python3 tools/reporte_tiles.py      # docs/reporte_tiles.md: capas por mapa y tiles raros del original
+```
+`render_mapa.gd` (necesita ventana) dibuja con Godot el paisaje de cada mapa extraído (fondos y tiles, sin
+objetos); `comparar_mapas.py` lo compara píxel a píxel con el original dibujado desde los datos de GM8 y,
+con `--diff`, guarda original | extraído | diferencias de cada mapa distinto.
 
 ## Conexiones
 La categoría `conexiones` (por defecto) arma el grafo de los 717 mapas (`tools/conexiones.py`) →

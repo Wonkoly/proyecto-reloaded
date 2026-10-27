@@ -1,0 +1,1 @@
+# Tus eventos: copia aquí un .evento de data/extraido/eventos/<mapa>/ y edítalo (ver docs/eventos.md).

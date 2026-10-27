@@ -64,6 +64,17 @@ func conectar(jugador: BattlePokemon, rival: BattlePokemon, rival_entrenador: bo
 		bp.movido.connect(_mensajes.on_pokemon_movido.bind(bp))
 
 
+## Entró otro Pokémon de un equipo: nombre, nivel, tipos y ataques del panel de su lado.
+func cambiar_pokemon(bp: BattlePokemon) -> void:
+	var lado: Lado = _jugador if bp.lado == 1 else _rival
+	lado.nombre = bp.pokemon.apodo if bp.pokemon.apodo != "" else bp.pokemon.especie.nombre
+	lado.nivel = bp.pokemon.nivel
+	lado.tipos.assign(bp.pokemon.especie.tipos.map(func(t: Tipos.Tipo) -> int: return Tipos.ID_ORIGINAL[t]))
+	lado.ataques = bp.pokemon.movimientos
+	_on_hp(bp.pokemon.hp_actual, bp.hp_max, lado)
+	_on_energia(bp.pokemon.energia_actual, bp.energia_max, lado)
+
+
 func mostrar_resultado(texto: String) -> void:
 	_resultado.text = texto
 	_resultado.show()

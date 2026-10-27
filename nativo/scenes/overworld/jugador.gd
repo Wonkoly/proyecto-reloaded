@@ -55,9 +55,17 @@ func _ready() -> void:
 	camara.reset_smoothing()
 
 
+func _algun_entrenador_viene() -> bool:
+	for npc: Npc in get_tree().get_nodes_in_group("npcs"):
+		if npc._yendo == self or (npc.entrenador != 0 and npc._hablando):
+			return true
+	return false
+
+
 ## Z (interactuar): el primer NPC que responde (lo mira de frente o lo toca) habla.
 func _unhandled_input(evento: InputEvent) -> void:
-	if not evento.is_action_pressed("interactuar") or evento.is_echo() or SceneManager.en_transicion or _salto:
+	if not evento.is_action_pressed("interactuar") or evento.is_echo() or SceneManager.en_transicion or _salto \
+			or Eventos.en_curso:
 		return
 	for npc: Npc in get_tree().get_nodes_in_group("npcs"):
 		if not npc.visible or npc.process_mode == Node.PROCESS_MODE_DISABLED:
@@ -84,8 +92,27 @@ func empujar(dir: Vector2, velocidad: float, segundos: float) -> void:
 	mira = {Vector2(0, 1): 2, Vector2(0, -1): 8, Vector2(-1, 0): 4, Vector2(1, 0): 6}.get(dir, mira)
 
 
+## Mira hacia un punto (en 8 direcciones, como Refresh_Mira).
+func mirar_a(punto: Vector2) -> void:
+	var angulo: float = fposmod(rad_to_deg(-(punto - global_position).angle()), 360.0)
+	mira = [6, 9, 8, 7, 4, 1, 2, 3][int(fposmod(angulo + 22.5, 360.0) / 45.0) % 8]
+	_frame = 1.0
+	queue_redraw()
+
+
+## Se queda quieto (un entrenador lo vio).
+func detener() -> void:
+	_moviendose = false
+	_frame = 1.0
+	velocity = Vector2.ZERO
+	queue_redraw()
+
+
 func _physics_process(delta: float) -> void:
 	if SceneManager.en_transicion:
+		return
+	if Eventos.en_curso or _algun_entrenador_viene():
+		detener()
 		return
 	collision_mask = 0 if GameState.dev_noclip else CAPAS_CHOQUE
 	if _empuje_restante > 0.0:

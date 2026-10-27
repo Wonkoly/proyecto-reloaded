@@ -204,8 +204,13 @@ treparrocas y gran ojo.
   Los NPC estáticos (sin sprINDEX o 1211-1299 menos 1294) tienen un sprite de 3 frames (arriba, lado, abajo).
 - **obj_NoPass** (`NoPassStepActions`): si el jugador entra en la zona que vigila, "!" medio segundo, el
   jugador lo mira, habla y retrocede 10 steps a 4 px/step en la dirección de `nopass`.
+- **Entrenadores** (`TrainerCreation`, `TrainerPokemon`, `EntrenadorStepActions`): ver `docs/eventos.md`.
+  Faltan: los 103 entrenadores especiales sin equipo en `TrainerPokemon` (líderes, liga), el dinero del
+  premio, el menú para elegir tu siguiente Pokémon, los patrones de mira (`mirafijo` 24, 246…), dobles y
+  triples, el Centro Pokémon al perder (ahora se cura donde está) y que el NPC de después aparezca donde
+  terminó de caminar.
 - Falta: los NPC con conversación propia (`obj_Watcher`, tiendas, `obj_Regalar`, personajes de la
-  historia: 517 de 1558), las rutas (`TimelineIndex` de vueltas y patrullas), `minX/maxX`, el empujón al
+  historia), las rutas (`TimelineIndex` de vueltas y patrullas), `minX/maxX`, el empujón al
   aparecer encima del jugador (`TalkCollitionProta`) y 6 textos con un parámetro que depende de la partida.
 
 ## Códigos (`ExecuteCheat`)

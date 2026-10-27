@@ -42,6 +42,7 @@ static func decir(desde: Node, texto: String, sprindex: float = -1.0, nombre: St
 	if dos_puntos > 0 and nombre == "":
 		nombre = texto.left(dos_puntos)
 		texto = texto.substr(dos_puntos + 2)
+	nombre = preparar(nombre)
 	var datos: Dictionary = personaje(sprindex)
 	if nombre == "":
 		nombre = str(datos.get("nombre", ""))

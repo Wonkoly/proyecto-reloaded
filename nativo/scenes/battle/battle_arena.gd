@@ -14,22 +14,31 @@ var _numeros: Dictionary[BattlePokemon, Variant] = {}
 
 func _ready() -> void:
 	get_window().content_scale_size = RESOLUCION
-	var desde_overworld: bool = GameState.salvaje != null
+	var desde_overworld: bool = GameState.salvaje != null or GameState.combate_entrenador != 0
 	var p_jugador: PokemonInstance
 	var p_rival: PokemonInstance
-	if desde_overworld:
+	var equipo_rival: Array[PokemonInstance] = []
+	var entrenador: EntrenadorData = Datos.entrenador(GameState.combate_entrenador) if GameState.combate_entrenador != 0 else null
+	if entrenador:
+		equipo_rival = entrenador.crear_equipo()
+		p_jugador = GameState.pokemon_para_combatir()
+		p_rival = equipo_rival[0] if not equipo_rival.is_empty() else null
+	elif desde_overworld:
 		p_jugador = GameState.pokemon_para_combatir()
 		p_rival = GameState.salvaje
 	else:
 		p_jugador = _pokemon_de_prueba(ConfigPruebas.especie_jugador, ConfigPruebas.nivel_jugador)
 		p_rival = _pokemon_de_prueba(ConfigPruebas.especie_rival, ConfigPruebas.nivel_rival)
 	if p_jugador == null or p_rival == null:
+		if entrenador:  # sin equipo extraído (entrenadores especiales): cuenta como ganado
+			push_warning("El entrenador %d no tiene equipo" % GameState.combate_entrenador)
+			SceneManager.volver_de_combate(true)
 		return
 	var jugador: BattlePokemon = _crear_pokemon("Jugador", p_jugador, 1, $PosicionJugador.position)
 	var rival: BattlePokemon = _crear_pokemon("Rival", p_rival, 2, $PosicionRival.position)
 	jugador.add_child(PlayerController.new())
 	var ia := AIController.new()
-	ia.entrenador = ConfigPruebas.rival_entrenador and not desde_overworld
+	ia.entrenador = entrenador != null or (ConfigPruebas.rival_entrenador and not desde_overworld)
 	ia.crack = ConfigPruebas.rival_crack and not desde_overworld
 	ia.maestro = ConfigPruebas.rival_maestro and not desde_overworld
 	rival.add_child(ia)
@@ -40,7 +49,8 @@ func _ready() -> void:
 	hud.conectar(jugador, rival, ia.entrenador)
 	manager.batalla_terminada.connect(
 		func(ganador: BattlePokemon) -> void: hud.mostrar_resultado("¡Gana %s!" % ganador.pokemon.especie.nombre))
-	manager.iniciar(jugador, rival)
+	manager.cambio_pokemon.connect(hud.cambiar_pokemon)
+	manager.iniciar(jugador, rival, GameState.equipo if desde_overworld else [], equipo_rival)
 	for bp: BattlePokemon in [jugador, rival]:
 		bp.golpeado.connect(_mostrar_danio.bind(bp))
 
@@ -77,6 +87,8 @@ func _mostrar_danio(_move: MoveData, danio: int, _eficacia: float, bp: BattlePok
 
 func _unhandled_input(event: InputEvent) -> void:
 	if event.is_action_pressed("ui_cancel"):
+		if GameState.combate_entrenador != 0:
+			return  # de un combate contra un entrenador no se huye
 		if GameState.salvaje != null:
 			SceneManager.volver_de_batalla()  # huir
 		else:

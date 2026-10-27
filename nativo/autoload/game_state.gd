@@ -31,6 +31,8 @@ var mapa_salida: String = ""
 var posicion_salida: Vector2 = Vector2.ZERO
 ## El Pokémon salvaje de la batalla en curso (null si la batalla no viene del overworld).
 var salvaje: PokemonInstance
+## El entrenador del combate en curso (INDEX, 0 = ninguno): lo pide el evento con "combate N".
+var combate_entrenador: int = 0
 ## Banderas de la historia (las del objeto "variables" del original; las que no están valen 0).
 ## Empieza tras recibir el primer Pokémon y el móvil (igual que ESTADO_HISTORIA en
 ## tools/mapas_original.py, con el que se toman los valores iniciales de los mapas).
@@ -44,6 +46,9 @@ var dinero: int = 0
 var nombre_jugador: String = ""
 ## Nombre del rival (global.rivalname; lo elige la presentación del profesor, que aún no existe).
 var nombre_rival: String = ""
+## Quién es el rival (global.rival_index: uno de los protagonistas 0-9, se elige con el personaje).
+## Mientras no existe la selección de personaje es Gary (1).
+var rival_personaje: int = 1
 ## Slot de la partida (1-9, como global.Slot); 0 = todavía no se guardó.
 var slot: int = 0
 ## Segundos jugados (cuenta mientras hay partida y el juego no está en pausa).
@@ -89,7 +94,8 @@ func _ready() -> void:
 func nueva_partida(nombre: String = "") -> void:
 	dificultad = Dificultad.NORMAL
 	nombre_jugador = nombre
-	nombre_rival = ""
+	rival_personaje = 1
+	nombre_rival = Textos.linea("txt_character", rival_personaje + 1)  # NameMainProta
 	slot = 0
 	tiempo_juego = 0.0
 	en_partida = true
@@ -122,6 +128,7 @@ func a_dict() -> Dictionary:
 	return {
 		"nombre_jugador": nombre_jugador,
 		"nombre_rival": nombre_rival,
+		"rival_personaje": rival_personaje,
 		"dificultad": dificultad,
 		"equipo": equipo.map(func(p: PokemonInstance) -> Dictionary: return p.a_dict()),
 		"mapa_actual": mapa_actual,
@@ -148,7 +155,8 @@ func a_dict() -> Dictionary:
 func desde_dict(d: Dictionary, slot_: int) -> void:
 	nueva_partida(str(d.get("nombre_jugador", "")))
 	slot = slot_
-	nombre_rival = str(d.get("nombre_rival", ""))
+	rival_personaje = int(d.get("rival_personaje", 1))
+	nombre_rival = str(d.get("nombre_rival", Textos.linea("txt_character", rival_personaje + 1)))
 	dificultad = clampi(int(d.get("dificultad", Dificultad.NORMAL)), Dificultad.FACIL, Dificultad.SEXTA) as Dificultad
 	if d.has("equipo"):
 		equipo.clear()

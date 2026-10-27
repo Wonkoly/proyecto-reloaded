@@ -1,0 +1,1 @@
+# Tus entrenadores editados (NNNN.tres): se usan en lugar de data/extraido/entrenadores/ (ver docs/eventos.md).

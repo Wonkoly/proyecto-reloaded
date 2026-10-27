@@ -7,6 +7,9 @@ const ESCENA_JUGADOR: String = "res://scenes/overworld/jugador.tscn"
 const ESCENA_BATALLA: String = "res://scenes/battle/battle_arena.tscn"
 const DURACION_FUNDIDO: float = 0.25
 
+## El mapa nuevo ya está en el árbol (los eventos siguen después de un combate o de "ir_a").
+signal mapa_cargado
+
 var en_transicion: bool = false
 var _velo: ColorRect
 
@@ -93,6 +96,27 @@ func volver_de_batalla() -> void:
 		await _con_fundido(_cargar_mapa)
 
 
+## Del overworld a un combate contra el entrenador `n` (lo pide un evento: "combate n").
+func ir_a_combate(n: int, jugador: Jugador = null) -> void:
+	if jugador:
+		GameState.posicion_jugador = jugador.global_position
+		GameState.mira = jugador.mira
+	GameState.combate_entrenador = n
+	await _con_fundido(func() -> void: get_tree().change_scene_to_file(ESCENA_BATALLA))
+
+
+## Vuelve del combate al mismo lugar y el evento sigue con el resultado. Si perdió, como todavía no
+## hay Centro Pokémon, el equipo se cura donde está.
+func volver_de_combate(gano: bool) -> void:
+	GameState.combate_entrenador = 0
+	if not gano:
+		for p: PokemonInstance in GameState.equipo:
+			p.hp_actual = p.calcular_stats()["hp"]
+			p.energia_actual = p.calcular_energia_maxima()
+	await _con_fundido(_cargar_mapa)
+	Eventos.combate_terminado.emit(gano)
+
+
 func _cargar_mapa() -> void:
 	var mapa: Mapa = (load(ruta_mapa(GameState.mapa_actual)) as PackedScene).instantiate()
 	var jugador: Jugador = (load(ESCENA_JUGADOR) as PackedScene).instantiate()
@@ -103,6 +127,7 @@ func _cargar_mapa() -> void:
 	GameState.mapa_actual = mapa.nombre_original
 	mapa.objetos().add_child(jugador)
 	get_tree().change_scene_to_node(mapa)
+	mapa.ready.connect(mapa_cargado.emit, CONNECT_ONE_SHOT)
 
 
 func _con_fundido(cambio: Callable) -> void:

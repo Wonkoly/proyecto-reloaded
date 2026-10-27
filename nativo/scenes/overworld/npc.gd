@@ -11,6 +11,11 @@ extends StaticBody2D
 ## obj_NoPass (NoPassStepActions): si el jugador entra en la zona que vigila (según hacia dónde mira y
 ## el paso que cierra, hasta `distancia` px) sale un "!", el jugador lo mira, habla y lo hace retroceder
 ## 10 steps a 4 px/step en la dirección de no_pasar (NoPassMueveProta).
+## obj_Entrenador (EntrenadorStepActions): mira en línea recta hasta `distancia` px (4 px de ancho,
+## sin paredes ni agua en medio); si ve al jugador lo congela, "!", camina hacia él a 3 px/step hasta
+## quedar al lado y corre su evento (el reto y el combate). También al hablarle.
+## Cualquier NPC con evento (data/eventos/ o data/extraido/eventos/, ver Eventos) lo corre en lugar de
+## decir su texto: así se cambia la historia sin tocar el código.
 ## Los NPC "estáticos" (sin sprINDEX o de 1211 a 1299) tienen un solo sprite de 3 frames: arriba,
 ## lado y abajo (TalkSetSprite).
 
@@ -45,6 +50,8 @@ const DIR_TECLA: Dictionary[int, Vector2] = {37: Vector2.LEFT, 38: Vector2.UP, 3
 @export var distancia: float = 10.0
 ## nopass (obj_NoPass): la tecla de la dirección que no deja pasar (vk_left = 37...); 0 = ninguna.
 @export var no_pasar: int = 0
+## INDEX del entrenador (obj_Entrenador; 0 = no es entrenador): su equipo en Datos.entrenador().
+@export var entrenador: int = 0
 @export var objeto_original: String = ""
 
 var _acumulado: float = 0.0
@@ -57,12 +64,34 @@ var _espera_mira: int = 0
 var _dir_paso: Vector2 = Vector2.ZERO
 var _pasos: int = 0
 var _exclamacion: bool = false
+## Entrenador que vio al jugador y camina hacia él (PILLA).
+var _yendo: Jugador
 
 
 func _ready() -> void:
+	if nombre == "$rival$":
+		_vestir_rival()
 	add_to_group("npcs")
 	collision_mask = MASCARA_CAMINAR
 	queue_redraw()
+
+
+## El rival se ve como el protagonista que es (global.spr_rivalD/U/R; IndexRivalGrande: 1000 + índice).
+func _vestir_rival() -> void:
+	var tabla: Variant = JSON.parse_string(FileAccess.get_file_as_string("res://data/extraido/personajes.json"))
+	var nombres: Variant = tabla.get("protagonistas", {}).get(str(GameState.rival_personaje)) if tabla is Dictionary else null
+	if nombres is Array and nombres.size() == 3:
+		var base: String = "res://assets/extraido/sprites/overworld/%s.tres"
+		sprite_abajo = load(base % nombres[0])
+		sprite_arriba = load(base % nombres[1])
+		sprite_derecha = load(base % nombres[2])
+	sprindex = 1000.0 + GameState.rival_personaje
+
+
+## Su evento (Eventos.de_nodo), o null.
+func evento() -> Evento:
+	var mapa: Mapa = get_tree().current_scene as Mapa
+	return Eventos.de_nodo(mapa.nombre_original, name) if mapa else null
 
 
 ## Lo que dice (con sus parámetros), o "" si no habla.
@@ -82,7 +111,7 @@ func es_estatico() -> bool:
 ## KeyActionsTalk: si el jugador lo mira de frente o lo toca. Devuelve hacia dónde se giraría el NPC
 ## (0 = no habla, -1 = habla sin girarse).
 func responde_a(jugador: Jugador) -> int:
-	if _hablando or _espera_hablar > 0 or texto() == "":
+	if _hablando or _espera_hablar > 0 or _yendo or (texto() == "" and evento() == null):
 		return 0
 	var p: Vector2 = jugador.global_position
 	var n: Vector2 = global_position
@@ -110,8 +139,34 @@ func hablar(nueva_mira: int) -> void:
 	_espera_hablar = 30
 	if mira_fija != -1:
 		_espera_mira = 10
-	await CajaDialogo.decir(self, texto(), sprindex, nombre)
-	_hablando = false
+	var e: Evento = evento()
+	if e:
+		await Eventos.ejecutar(e, self)
+	else:
+		await CajaDialogo.decir(self, texto(), sprindex, nombre)
+	if is_instance_valid(self):
+		_hablando = false
+
+
+## ExclamationEffect: "!" sobre la cabeza medio segundo (el juego se congela) y una pausa.
+func exclamacion() -> void:
+	var arbol: SceneTree = get_tree()
+	var pausa_previa: bool = arbol.paused
+	arbol.paused = true
+	_exclamacion = true
+	queue_redraw()
+	await arbol.create_timer(0.5, true, false, true).timeout
+	_exclamacion = false
+	queue_redraw()
+	await arbol.create_timer(0.2, true, false, true).timeout
+	arbol.paused = pausa_previa
+
+
+## Mira hacia un punto (en 4 direcciones).
+func mirar_a(punto: Vector2) -> void:
+	var d: Vector2 = punto - global_position
+	mira = (6 if d.x > 0 else 4) if absf(d.x) > absf(d.y) else (2 if d.y > 0 else 8)
+	queue_redraw()
 
 
 func _physics_process(delta: float) -> void:
@@ -129,10 +184,18 @@ func _paso() -> void:
 		if _espera_mira == 0:
 			mira = mira_fija
 			queue_redraw()
+	if _yendo:
+		_ir_hacia_jugador()
+		return
 	if _hablando:
 		return
 	if _pasos > 0:
 		_caminar()
+		return
+	if entrenador != 0:
+		var j: Jugador = _jugador()
+		if j and not Eventos.en_curso and _ve(j):
+			_pillar(j)
 		return
 	if no_pasar != 0 and objeto_original == "obj_NoPass" and _espera_hablar == 0:
 		var jugador: Jugador = _jugador()
@@ -178,6 +241,60 @@ func _caminar() -> void:
 	_frame = fposmod(_frame + 0.2, s.frames.size()) if s and not s.frames.is_empty() else 1.0
 	if _pasos == 0:
 		_frame = 1.0
+	queue_redraw()
+
+
+## EntrenadorStepActions: en su línea de visión (cob = 4 px de cada lado, hasta `distancia`) y sin
+## paredes ni agua entre los dos (collision_line a su altura, 8 px arriba y 8 abajo).
+func _ve(j: Jugador) -> bool:
+	var p: Vector2 = j.global_position
+	var n: Vector2 = global_position
+	var en_linea: bool = false
+	match mira:
+		2: en_linea = absf(p.x - n.x) < 4 and p.y > n.y and p.y - n.y < distancia
+		4: en_linea = absf(p.y - n.y) < 4 and p.x < n.x and n.x - p.x < distancia
+		6: en_linea = absf(p.y - n.y) < 4 and p.x > n.x and p.x - n.x < distancia
+		8: en_linea = absf(p.x - n.x) < 4 and p.y < n.y and n.y - p.y < distancia
+	if not en_linea:
+		return false
+	var espacio: PhysicsDirectSpaceState2D = get_world_2d().direct_space_state
+	for dy: float in [0.0, -8.0, 8.0]:
+		var q := PhysicsRayQueryParameters2D.create(n + Vector2(0, dy), p + Vector2(0, dy), 1 | 64, [get_rid()])
+		var choque: Dictionary = espacio.intersect_ray(q)
+		if not choque.is_empty() and choque.collider is not Npc:
+			return false
+	return true
+
+
+## Lo vio: "!", el jugador se queda quieto y el entrenador va hacia él.
+func _pillar(j: Jugador) -> void:
+	_hablando = true
+	j.detener()
+	await exclamacion()
+	_yendo = j
+	_hablando = false
+
+
+## Camina 3 px/step hacia el jugador hasta quedar a menos de 5 px; entonces corre su evento.
+func _ir_hacia_jugador() -> void:
+	if _distancia_a(_yendo) < 5.0:
+		var j: Jugador = _yendo
+		_yendo = null
+		_frame = 1.0
+		j.mirar_a(global_position)
+		hablar(-1)
+		return
+	var v: Vector2 = {2: Vector2.DOWN, 4: Vector2.LEFT, 6: Vector2.RIGHT, 8: Vector2.UP}.get(mira, Vector2.ZERO)
+	var paso: Vector2 = v * minf(3.0, maxf(1.0, _distancia_a(_yendo) - 4.0))
+	if test_move(global_transform, paso):
+		var j2: Jugador = _yendo
+		_yendo = null
+		j2.mirar_a(global_position)
+		hablar(-1)
+		return
+	position += paso
+	var s: SpriteOriginal = _sprite()
+	_frame = fposmod(_frame + 0.2, s.frames.size()) if s and not s.frames.is_empty() else 1.0
 	queue_redraw()
 
 

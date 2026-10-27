@@ -10,7 +10,7 @@ extraídos (ver el README principal); los nombres entre paréntesis son scripts 
   - Velocidad: `px/step × 30 = px/s`. Tiempo: `steps / 30 = s` (alarma de 15 steps = 0.5 s).
   - `image_speed` (frames por step) `× 30 = fps`.
   - Una probabilidad `p` por step equivale a una tasa de `30·p` eventos por segundo
-    (probabilidad por frame en nativo: `1 - (1 - p)^(30·delta)`, o `30·p·delta` si es pequeña).
+	(probabilidad por frame en nativo: `1 - (1 - p)^(30·delta)`, o `30·p·delta` si es pequeña).
 - Resolución del original: vista de 320×180, tiles de 16 px.
 - Direcciones con notación de teclado numérico (`mira`): 2 abajo, 8 arriba, 4 izquierda, 6 derecha,
   1/3/7/9 diagonales.
@@ -186,6 +186,28 @@ treparrocas y gran ojo.
   (`CreateDevices`).
 - Cámara: vista de 320×180 que sigue a `obj_Prota` con bordes de 120×90 px.
 
+## NPCs (`scenes/overworld/npc.gd`, `scenes/ui/caja_dialogo.gd`)
+- **Hablar** (`KeyActionsTalk`, `TalkHabla`): Z con el jugador mirándolo de frente (alineado a menos de
+  6 px y a menos de `distancia`: 10 en `obj_Talk`, 64 en `obj_NoPass`, 12 el resto) o tocándolo. Se gira
+  hacia el jugador, habla y no vuelve a hablar en 30 steps; con `mirafijo`, 10 steps después vuelve a
+  mirar hacia ahí. Un `obj_Talk` sin texto dice `TextDialog(2439)`.
+- **Cuadro de diálogo** (`Dialogo`, `DialogoSimple`): con nombre (el `name` del NPC, el que trae el
+  texto como "Nombre: texto" o `NameTrainer(sprINDEX)`) usa `spr_dialogo_face` con el retrato (un recorte
+  de 32×32 de `ImportTrainer`, en `getBigTrainerOffsets`, volteado con su borde derecho en x = 39) y el
+  nombre en amarillo en (57, 118); si no, `spr_dialogo`. Texto blanco en (15, 142), páginas de 2 líneas
+  de 290 px y 40 letras, "@" separa diálogos, 35 ms por letra (`vel_text`), Z/X/Enter pasa de página.
+  `$prota$`, `$rival$`, `$parN$` y "..." → "…" como `TextDialog`. Nombres y retratos de cada sprINDEX:
+  `data/extraido/dialogo_personajes.json` (`tools/dialogos_original.py`).
+- **Moverse** (`TalkSetSprite`, `TalkSetMovimiento`, `People_PasoN`): sin mira fija, 1/200 por step mira
+  a otro lado; con `MOVE` (y sprINDEX), 1 % por step: 20 % se gira, si no da un paso de 16 px a 2 px/step
+  (si los 16 px están libres; se frena ante paredes, el jugador o el agua) animado a 0.2 frames/step.
+  Los NPC estáticos (sin sprINDEX o 1211-1299 menos 1294) tienen un sprite de 3 frames (arriba, lado, abajo).
+- **obj_NoPass** (`NoPassStepActions`): si el jugador entra en la zona que vigila, "!" medio segundo, el
+  jugador lo mira, habla y retrocede 10 steps a 4 px/step en la dirección de `nopass`.
+- Falta: los NPC con conversación propia (`obj_Watcher`, tiendas, `obj_Regalar`, personajes de la
+  historia: 517 de 1558), las rutas (`TimelineIndex` de vueltas y patrullas), `minX/maxX`, el empujón al
+  aparecer encima del jugador (`TalkCollitionProta`) y 6 textos con un parámetro que depende de la partida.
+
 ## Códigos (`ExecuteCheat`)
 Con **F3** (`key_global_code`) se abre un cuadro "Introduce un Cheat..." (13 letras como máximo; se
 compara en mayúsculas). En nativo: autoload `Trucos` (F3, o Shift+F3 cuando está la consola dev) y el
@@ -243,7 +265,7 @@ Ids del juego → `Tipos.Tipo`: 1 Normal, 2 Fuego, 3 Agua, 4 Planta, 5 Eléctric
 - **Overworld nativo**: los encuentros usan `TablaEncuentros` (`data/encuentros/<mapa>.tres`, a
   mano) en lugar de `AparicionSalvajes`; la probabilidad de `FrequencySalvajes` se aplica por
   distancia (paso de referencia 3 px). Falta: hordas, repelente/atractor, hierba especial, surf,
-  bici, saltos, hablar con NPCs y sus diálogos, elección de personaje (siempre Ash), curar al
+  bici, saltos, los NPCs con conversación propia (ver «NPCs» abajo), elección de personaje (siempre Ash), curar al
   equipo (si todos están debilitados no hay encuentros) y guardar/cargar partida.
 - **Mapas nativos** (`tools/mapas_original.py`): los 717 se extraen (`--mapas todos`). Instancias que
   todavía quedan como `Marker2D` (7468 de 125 tipos; las más frecuentes):

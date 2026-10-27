@@ -34,6 +34,8 @@ var _primer_frame: bool = true
 var _tabla: TablaEncuentros
 ## El salto que se está cruzando y su dirección (fija mientras dura, como global.wait = 3).
 var _salto: Salto
+var _empuje: Vector2 = Vector2.ZERO
+var _empuje_restante: float = 0.0
 var _dir_salto: Vector2 = Vector2.ZERO
 
 @onready var camara: Camera2D = $Camera2D
@@ -53,6 +55,20 @@ func _ready() -> void:
 	camara.reset_smoothing()
 
 
+## Z (interactuar): el primer NPC que responde (lo mira de frente o lo toca) habla.
+func _unhandled_input(evento: InputEvent) -> void:
+	if not evento.is_action_pressed("interactuar") or evento.is_echo() or SceneManager.en_transicion or _salto:
+		return
+	for npc: Npc in get_tree().get_nodes_in_group("npcs"):
+		if not npc.visible or npc.process_mode == Node.PROCESS_MODE_DISABLED:
+			continue
+		var giro: int = npc.responde_a(self)
+		if giro != 0:
+			get_viewport().set_input_as_handled()
+			npc.hablar(giro)
+			return
+
+
 ## Quieto, sin cruzar un salto y dentro del mapa (lo que pide el original para guardar).
 func quieto() -> bool:
 	var mapa: Mapa = _mapa()
@@ -60,10 +76,29 @@ func quieto() -> bool:
 	return not _moviendose and _salto == null and dentro
 
 
+## Lo mueve solo en `dir` a `velocidad` px/s durante `segundos` (NoPassMueveProta: un NPC lo hace
+## retroceder). Mientras dura, el teclado no lo mueve.
+func empujar(dir: Vector2, velocidad: float, segundos: float) -> void:
+	_empuje = dir * velocidad
+	_empuje_restante = segundos
+	mira = {Vector2(0, 1): 2, Vector2(0, -1): 8, Vector2(-1, 0): 4, Vector2(1, 0): 6}.get(dir, mira)
+
+
 func _physics_process(delta: float) -> void:
 	if SceneManager.en_transicion:
 		return
 	collision_mask = 0 if GameState.dev_noclip else CAPAS_CHOQUE
+	if _empuje_restante > 0.0:
+		_empuje_restante -= delta
+		var frames_empuje: int = _sprite().frames.size() if _sprite() else 1
+		_frame = fmod(_frame + 9.0 * delta, frames_empuje)  # image_speed 0.3
+		_moviendose = true
+		move_and_collide(_empuje * delta)
+		if _empuje_restante <= 0.0:
+			_frame = 1.0
+			_moviendose = false
+		queue_redraw()
+		return
 	var x: float = Input.get_axis("mover_izquierda", "mover_derecha")
 	var y: float = Input.get_axis("mover_arriba", "mover_abajo")
 	var dir: Vector2 = Vector2(signf(x) if absf(x) > 0.3 else 0.0, signf(y) if absf(y) > 0.3 else 0.0)

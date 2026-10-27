@@ -42,6 +42,8 @@ var indice_lugar: int = 0
 var dinero: int = 0
 ## Nombre del protagonista (global.protaname); al empezar, el del perfil.
 var nombre_jugador: String = ""
+## Nombre del rival (global.rivalname; lo elige la presentación del profesor, que aún no existe).
+var nombre_rival: String = ""
 ## Slot de la partida (1-9, como global.Slot); 0 = todavía no se guardó.
 var slot: int = 0
 ## Segundos jugados (cuenta mientras hay partida y el juego no está en pausa).
@@ -87,6 +89,7 @@ func _ready() -> void:
 func nueva_partida(nombre: String = "") -> void:
 	dificultad = Dificultad.NORMAL
 	nombre_jugador = nombre
+	nombre_rival = ""
 	slot = 0
 	tiempo_juego = 0.0
 	en_partida = true
@@ -118,6 +121,7 @@ func _process(delta: float) -> void:
 func a_dict() -> Dictionary:
 	return {
 		"nombre_jugador": nombre_jugador,
+		"nombre_rival": nombre_rival,
 		"dificultad": dificultad,
 		"equipo": equipo.map(func(p: PokemonInstance) -> Dictionary: return p.a_dict()),
 		"mapa_actual": mapa_actual,
@@ -144,6 +148,7 @@ func a_dict() -> Dictionary:
 func desde_dict(d: Dictionary, slot_: int) -> void:
 	nueva_partida(str(d.get("nombre_jugador", "")))
 	slot = slot_
+	nombre_rival = str(d.get("nombre_rival", ""))
 	dificultad = clampi(int(d.get("dificultad", Dificultad.NORMAL)), Dificultad.FACIL, Dificultad.SEXTA) as Dificultad
 	if d.has("equipo"):
 		equipo.clear()

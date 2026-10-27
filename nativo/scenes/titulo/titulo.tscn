@@ -1,7 +1,208 @@
 [gd_scene format=3]
 
 [ext_resource type="Script" path="res://scenes/titulo/titulo.gd" id="1"]
+[ext_resource type="Theme" path="res://scenes/titulo/tema_menu.tres" id="2"]
+[ext_resource type="Script" path="res://scenes/titulo/fondo_menu.gd" id="3"]
+[ext_resource type="Script" path="res://scenes/titulo/logo_reloaded.gd" id="4"]
 
-[node name="Titulo" type="Node2D"]
-texture_repeat = 2
+[node name="Titulo" type="Control"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme = ExtResource("2")
 script = ExtResource("1")
+
+[node name="Fondo" type="Control" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+script = ExtResource("3")
+
+[node name="Margen" type="MarginContainer" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_constants/margin_left = 32
+theme_override_constants/margin_top = 18
+theme_override_constants/margin_right = 32
+theme_override_constants/margin_bottom = 12
+
+[node name="Vertical" type="VBoxContainer" parent="Margen"]
+layout_mode = 2
+
+[node name="Columnas" type="HBoxContainer" parent="Margen/Vertical"]
+layout_mode = 2
+size_flags_vertical = 3
+theme_override_constants/separation = 28
+
+[node name="Izquierda" type="VBoxContainer" parent="Margen/Vertical/Columnas"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/separation = 10
+
+[node name="Logo" type="Control" parent="Margen/Vertical/Columnas/Izquierda"]
+custom_minimum_size = Vector2(300, 99)
+layout_mode = 2
+size_flags_horizontal = 0
+script = ExtResource("4")
+escala = 1.5
+
+[node name="Menu" type="VBoxContainer" parent="Margen/Vertical/Columnas/Izquierda"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(230, 0)
+layout_mode = 2
+size_flags_horizontal = 0
+theme_override_constants/separation = 2
+
+[node name="Continuar" type="Button" parent="Margen/Vertical/Columnas/Izquierda/Menu"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_type_variation = &"BotonMenu"
+text = "Continuar"
+alignment = 0
+
+[node name="Nueva" type="Button" parent="Margen/Vertical/Columnas/Izquierda/Menu"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_type_variation = &"BotonMenu"
+text = "Nueva partida"
+alignment = 0
+
+[node name="Cargar" type="Button" parent="Margen/Vertical/Columnas/Izquierda/Menu"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_type_variation = &"BotonMenu"
+text = "Cargar partida"
+alignment = 0
+
+[node name="Multijugador" type="Button" parent="Margen/Vertical/Columnas/Izquierda/Menu"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_type_variation = &"BotonMenu"
+text = "Multijugador"
+alignment = 0
+
+[node name="Opciones" type="Button" parent="Margen/Vertical/Columnas/Izquierda/Menu"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_type_variation = &"BotonMenu"
+text = "Opciones"
+alignment = 0
+
+[node name="Salir" type="Button" parent="Margen/Vertical/Columnas/Izquierda/Menu"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_type_variation = &"BotonMenu"
+text = "Salir del juego"
+alignment = 0
+
+[node name="Derecha" type="VBoxContainer" parent="Margen/Vertical/Columnas"]
+custom_minimum_size = Vector2(230, 0)
+layout_mode = 2
+theme_override_constants/separation = 12
+alignment = 1
+
+[node name="Perfil" type="PanelContainer" parent="Margen/Vertical/Columnas/Derecha"]
+layout_mode = 2
+theme_type_variation = &"Tarjeta"
+
+[node name="Caja" type="VBoxContainer" parent="Margen/Vertical/Columnas/Derecha/Perfil"]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="Titulo" type="Label" parent="Margen/Vertical/Columnas/Derecha/Perfil/Caja"]
+layout_mode = 2
+theme_type_variation = &"EtiquetaTitulo"
+text = "PERFIL"
+
+[node name="Fila" type="HBoxContainer" parent="Margen/Vertical/Columnas/Derecha/Perfil/Caja"]
+layout_mode = 2
+theme_override_constants/separation = 10
+
+[node name="Avatar" type="Control" parent="Margen/Vertical/Columnas/Derecha/Perfil/Caja/Fila"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(36, 36)
+layout_mode = 2
+
+[node name="Textos" type="VBoxContainer" parent="Margen/Vertical/Columnas/Derecha/Perfil/Caja/Fila"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/separation = 0
+alignment = 1
+
+[node name="NombrePerfil" type="Label" parent="Margen/Vertical/Columnas/Derecha/Perfil/Caja/Fila/Textos"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_font_sizes/font_size = 17
+text = "Jugador"
+
+[node name="EstadoPerfil" type="Label" parent="Margen/Vertical/Columnas/Derecha/Perfil/Caja/Fila/Textos"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_type_variation = &"EtiquetaSuave"
+text = "Sin conexión · perfil local"
+
+[node name="CambiarNombre" type="Button" parent="Margen/Vertical/Columnas/Derecha/Perfil/Caja"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_font_sizes/font_size = 12
+text = "Cambiar nombre"
+
+[node name="Ultima" type="PanelContainer" parent="Margen/Vertical/Columnas/Derecha"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_type_variation = &"Tarjeta"
+
+[node name="Caja" type="VBoxContainer" parent="Margen/Vertical/Columnas/Derecha/Ultima"]
+layout_mode = 2
+theme_override_constants/separation = 4
+
+[node name="Titulo" type="Label" parent="Margen/Vertical/Columnas/Derecha/Ultima/Caja"]
+layout_mode = 2
+theme_type_variation = &"EtiquetaTitulo"
+text = "ÚLTIMA PARTIDA"
+
+[node name="LugarUltima" type="Label" parent="Margen/Vertical/Columnas/Derecha/Ultima/Caja"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_font_sizes/font_size = 15
+text = "Pueblo Alba"
+
+[node name="DetalleUltima" type="Label" parent="Margen/Vertical/Columnas/Derecha/Ultima/Caja"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_type_variation = &"EtiquetaSuave"
+text = "Slot 1 · 0 h 00 min"
+autowrap_mode = 3
+
+[node name="EquipoUltima" type="Label" parent="Margen/Vertical/Columnas/Derecha/Ultima/Caja"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_type_variation = &"EtiquetaSuave"
+text = "Charmander Nv. 5"
+autowrap_mode = 3
+
+[node name="Pie" type="HBoxContainer" parent="Margen/Vertical"]
+layout_mode = 2
+
+[node name="Version" type="Label" parent="Margen/Vertical/Pie"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+theme_type_variation = &"EtiquetaSuave"
+text = "Last Beta 1.9.2.2"
+
+[node name="Credito" type="Label" parent="Margen/Vertical/Pie"]
+layout_mode = 2
+theme_type_variation = &"EtiquetaSuave"
+text = "FER Productions · port nativo"

@@ -53,7 +53,7 @@ DIRECCION_POR_FRAME = ["8", "9", "6", "3", "2", "1", "4", "7"]
 
 CATEGORIAS = ["datos", "sprites", "fondos", "ui", "fuentes", "efectos", "tilesets", "musica", "gritos", "entrenadores", "mapas",
               "conexiones", "encuentros"]
-POR_DEFECTO = ["datos", "sprites", "fondos", "ui", "fuentes", "efectos", "mapas", "conexiones", "encuentros"]
+POR_DEFECTO = ["datos", "sprites", "fondos", "ui", "fuentes", "efectos", "entrenadores", "mapas", "conexiones", "encuentros"]
 
 # Sprites internos que usa el HUD de batalla (DrawEventBattle1, DrawBattleAttacks, DrawPanelInformativo).
 SPRITES_UI = [
@@ -63,7 +63,7 @@ SPRITES_UI = [
     "spr_simbolito_atfs", "spr_simbolito_atsp", "spr_simbolito_atst",
     # Intro y título (obj_blackIntro, InicioROOM) y los cuadros de pregunta (ShowDialogQuestion).
     "spr_credits_intro", "spr_title", "spr_title2", "spr_title3", "spr_lineafreak",
-    "spr_bckConfirm", "spr_bckConfirmImportant", "spr_bckMessage",
+    "spr_bckConfirm", "spr_bckConfirmImportant", "spr_bckMessage", "spr_dialogo", "spr_dialogo_face", "spr_EXC",
 ]
 # Fondos de la intro y el título (IntroROOM, InicioROOM) → sprites/ui/fondos/.
 FONDOS_UI = ["BackIntro", "BackIntroLetras", "GradienteNight", "BackFerProductions"]
@@ -80,7 +80,7 @@ CARPETAS = {
     "musica": [ASSETS / "audio" / "music"],
     "gritos": [ASSETS / "audio" / "sfx" / "gritos"],
     "entrenadores": [ASSETS / "sprites" / "trainers"],
-    "mapas": [ASSETS / "mapas", ASSETS / "sprites" / "overworld", DATA / "personajes.json"],
+    "mapas": [ASSETS / "mapas", ASSETS / "sprites" / "overworld", DATA / "personajes.json", DATA / "dialogo_personajes.json"],
     "conexiones": [DATA / "conexiones.json", DATA / "mapas_geometria.json"],
     "encuentros": [DATA / "encuentros"],
 }
@@ -718,6 +718,17 @@ def extraer_mapas(plan: Plan, juego: Path, ext: Path, tilesets: dict, filtro: li
         plan.escribir(ASSETS / "mapas" / f"{snake(room['name'])}.tscn", texto)
         if no_convertidos:
             resumen.append(f"{room['name']}: " + ", ".join(sorted(set(no_convertidos))))
+    # Nombre y retrato de quien habla en cada diálogo (sprINDEX de los NPCs): dialogos_original.py.
+    dialogo = {}
+    for sprindex in sorted(original.sprindex_usados):
+        r = original.personajes.retrato(sprindex)
+        if r and "sprite" in r:
+            r["sprite"] = sprite_tres(r["sprite"])
+        elif r:
+            r["archivo"] = res(ASSETS / "sprites" / "trainers" / (snake(Path(r["archivo"]).stem) + ".png"))
+        clave = str(int(sprindex)) if float(sprindex).is_integer() else str(sprindex)
+        dialogo[clave] = {"nombre": original.personajes.nombre(sprindex), "retrato": r}
+    plan.escribir(DATA / "dialogo_personajes.json", json.dumps(dialogo, ensure_ascii=False, indent=1))
     for nombre in sorted(usados):
         if (juego / "_internal" / "sprites" / nombre).is_dir():
             extraer_sprite_original(plan, juego, nombre, ASSETS / "sprites" / "overworld")

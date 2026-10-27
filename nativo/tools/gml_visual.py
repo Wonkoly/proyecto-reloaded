@@ -236,7 +236,15 @@ EFECTOS = ["ef_explosion", "ef_ring", "ef_ellipse", "ef_firework", "ef_smoke", "
 FORMAS = ["pt_shape_pixel", "pt_shape_disk", "pt_shape_square", "pt_shape_line", "pt_shape_star",
           "pt_shape_circle", "pt_shape_ring", "pt_shape_sphere", "pt_shape_flare", "pt_shape_spark",
           "pt_shape_explosion", "pt_shape_cloud", "pt_shape_smoke", "pt_shape_snow"]
-CONSTANTES = {**COLORES, **{e: i for i, e in enumerate(EFECTOS)}, **{f: i for i, f in enumerate(FORMAS)},
+# Teclas de GM8 (códigos virtuales de Windows): vk_left, vk_f5...
+VK = {"vk_nokey": 0, "vk_anykey": 1, "vk_backspace": 8, "vk_tab": 9, "vk_enter": 13, "vk_shift": 16,
+      "vk_control": 17, "vk_alt": 18, "vk_pause": 19, "vk_escape": 27, "vk_space": 32, "vk_pageup": 33,
+      "vk_pagedown": 34, "vk_end": 35, "vk_home": 36, "vk_left": 37, "vk_up": 38, "vk_right": 39,
+      "vk_down": 40, "vk_insert": 45, "vk_delete": 46, "vk_multiply": 106, "vk_add": 107,
+      "vk_subtract": 109, "vk_decimal": 110, "vk_divide": 111, "vk_lshift": 160, "vk_rshift": 161,
+      "vk_lcontrol": 162, "vk_rcontrol": 163, "vk_lalt": 164, "vk_ralt": 165,
+      **{f"vk_f{i}": 111 + i for i in range(1, 13)}, **{f"vk_numpad{i}": 96 + i for i in range(10)}}
+CONSTANTES = {**COLORES, **VK, **{e: i for i, e in enumerate(EFECTOS)}, **{f: i for i, f in enumerate(FORMAS)},
               "ps_shape_rectangle": 0, "ps_shape_ellipse": 1, "ps_shape_diamond": 2, "ps_shape_line": 3,
               "ps_distr_linear": 0, "ps_distr_gaussian": 1, "ps_distr_invgaussian": 2,
               "true": 1, "false": 0, "noone": -4, "pi": "PI"}

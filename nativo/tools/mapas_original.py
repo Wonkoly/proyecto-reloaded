@@ -17,6 +17,7 @@ import struct
 from pathlib import Path
 
 import capas_tiles
+import dialogos_original
 
 import gml_visual
 
@@ -73,6 +74,11 @@ class Juego:
         self.fondos: list[str | None] = indice["backgrounds"]
         self._mascaras: capas_tiles.Mascaras | None = None
         self._tiles_ref: set[int] | None = None
+        self._dialogos: dialogos_original.Funciones | None = None
+        self._teclas: dict[str, int] | None = None
+        self._personajes: dialogos_original.Personajes | None = None
+        # sprINDEX de los NPCs extraídos: dialogo_personajes.json tiene su nombre y retrato.
+        self.sprindex_usados: set[float] = set()
         self._obj: dict[str, dict] = {}
         self._meta: dict[str, dict | None] = {}
         self._arboles: dict[str, list] = {}
@@ -102,6 +108,26 @@ class Juego:
         if self._tiles_ref is None:
             self._tiles_ref = capas_tiles.tiles_referenciados(self.ext / "scripts")
         return self._tiles_ref
+
+    @property
+    def dialogos(self) -> dialogos_original.Funciones:
+        if self._dialogos is None:
+            self._dialogos = dialogos_original.Funciones(self.ext / "scripts", self.ext / "text" / "es")
+        return self._dialogos
+
+    @property
+    def personajes(self) -> dialogos_original.Personajes:
+        if self._personajes is None:
+            self._personajes = dialogos_original.Personajes(self, self.dialogos, self.juego / "data" / "trainer")
+        return self._personajes
+
+    def nombre_tecla(self, clave: str) -> str:
+        """NameTecla de una tecla del original por su nombre (key_menu_pokemon → "Espacio")."""
+        if self._teclas is None:
+            self._teclas = dialogos_original.teclas_por_defecto(self.script("DefaultKeyAssignment"))
+        codigo = self._teclas.get(clave)
+        v = self.dialogos.llamar("NameTecla", float(codigo)) if codigo is not None else None
+        return v if isinstance(v, str) else "?"
 
     def meta(self, sprite: str | None) -> dict | None:
         if not sprite:
@@ -373,11 +399,31 @@ class Evaluador:
             if nombre == "TextDialog":
                 return {"dialogo": int(self.valor(args[0]))}
             if nombre in ("TextoPar1", "TextoPar2", "TextoPar3"):
-                return self.valor(args[0])
+                # El texto y sus $par1$, $par2$... (se reemplazan al mostrarlo).
+                base = self.valor(args[0])
+                pars = [self._parametro(a) for a in args[1:]]
+                if isinstance(base, dict):
+                    return {**base, "par": pars}
+                for n, par in enumerate(pars, 1):
+                    base = str(base).replace(f"$par{n}$", par)
+                return base
             if nombre == "NameTecla":
-                return ""
+                return self._parametro(e)
             raise _Desconocido(nombre)
         raise _Desconocido(k)
+
+
+    def _parametro(self, a) -> str:
+        """Un parámetro de TextoPar como texto (string() de GM; NameTecla: el nombre de la tecla)."""
+        if a[0] == "llamada" and a[1] == "NameTecla" and a[2] and a[2][0][0] == "campo":
+            return self.juego.nombre_tecla(a[2][0][2])
+        try:
+            v = self.valor(a)
+        except _Desconocido:
+            return "?"  # depende del estado del juego: el texto se conserva igual
+        if isinstance(v, float):
+            return str(int(v)) if v.is_integer() else str(round(v, 2))
+        return v if isinstance(v, str) else ""
 
 
 def _usa_historia(e) -> bool:
@@ -864,6 +910,33 @@ def escena_mapa(room: dict, juego: Juego, tilesets: dict, sprite_tres, snake, re
             texto = inst.get("str")
             if isinstance(texto, dict) and "dialogo" in texto:
                 props.append(f"dialogo = {texto['dialogo']}")
+                if texto.get("par"):
+                    props.append("dialogo_parametros = PackedStringArray(%s)" % ", ".join(gd_str(p) for p in texto["par"]))
+            elif isinstance(texto, str) and texto:
+                props.append(f"texto_fijo = {gd_str(texto)}")
+            if isinstance(inst.get("name"), str) and inst["name"]:
+                props.append(f"nombre = {gd_str(inst['name'])}")
+            # Quién habla (TalkHabla: sin sprINDEX, el de su sprite con GetStaticNPCIndex).
+            sprindex = inst.get("sprINDEX", -1)
+            if not isinstance(sprindex, float) or sprindex < 0:
+                spr_id = inst.get("sprite_index")
+                sprindex = float(juego.personajes.estaticos.get(int(spr_id), -1)) if isinstance(spr_id, float) else -1.0
+            if sprindex >= 0:
+                props.append(f"sprindex = {f(sprindex)}")
+                juego.sprindex_usados.add(sprindex)
+            if isinstance(inst.get("mirafijo"), float):
+                props.append(f"mira_fija = {int(inst['mirafijo'])}")
+            # Distancia para hablar: obj_Talk 10 (DefineTalk), obj_NoPass 64 (DefineNoPass), el resto 12
+            # (ProtaInteraction). obj_NoPass cierra por defecto el paso hacia la izquierda (vk_left).
+            no_pasa = juego.es(obj, "obj_NoPass")
+            dist = inst.get("distancia")
+            if not isinstance(dist, float):
+                dist = 64.0 if no_pasa else 10.0 if juego.es(obj, "obj_Talk") else 12.0
+            if dist != 10:
+                props.append(f"distancia = {f(dist)}")
+            nopass = inst.get("nopass", 37.0 if no_pasa else None)
+            if isinstance(nopass, float):
+                props.append(f"no_pasar = {int(nopass)}")
             e.nodo(nombre, None, "Objetos", props, instancia=e.ref("PackedScene", "res://scenes/overworld/npc.tscn"))
             if meta and (c := caja(meta, 0, 0, 1, 1)):
                 e.nodo("CollisionShape2D", "CollisionShape2D", f"Objetos/{nombre}", [

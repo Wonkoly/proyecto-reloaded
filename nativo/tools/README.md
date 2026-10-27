@@ -42,7 +42,7 @@ sobrescribe en la siguiente corrida.
 | tilesets | `--tilesets` | `gamedata/_internal/backgrounds/` | `assets/extraido/sprites/tilesets/*.png` + un `TileSet` `.tres` de 16×16 por imagen |
 | musica | `--musica` | `gamedata/data/audio/musica/{pk,re}/*.ogg` | `assets/extraido/audio/music/` (la del título va en `ui`) |
 | gritos | `--gritos` | `gamedata/data/audio/grito/*.wav` | `assets/extraido/audio/sfx/gritos/` |
-| entrenadores | `--entrenadores` | `gamedata/data/trainer/*.png` | `assets/extraido/sprites/trainers/` |
+| entrenadores | (por defecto) | `gamedata/data/trainer/*.png` | `assets/extraido/sprites/trainers/` |
 | mapas | (por defecto: Home_2, Home_1, PuebloAlba, Ruta_1) `--mapas-lista` | `extracted/rooms/*.json` + `CreateDoors`, `CreateNPC1..5`, `CreateDevices`, `SetOnlyWater`, `CambiosWorldRooms`, `CambiosSpecialRooms` | `assets/extraido/mapas/nombre.tscn` y `assets/extraido/sprites/overworld/` (también extrae los tilesets; `--todo` extrae los 717 mapas) |
 | conexiones | (por defecto) | lo mismo que mapas, para los 717 | `data/extraido/conexiones.json` (grafo) y `data/extraido/mapas_geometria.json` (ver Conexiones) |
 | encuentros | (por defecto) | `extracted/scripts/AparicionSalvajes.gml`, `HierbasSalvajes`, `ActivacionSalvajes` | `data/extraido/encuentros/<mapa>.tres` (`TablaEncuentros`; ver `docs/analisis_encuentros.md`; ~5 min) |

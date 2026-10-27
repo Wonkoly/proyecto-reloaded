@@ -79,6 +79,10 @@ class Juego:
         self._personajes: dialogos_original.Personajes | None = None
         # sprINDEX de los NPCs extraídos: dialogo_personajes.json tiene su nombre y retrato.
         self.sprindex_usados: set[float] = set()
+        # Entrenadores colocados (TrainerCreation): INDEX → {nombre, sprindex}; y los eventos que se
+        # generan para ellos: (room, nodo) → texto del .evento.
+        self.entrenadores_vistos: dict[int, dict] = {}
+        self.eventos_generados: dict[tuple[str, str], str] = {}
         self._obj: dict[str, dict] = {}
         self._meta: dict[str, dict | None] = {}
         self._arboles: dict[str, list] = {}
@@ -334,6 +338,8 @@ class Evaluador:
             base = e[1]
             if base == ("num", "18"):
                 return float(ESTADO_HISTORIA.get(e[2], 0))  # banderas de la historia
+            if base == ("id", "global") and e[2] == "rivalname":
+                return "$rival$"  # se reemplaza al mostrar el texto
             if base[0] == "num" or base == ("id", "global"):
                 return 0.0  # globales y otros objetos: valor inicial
             if base[0] == "id" and isinstance(self.locales.get(base[1]), dict):
@@ -409,6 +415,24 @@ class Evaluador:
                 return base
             if nombre == "NameTecla":
                 return self._parametro(e)
+            if nombre in ("TextCharacter", "TextCharacter2"):
+                return " ".join(self.juego.dialogos.linea("txt_character", int(self.valor(a))) for a in args)
+            if nombre == "BuildTextTrainer":
+                # El texto de después del combate; de paso pone el nombre (argument1) al NPC z.
+                texto = {"dialogo": int(self.valor(args[0])), "par": [self._parametro(a) for a in args[2:]]}
+                z = self.locales.get("z")
+                quien = self.valor(args[1]) if len(args) > 1 else 0.0
+                if isinstance(z, dict) and isinstance(quien, float):
+                    if quien > 0:
+                        z["name"] = self.juego.dialogos.linea("txt_character", int(quien))
+                    elif quien == -101:
+                        z["name"] = "$rival$"
+                return texto
+            if nombre == "IniTrainer" and len(args) == 2:
+                z = self.valor(args[0])
+                if isinstance(z, dict):
+                    z["sprINDEX"] = self.valor(args[1])
+                return 0.0
             raise _Desconocido(nombre)
         raise _Desconocido(k)
 
@@ -424,6 +448,22 @@ class Evaluador:
         if isinstance(v, float):
             return str(int(v)) if v.is_integer() else str(round(v, 2))
         return v if isinstance(v, str) else ""
+
+
+def evento_entrenador(n: int, texto, inst: dict, room: str) -> str:
+    """El .evento de un entrenador (EntrenadorHabla): su texto, el combate y, si gana el jugador, su
+    bandera trainer_N (con ella el mapa cambia al entrenador por el NPC de después del combate)."""
+    nombre = inst.get("name") if isinstance(inst.get("name"), str) else ""
+    lineas = [f"# Entrenador {n}{': ' + nombre if nombre else ''} ({room}). Generado por tools/extraer.py:",
+              "# para cambiarlo, cópialo a data/eventos/ con el mismo nombre (ver docs/eventos.md).",
+              "# Se ejecuta cuando el entrenador te ve (y camina hasta ti) o cuando le hablas."]
+    if isinstance(texto, dict) and "dialogo" in texto:
+        pars = " ".join(gd_str(p) for p in texto.get("par", []))
+        lineas.append(f"decir {texto['dialogo']}" + (f" {pars}" if pars else ""))
+    elif isinstance(texto, str) and texto:
+        lineas.append(f"decir {gd_str(texto)}")
+    lineas += [f"combate {n}", "si gano:", f"    bandera trainer_{n} = 1"]
+    return "\n".join(lineas) + "\n"
 
 
 def _usa_historia(e) -> bool:
@@ -821,7 +861,8 @@ def escena_mapa(room: dict, juego: Juego, tilesets: dict, sprite_tres, snake, re
         return juego.rooms[int(v)] if isinstance(v, (int, float)) and 0 <= int(v) < len(juego.rooms) else ""
 
     instancias = [dict(i, origen="room") for i in room["instances"]]
-    scripts = ["CreateDoors", "CreateNPC1", "CreateNPC2", "CreateNPC3", "CreateNPC4", "CreateNPC5", "CreateDevices"]
+    scripts = ["CreateDoors", "CreateNPC1", "CreateNPC2", "CreateNPC3", "CreateNPC4", "CreateNPC5", "CreateDevices",
+               "TrainerCreation"]
     if any(i["object"] == "ONLYWATER" for i in room["instances"]):
         scripts.append("SetOnlyWater")
     instancias += [dict(i, origen="script", xscale=1.0, yscale=1.0, id=f"s{k}")
@@ -929,14 +970,22 @@ def escena_mapa(room: dict, juego: Juego, tilesets: dict, sprite_tres, snake, re
             # Distancia para hablar: obj_Talk 10 (DefineTalk), obj_NoPass 64 (DefineNoPass), el resto 12
             # (ProtaInteraction). obj_NoPass cierra por defecto el paso hacia la izquierda (vk_left).
             no_pasa = juego.es(obj, "obj_NoPass")
+            es_entrenador = juego.es(obj, "obj_Entrenador") and isinstance(inst.get("INDEX"), float)
             dist = inst.get("distancia")
             if not isinstance(dist, float):
-                dist = 64.0 if no_pasa else 10.0 if juego.es(obj, "obj_Talk") else 12.0
+                # DefineEntrenador: 80 (lo que alcanza a ver).
+                dist = 80.0 if es_entrenador else 64.0 if no_pasa else 10.0 if juego.es(obj, "obj_Talk") else 12.0
             if dist != 10:
                 props.append(f"distancia = {f(dist)}")
             nopass = inst.get("nopass", 37.0 if no_pasa else None)
             if isinstance(nopass, float):
                 props.append(f"no_pasar = {int(nopass)}")
+            if es_entrenador:
+                n_ent = int(inst["INDEX"])
+                props.append(f"entrenador = {n_ent}")
+                juego.entrenadores_vistos.setdefault(n_ent, {"nombre": inst.get("name") if isinstance(inst.get("name"), str) else "",
+                                                             "sprindex": sprindex, "lider": bool(inst.get("lider"))})
+                juego.eventos_generados[(room["name"], nombre)] = evento_entrenador(n_ent, texto, inst, room["name"])
             e.nodo(nombre, None, "Objetos", props, instancia=e.ref("PackedScene", "res://scenes/overworld/npc.tscn"))
             if meta and (c := caja(meta, 0, 0, 1, 1)):
                 e.nodo("CollisionShape2D", "CollisionShape2D", f"Objetos/{nombre}", [

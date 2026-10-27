@@ -28,6 +28,7 @@ import gml_eval  # noqa: E402  (módulos propios, al lado de este script)
 import gml_visual  # noqa: E402
 import conexiones
 import encuentros_original
+import entrenadores_original
 import mapas_original  # noqa: E402
 
 NATIVO = Path(__file__).resolve().parent.parent
@@ -80,7 +81,8 @@ CARPETAS = {
     "musica": [ASSETS / "audio" / "music"],
     "gritos": [ASSETS / "audio" / "sfx" / "gritos"],
     "entrenadores": [ASSETS / "sprites" / "trainers"],
-    "mapas": [ASSETS / "mapas", ASSETS / "sprites" / "overworld", DATA / "personajes.json", DATA / "dialogo_personajes.json"],
+    "mapas": [ASSETS / "mapas", ASSETS / "sprites" / "overworld", DATA / "personajes.json", DATA / "dialogo_personajes.json",
+              DATA / "entrenadores", DATA / "eventos"],
     "conexiones": [DATA / "conexiones.json", DATA / "mapas_geometria.json"],
     "encuentros": [DATA / "encuentros"],
 }
@@ -720,6 +722,7 @@ def extraer_mapas(plan: Plan, juego: Path, ext: Path, tilesets: dict, filtro: li
             resumen.append(f"{room['name']}: " + ", ".join(sorted(set(no_convertidos))))
     # Nombre y retrato de quien habla en cada diálogo (sprINDEX de los NPCs): dialogos_original.py.
     dialogo = {}
+    original.sprindex_usados.update(float(1000 + i) for i in range(10))  # los protagonistas (y el rival)
     for sprindex in sorted(original.sprindex_usados):
         r = original.personajes.retrato(sprindex)
         if r and "sprite" in r:
@@ -729,6 +732,36 @@ def extraer_mapas(plan: Plan, juego: Path, ext: Path, tilesets: dict, filtro: li
         clave = str(int(sprindex)) if float(sprindex).is_integer() else str(sprindex)
         dialogo[clave] = {"nombre": original.personajes.nombre(sprindex), "retrato": r}
     plan.escribir(DATA / "dialogo_personajes.json", json.dumps(dialogo, ensure_ascii=False, indent=1))
+    # Entrenadores (TrainerPokemon + lo que TrainerCreation dice de cada uno) y sus eventos de reto.
+    for n, miembros in entrenadores_original.equipos(original.script("TrainerPokemon")).items():
+        visto = original.entrenadores_vistos.get(n, {})
+        tres = Tres("Resource", "EntrenadorData")
+        script_miembro = tres.ext_resource("Script", "res://scripts/resources/miembro_equipo.gd")
+        refs = []
+        for m in miembros:
+            props = [f"script = {script_miembro}", f"nivel = {m['nivel']}"]
+            if "especie_bandera" in m:
+                props.append(f"especie_bandera = {mapas_original.gd_str(m['especie_bandera'])}")
+            else:
+                props.append(f"especie = {m['especie']}")
+            if m["nivel_escala"]:
+                props += ["nivel_escala = true", f"ajuste = {m['ajuste']}"]
+            if m["objeto"]:
+                props.append(f"objeto = {m['objeto']}")
+            if m["movimientos"]:
+                props.append("movimientos = PackedInt32Array(%s)" % ", ".join(str(x) for x in m["movimientos"]))
+            if m["condicion"]:
+                props.append(f"condicion = {mapas_original.gd_str(m['condicion'])}")
+            refs.append(tres.sub_resource("Resource", props))
+        sprindex = visto.get("sprindex", -1.0)
+        plan.escribir(DATA / "entrenadores" / f"{n:04d}.tres", tres.texto([
+            f"script = {tres.ext_resource('Script', 'res://scripts/resources/entrenador_data.gd')}",
+            f"id = {n}", f"nombre = {mapas_original.gd_str(visto.get('nombre', ''))}",
+            f"sprindex = {mapas_original.f(sprindex)}", f"lider = {'true' if visto.get('lider') else 'false'}",
+            "equipo = Array[Resource]([%s])" % ", ".join(refs)]))
+    for (room, nodo), texto in sorted(original.eventos_generados.items()):
+        plan.escribir(DATA / "eventos" / snake(room) / f"{nodo}.evento", texto)
+    print(f"  {len(original.entrenadores_vistos)} entrenadores colocados, {len(original.eventos_generados)} eventos")
     for nombre in sorted(usados):
         if (juego / "_internal" / "sprites" / nombre).is_dir():
             extraer_sprite_original(plan, juego, nombre, ASSETS / "sprites" / "overworld")

@@ -25,6 +25,16 @@ static func movimiento(id_original: int) -> MoveData:
 	return load(ruta) as MoveData
 
 
+## El entrenador número `id` (INDEX): el editado en data/entrenadores/ si existe, si no el extraído.
+static func entrenador(id: int) -> EntrenadorData:
+	for carpeta: String in ["res://data/entrenadores", "res://data/extraido/entrenadores"]:
+		var ruta: String = carpeta.path_join("%04d.tres" % id)
+		if ResourceLoader.exists(ruta):
+			return load(ruta) as EntrenadorData
+	push_error("No hay datos del entrenador %d" % id)
+	return null
+
+
 ## Los archivos de datos se llaman NNNN_nombre.tres (NNNN = id_original).
 static func _buscar(carpeta: String, id_original: int) -> String:
 	var prefijo: String = "%04d_" % id_original

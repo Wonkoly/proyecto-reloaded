@@ -43,7 +43,13 @@ sino:
 | `narrar N` / `narrar "texto"` | Cuadro sin nombre ni retrato. |
 | `exclamacion` | "!" sobre el NPC. |
 | `mirar_jugador` / `jugador_mira_npc` | Uno mira al otro. |
-| `combate N` | Combate contra el entrenador N (`data/.../entrenadores/NNNN.tres`). Deja `gano` en 1 o 0. |
+| `combate N [M…]` | Combate contra el entrenador N (`data/.../entrenadores/NNNN.tres`); con más números, contra varios a la vez (dobles: sus equipos se intercalan). Deja `gano` en 1 o 0. Al perder vas al último Centro Pokémon y el evento termina. |
+| `hablante N ["Nombre"]` / `hablante "Nombre"` / `hablante npc` | Quién habla en los `decir` que siguen: un sprINDEX (su retrato y nombre), un nombre suelto, o de nuevo el NPC del evento. |
+| `exclamacion_de N` | "!" sobre el entrenador N del mapa (el compañero de un doble). |
+| `curar_centro` | La curación de la enfermera: cura al equipo con la animación de la máquina. |
+| `ir_al_centro` | Lleva al jugador al último Centro Pokémon (y termina el evento). |
+| `frame N` | Cuadro fijo del sprite del NPC (`frame -1`: el normal). |
+| `sonido nombre` | Un sonido de `assets/extraido/audio/sfx/ui/` (`snd_curar`, `snd_get`…). |
 | `bandera nombre = valor` | Cambia una bandera (también `+=` y `-=`; el valor puede ser una cuenta con otras banderas). Los mapas se actualizan al momento. |
 | `dinero + N` / `dinero - N` / `dinero = N` | Dinero del jugador. |
 | `curar` | Cura al equipo. |

@@ -190,10 +190,18 @@ func _orden(o: Dictionary, ruta: String) -> void:
 				var pasos: float = float(a[1]) if a.size() > 1 else 10.0
 				jugador.empujar(DIRECCIONES[a[0]], 120.0, pasos / 30.0)
 				await get_tree().create_timer(pasos / 30.0).timeout
-		"combate":
+		"combate":  # combate N [M...]: contra uno o varios entrenadores (dobles: los equipos juntos)
 			if a.size() > 0:
-				SceneManager.ir_a_combate(int(a[0]), jugador)
+				var ids: Array[int] = []
+				for x: String in a:
+					ids.append(int(x))
+				SceneManager.ir_a_combate(ids[0], jugador, ids.slice(1))
 				gano = await combate_terminado
+		"exclamacion_de":  # exclamacion_de N: el "!" sobre el entrenador N del mapa (el compañero)
+			for otro: Npc in get_tree().get_nodes_in_group("npcs"):
+				if a.size() > 0 and otro.entrenador == int(a[0]) and otro.visible:
+					otro.mirar_a(jugador.global_position if jugador else otro.global_position)
+					await otro.exclamacion()
 		"ir_a":
 			if a.size() >= 3:
 				SceneManager.ir_a_mapa(a[0], Vector2(float(a[1]), float(a[2])), int(a[3]) if a.size() > 3 else -1)

@@ -85,6 +85,10 @@ func _dinero(gano: bool) -> void:
 		return
 	if gano and GameState.combate_entrenador != 0:
 		var t: EntrenadorData = Datos.entrenador(GameState.combate_entrenador)
+		for n: int in GameState.combate_companeros:
+			var otro: EntrenadorData = Datos.entrenador(n)
+			if otro and otro.lider:
+				t = otro
 		var premio: int = 0
 		for p: PokemonInstance in _equipos[1]:
 			premio += p.nivel * (32 if t and t.lider else 16)

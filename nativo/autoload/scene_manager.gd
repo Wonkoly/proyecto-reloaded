@@ -99,7 +99,8 @@ func volver_de_batalla() -> void:
 
 
 ## Del overworld a un combate contra el entrenador `n` (lo pide un evento: "combate n").
-func ir_a_combate(n: int, jugador: Jugador = null) -> void:
+func ir_a_combate(n: int, jugador: Jugador = null, companeros: Array[int] = []) -> void:
+	GameState.combate_companeros = companeros
 	if jugador:
 		GameState.posicion_jugador = jugador.global_position
 		GameState.mira = jugador.mira
@@ -118,6 +119,7 @@ func ir_a_combate(n: int, jugador: Jugador = null) -> void:
 ## Pokémon (GoCentroPokemon) y el evento termina ahí.
 func volver_de_combate(gano: bool) -> void:
 	GameState.combate_entrenador = 0
+	GameState.combate_companeros = []
 	if not gano:
 		_preparar_centro()
 	await _con_fundido(_cargar_mapa)

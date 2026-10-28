@@ -21,6 +21,18 @@ func _ready() -> void:
 	var entrenador: EntrenadorData = Datos.entrenador(GameState.combate_entrenador) if GameState.combate_entrenador != 0 else null
 	if entrenador:
 		equipo_rival = entrenador.crear_equipo()
+		# Dobles y triples: los equipos de los compañeros, intercalados (como pkmn2 en el original).
+		var equipos: Array = [equipo_rival]
+		for n: int in GameState.combate_companeros:
+			var otro: EntrenadorData = Datos.entrenador(n)
+			if otro:
+				equipos.append(otro.crear_equipo())
+		if equipos.size() > 1:
+			equipo_rival = []
+			for i: int in 6:
+				for eq: Array in equipos:
+					if i < eq.size():
+						equipo_rival.append(eq[i])
 		p_jugador = GameState.pokemon_para_combatir()
 		p_rival = equipo_rival[0] if not equipo_rival.is_empty() else null
 	elif desde_overworld:

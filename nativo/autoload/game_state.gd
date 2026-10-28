@@ -36,6 +36,8 @@ var salvaje: PokemonInstance
 var ultimo_entrenador: Dictionary = {}
 ## El entrenador del combate en curso (INDEX, 0 = ninguno): lo pide el evento con "combate N".
 var combate_entrenador: int = 0
+## Los compañeros del combate (dobles y triples: sus equipos pelean junto al de combate_entrenador).
+var combate_companeros: Array[int] = []
 ## Banderas de la historia (las del objeto "variables" del original; las que no están valen 0).
 ## Empieza tras recibir el primer Pokémon y el móvil (igual que ESTADO_HISTORIA en
 ## tools/mapas_original.py, con el que se toman los valores iniciales de los mapas).

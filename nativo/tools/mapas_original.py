@@ -450,19 +450,37 @@ class Evaluador:
         return v if isinstance(v, str) else ""
 
 
-def evento_entrenador(n: int, texto, inst: dict, room: str) -> str:
-    """El .evento de un entrenador (EntrenadorHabla): su texto, el combate y, si gana el jugador, su
-    bandera trainer_N (con ella el mapa cambia al entrenador por el NPC de después del combate)."""
+def _linea_decir(texto) -> str | None:
+    if isinstance(texto, dict) and "dialogo" in texto:
+        pars = " ".join(gd_str(p) for p in texto.get("par", []))
+        return f"decir {texto['dialogo']}" + (f" {pars}" if pars else "")
+    if isinstance(texto, str) and texto:
+        return f"decir {gd_str(texto)}"
+    return None
+
+
+def evento_entrenador(n: int, texto, inst: dict, room: str, companeros: list | None = None, juego=None) -> str:
+    """El .evento de un entrenador (EntrenadorHabla): su texto (y el de sus compañeros, en los dobles), el
+    combate y, si gana el jugador, sus banderas trainer_N (con ellas el mapa cambia al entrenador por el
+    NPC de después del combate)."""
     nombre = inst.get("name") if isinstance(inst.get("name"), str) else ""
     lineas = [f"# Entrenador {n}{': ' + nombre if nombre else ''} ({room}). Generado por tools/extraer.py:",
               "# para cambiarlo, cópialo a data/eventos/ con el mismo nombre (ver docs/eventos.md).",
               "# Se ejecuta cuando el entrenador te ve (y camina hasta ti) o cuando le hablas."]
-    if isinstance(texto, dict) and "dialogo" in texto:
-        pars = " ".join(gd_str(p) for p in texto.get("par", []))
-        lineas.append(f"decir {texto['dialogo']}" + (f" {pars}" if pars else ""))
-    elif isinstance(texto, str) and texto:
-        lineas.append(f"decir {gd_str(texto)}")
-    lineas += [f"combate {n}", "si gano:", f"    bandera trainer_{n} = 1"]
+    d = _linea_decir(texto)
+    if d:
+        lineas.append(d)
+    numeros = [n]
+    for c in companeros or []:
+        numeros.append(int(c["INDEX"]))
+        d = _linea_decir(c.get("str"))
+        if d:
+            quien = c.get("sprINDEX", -1)
+            nom = c.get("name") if isinstance(c.get("name"), str) else ""
+            lineas += ["exclamacion_de " + str(int(c["INDEX"])),
+                       f"hablante {f(quien) if isinstance(quien, float) else -1} {gd_str(nom)}", d, "hablante npc"]
+    lineas += ["combate " + " ".join(str(x) for x in numeros), "si gano:"]
+    lineas += [f"    bandera trainer_{x} = 1" for x in numeros]
     return "\n".join(lineas) + "\n"
 
 
@@ -997,7 +1015,10 @@ def escena_mapa(room: dict, juego: Juego, tilesets: dict, sprite_tres, snake, re
                 props.append(f"entrenador = {n_ent}")
                 juego.entrenadores_vistos.setdefault(n_ent, {"nombre": inst.get("name") if isinstance(inst.get("name"), str) else "",
                                                              "sprindex": sprindex, "lider": bool(inst.get("lider"))})
-                juego.eventos_generados[(room["name"], nombre)] = evento_entrenador(n_ent, texto, inst, room["name"])
+                # isDoble / isTriple: los compañeros (compi_1, compi_2) retan y pelean con él.
+                companeros = [c for c in (inst.get("compi_1"), inst.get("compi_2"))
+                              if isinstance(c, dict) and isinstance(c.get("INDEX"), float)]
+                juego.eventos_generados[(room["name"], nombre)] = evento_entrenador(n_ent, texto, inst, room["name"], companeros, juego)
             e.nodo(nombre, None, "Objetos", props, instancia=e.ref("PackedScene", "res://scenes/overworld/npc.tscn"))
             if meta and (c := caja(meta, 0, 0, 1, 1)):
                 e.nodo("CollisionShape2D", "CollisionShape2D", f"Objetos/{nombre}", [

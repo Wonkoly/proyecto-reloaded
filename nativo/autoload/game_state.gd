@@ -31,6 +31,9 @@ var mapa_salida: String = ""
 var posicion_salida: Vector2 = Vector2.ZERO
 ## El Pokémon salvaje de la batalla en curso (null si la batalla no viene del overworld).
 var salvaje: PokemonInstance
+## El último entrenador contra el que se peleó (last_trainer_index/x/y/mira): su NPC de después del
+## combate aparece donde quedó (TalkLastTrainer).
+var ultimo_entrenador: Dictionary = {}
 ## El entrenador del combate en curso (INDEX, 0 = ninguno): lo pide el evento con "combate N".
 var combate_entrenador: int = 0
 ## Banderas de la historia (las del objeto "variables" del original; las que no están valen 0).
@@ -97,6 +100,7 @@ func nueva_partida(nombre: String = "") -> void:
 	dificultad = Dificultad.NORMAL
 	nombre_jugador = nombre
 	ultimo_centro = -100
+	ultimo_entrenador = {}
 	rival_personaje = 1
 	nombre_rival = Textos.linea("txt_character", rival_personaje + 1)  # NameMainProta
 	slot = 0
@@ -133,6 +137,7 @@ func a_dict() -> Dictionary:
 		"nombre_rival": nombre_rival,
 		"rival_personaje": rival_personaje,
 		"ultimo_centro": ultimo_centro,
+		"ultimo_entrenador": ultimo_entrenador,
 		"dificultad": dificultad,
 		"equipo": equipo.map(func(p: PokemonInstance) -> Dictionary: return p.a_dict()),
 		"mapa_actual": mapa_actual,
@@ -161,6 +166,7 @@ func desde_dict(d: Dictionary, slot_: int) -> void:
 	slot = slot_
 	rival_personaje = int(d.get("rival_personaje", 1))
 	ultimo_centro = int(d.get("ultimo_centro", -100))
+	ultimo_entrenador = d.get("ultimo_entrenador", {}) if d.get("ultimo_entrenador") is Dictionary else {}
 	nombre_rival = str(d.get("nombre_rival", Textos.linea("txt_character", rival_personaje + 1)))
 	dificultad = clampi(int(d.get("dificultad", Dificultad.NORMAL)), Dificultad.FACIL, Dificultad.SEXTA) as Dificultad
 	if d.has("equipo"):

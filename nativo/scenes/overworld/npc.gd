@@ -52,6 +52,8 @@ const DIR_TECLA: Dictionary[int, Vector2] = {37: Vector2.LEFT, 38: Vector2.UP, 3
 @export var no_pasar: int = 0
 ## INDEX del entrenador (obj_Entrenador; 0 = no es entrenador): su equipo en Datos.entrenador().
 @export var entrenador: int = 0
+## TRAINER: este NPC es el entrenador N ya vencido (aparece donde quedó el entrenador).
+@export var entrenador_vencido: int = 0
 ## Frame fijo del sprite (la enfermera: 0 normal, 1 curando, 2 reverencia); -1 = según la dirección.
 @export var frame_fijo: int = -1
 @export var objeto_original: String = ""
@@ -75,6 +77,14 @@ func _ready() -> void:
 		_vestir_rival()
 	add_to_group("npcs")
 	collision_mask = MASCARA_CAMINAR
+	# TalkLastTrainer: el NPC del entrenador recién vencido, donde quedó y mirando igual.
+	var u: Dictionary = GameState.ultimo_entrenador
+	if entrenador_vencido != 0 and int(u.get("id", 0)) == entrenador_vencido \
+			and get_tree().current_scene and str(u.get("mapa", "")) == GameState.mapa_actual:
+		position = Vector2(float(u.x), float(u.y))
+		mira = int(u.mira)
+	if entrenador != 0:
+		_mira_entrenador(true)
 	queue_redraw()
 
 
@@ -139,7 +149,7 @@ func hablar(nueva_mira: int) -> void:
 		_frame = 1.0
 		queue_redraw()
 	_espera_hablar = 30
-	if mira_fija != -1:
+	if mira_fija in [2, 4, 6, 8]:
 		_espera_mira = 10
 	var e: Evento = evento()
 	if e:
@@ -195,8 +205,10 @@ func _paso() -> void:
 		_caminar()
 		return
 	if entrenador != 0:
+		_mira_entrenador(false)
 		var j: Jugador = _jugador()
-		if j and not Eventos.en_curso and _ve(j):
+		# mirafijo negativo: mira fijo (o al azar con -1) pero no vigila.
+		if j and mira_fija >= 0 and not Eventos.en_curso and _ve(j):
 			_pillar(j)
 		return
 	if no_pasar != 0 and objeto_original == "obj_NoPass" and _espera_hablar == 0:
@@ -243,6 +255,24 @@ func _caminar() -> void:
 	_frame = fposmod(_frame + 0.2, s.frames.size()) if s and not s.frames.is_empty() else 1.0
 	if _pasos == 0:
 		_frame = 1.0
+	queue_redraw()
+
+
+## EntrenadorStepActions / EntrenadorInitialize: mirafijo 2/4/6/8 (o -2...) fija la dirección; 0 o -1
+## mira al azar; 24, 246, 2468... alterna entre esas direcciones (1/90 por step, o al aparecer).
+func _mira_entrenador(al_aparecer: bool) -> void:
+	var f: int = absi(mira_fija)
+	if f in [2, 4, 6, 8]:
+		if mira != f:
+			mira = f
+			queue_redraw()
+		return
+	if not al_aparecer and randi_range(1, 90) != 90:
+		return
+	var opciones: Array = [2, 4, 6, 8] if f <= 1 else Array(str(f).split("")).map(func(c: String) -> int: return int(c))
+	if al_aparecer and f <= 1:
+		return  # el que mira al azar empieza como lo puso la room
+	mira = opciones.pick_random()
 	queue_redraw()
 
 

@@ -104,6 +104,13 @@ func ir_a_combate(n: int, jugador: Jugador = null) -> void:
 		GameState.posicion_jugador = jugador.global_position
 		GameState.mira = jugador.mira
 	GameState.combate_entrenador = n
+	# EntrenadorHabla: last_trainer_x/y/mira, donde aparece después su NPC de vencido.
+	var mapa: Node = get_tree().current_scene
+	if mapa:
+		for npc: Npc in get_tree().get_nodes_in_group("npcs"):
+			if npc.entrenador == n:
+				GameState.ultimo_entrenador = {"id": n, "mapa": GameState.mapa_actual,
+					"x": npc.position.x, "y": npc.position.y, "mira": npc.mira}
 	await _con_fundido(func() -> void: get_tree().change_scene_to_file(ESCENA_BATALLA))
 
 

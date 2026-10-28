@@ -965,8 +965,13 @@ def escena_mapa(room: dict, juego: Juego, tilesets: dict, sprite_tres, snake, re
             if sprindex >= 0:
                 props.append(f"sprindex = {f(sprindex)}")
                 juego.sprindex_usados.add(sprindex)
-            if isinstance(inst.get("mirafijo"), float):
-                props.append(f"mira_fija = {int(inst['mirafijo'])}")
+            mirafijo = inst.get("mirafijo")
+            if not isinstance(mirafijo, float) and juego.es(obj, "obj_Entrenador"):
+                mirafijo = 0.0  # DefineEntrenador: mirafijo = false (mira al azar y vigila)
+            if isinstance(mirafijo, float):
+                props.append(f"mira_fija = {int(mirafijo)}")
+            if isinstance(inst.get("TRAINER"), float) and inst["TRAINER"] > 0:
+                props.append(f"entrenador_vencido = {int(inst['TRAINER'])}")
             # Distancia para hablar: obj_Talk 10 (DefineTalk), obj_NoPass 64 (DefineNoPass), el resto 12
             # (ProtaInteraction). obj_NoPass cierra por defecto el paso hacia la izquierda (vk_left).
             no_pasa = juego.es(obj, "obj_NoPass")

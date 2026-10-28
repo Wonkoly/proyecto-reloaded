@@ -14,6 +14,8 @@ const ESPERA_FIN: float = 3.0
 const ESPERA_CAMBIO: float = 1.0
 
 var terminada: bool = false
+var _gano: bool = false
+var _saliendo: bool = false
 var _pokemon: Array[BattlePokemon] = []
 var _equipos: Array = [[], []]
 var _inicio: Array[Vector2] = []
@@ -27,8 +29,13 @@ func iniciar(jugador: BattlePokemon, rival: BattlePokemon, equipo_jugador: Array
 		bp.debilitado.connect(_on_debilitado.bind(bp))
 
 
+## NextPokemon: el siguiente con vida después del que cayó, dando la vuelta al equipo (el original
+## solo muestra un menú para elegir con la opción cambio_custom, que está apagada por defecto).
 func _siguiente(lado: int) -> PokemonInstance:
-	for p: PokemonInstance in _equipos[lado]:
+	var equipo: Array = _equipos[lado]
+	var actual: int = equipo.find(_pokemon[lado].pokemon)
+	for k: int in range(1, equipo.size() + 1):
+		var p: PokemonInstance = equipo[(actual + k) % equipo.size()]
 		if p.hp_actual > 0 and p != _pokemon[lado].pokemon:
 			return p
 	return null
@@ -55,14 +62,46 @@ func _on_debilitado(caido: BattlePokemon) -> void:
 			if hijo is BattleController:
 				hijo.queue_free()
 		bp.set_direccion(Vector2.ZERO)
+	_gano = ganador == _pokemon[0]
 	batalla_terminada.emit(ganador)
 	await get_tree().create_timer(ESPERA_FIN).timeout
+	_salir()
+
+
+## Cobra (o paga) y vuelve, una sola vez (al pasar el tiempo o con Enter).
+func _salir() -> void:
+	if _saliendo:
+		return
+	_saliendo = true
+	await _dinero(_gano)
 	_volver()
+
+
+## NextPokemon: contra un entrenador se gana la suma de los niveles de su equipo × 16 (× 32 los
+## líderes; tope 20000, TextMenu 232). Sin Pokémon: "Ya no te quedan más Pokémon..." y, contra un
+## entrenador, se pierde la mitad del dinero (TextMenu 230).
+func _dinero(gano: bool) -> void:
+	if not is_inside_tree() or (GameState.combate_entrenador == 0 and GameState.salvaje == null):
+		return
+	if gano and GameState.combate_entrenador != 0:
+		var t: EntrenadorData = Datos.entrenador(GameState.combate_entrenador)
+		var premio: int = 0
+		for p: PokemonInstance in _equipos[1]:
+			premio += p.nivel * (32 if t and t.lider else 16)
+		premio = mini(premio, 20000)
+		if premio > 0:
+			GameState.dinero += premio
+			await CuadroOriginal.mensaje(self, Textos.par(Textos.linea("txt_menu", 232), str(premio)))
+	elif not gano and GameState.pokemon_para_combatir() == null:
+		await CuadroOriginal.mensaje(self, Textos.batalla(148))
+		if GameState.combate_entrenador != 0:  # global.battle = 1
+			GameState.dinero = GameState.dinero / 2
+			await CuadroOriginal.mensaje(self, Textos.linea("txt_menu", 230))
 
 
 func _unhandled_input(event: InputEvent) -> void:
 	if terminada and event.is_action_pressed("ui_accept"):
-		_volver()
+		_salir()
 
 
 func _volver() -> void:

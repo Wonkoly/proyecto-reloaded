@@ -980,6 +980,13 @@ def escena_mapa(room: dict, juego: Juego, tilesets: dict, sprite_tres, snake, re
             nopass = inst.get("nopass", 37.0 if no_pasa else None)
             if isinstance(nopass, float):
                 props.append(f"no_pasar = {int(nopass)}")
+            if obj == "obj_enfermera":
+                # EnfermeraHabla: DialogoIndexFace(2460, 1290), HealingPokeCenter, DialogoIndexFace(2461, 1290).
+                props += ["frame_fijo = 0", "sprindex = 1290"]
+                juego.sprindex_usados.add(1290.0)
+                juego.eventos_generados[(room["name"], nombre)] = (
+                    "# La enfermera del Centro Pokémon (EnfermeraHabla). Generado por tools/extraer.py.\n"
+                    "hablante 1290\ndecir 2460\ncurar_centro\ndecir 2461\nframe 2\nesperar 0.17\nframe 0\n")
             if es_entrenador:
                 n_ent = int(inst["INDEX"])
                 props.append(f"entrenador = {n_ent}")

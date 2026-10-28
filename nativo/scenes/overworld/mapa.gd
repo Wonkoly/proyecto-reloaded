@@ -18,6 +18,10 @@ var _guardando: bool = false
 func _ready() -> void:
 	get_window().content_scale_size = RESOLUCION
 	GameState.en_partida = true
+	# AdjustmentsRoom: algunos mapas registran el último Centro Pokémon.
+	var centro: Variant = SceneManager.centros().get("por_mapa", {}).get(nombre_original)
+	if centro != null:
+		GameState.ultimo_centro = int(centro)
 	aplicar_historia()
 	GameState.historia_cambiada.connect(aplicar_historia)
 

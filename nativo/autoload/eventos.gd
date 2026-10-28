@@ -24,6 +24,9 @@ var gano: bool = false
 var _cache: Dictionary[String, Evento] = {}
 ## El NPC del evento en curso: mapa y nombre del nodo (se vuelve a buscar tras un combate).
 var _npc_nombre: String = ""
+## Quién habla en "decir" (orden "hablante"): sprINDEX y nombre; -2 = el NPC del evento.
+var _hablante: float = -2.0
+var _hablante_nombre: String = ""
 var _detener: bool = false
 
 
@@ -48,6 +51,8 @@ func ejecutar(evento: Evento, npc: Npc = null) -> bool:
 	en_curso = true
 	_detener = false
 	_npc_nombre = String(npc.name) if npc else ""
+	_hablante = -2.0
+	_hablante_nombre = ""
 	await _bloque(evento.ordenes, evento.ruta)
 	en_curso = false
 	return true
@@ -122,10 +127,35 @@ func _orden(o: Dictionary, ruta: String) -> void:
 	var jugador: Jugador = _jugador()
 	match o.orden:
 		"decir":
-			if npc:
+			if _hablante != -2.0 or _hablante_nombre != "":
+				await CajaDialogo.decir(self, _texto(a), _hablante, _hablante_nombre)
+			elif npc:
 				await CajaDialogo.decir(npc, _texto(a), npc.sprindex, npc.nombre)
 			else:
 				await CajaDialogo.decir(self, _texto(a))
+		"hablante":  # hablante 1290 | hablante "Nombre" | hablante npc
+			if a.is_empty() or a[0] == "npc":
+				_hablante = -2.0
+				_hablante_nombre = ""
+			elif a[0].is_valid_float():
+				_hablante = float(a[0])
+				_hablante_nombre = a[1] if a.size() > 1 else ""
+			else:
+				_hablante = -1.0
+				_hablante_nombre = a[0]
+		"frame":
+			if npc:
+				npc.frame_fijo = int(a[0]) if a.size() > 0 else -1
+				npc.queue_redraw()
+		"sonido":
+			if a.size() > 0:
+				AudioManager.efecto_ui(a[0])
+		"curar_centro":
+			await _curar_centro(npc)
+		"ir_al_centro":
+			await SceneManager.ir_al_centro()
+			await SceneManager.mapa_cargado
+			_detener = true
 		"narrar":
 			await CajaDialogo.decir(self, _texto(a))
 		"exclamacion":
@@ -172,6 +202,61 @@ func _orden(o: Dictionary, ruta: String) -> void:
 			_detener = true
 		_:
 			_aviso(ruta, o.linea, "orden desconocida: " + o.orden)
+
+
+## HealingPokeCenter: cura, pone una Poké Ball por Pokémon en la máquina (cada 200 ms), la pantalla
+## parpadea 4 veces con snd_curar y la enfermera vuelve a su frame normal.
+const POS_MAQUINA: Dictionary[String, Vector2] = {"Centro_Pokemon": Vector2(153, 71)}
+const POS_PANTALLA: Dictionary[String, Vector2] = {"Centro_Pokemon": Vector2(181, 60)}
+
+
+func _curar_centro(npc: Npc) -> void:
+	GameState.curar_equipo()
+	var mapa: Mapa = get_tree().current_scene as Mapa
+	if npc:
+		npc.frame_fijo = 1
+		npc.queue_redraw()
+	var dibujo := Node2D.new()
+	dibujo.z_index = 100
+	var bolas: Array[Vector2] = []
+	var maquina: Vector2 = POS_MAQUINA.get(mapa.nombre_original if mapa else "", Vector2(-1, -1))
+	var pantalla: int = 0
+	var alfa: float = 1.0
+	var bola: SpriteOriginal = load("res://assets/extraido/sprites/ui/spr_nanoball.tres") if ResourceLoader.exists("res://assets/extraido/sprites/ui/spr_nanoball.tres") else null
+	var spr_pantalla: SpriteOriginal = load("res://assets/extraido/sprites/ui/spr_pantalla.tres") if ResourceLoader.exists("res://assets/extraido/sprites/ui/spr_pantalla.tres") else null
+	dibujo.draw.connect(func() -> void:
+		for b: Vector2 in bolas:
+			if bola:
+				bola.dibujar(dibujo, 0, b, Vector2.ONE, Color(1, 1, 1, alfa))
+		if pantalla > 0 and spr_pantalla and mapa:
+			spr_pantalla.dibujar(dibujo, pantalla - 1, POS_PANTALLA.get(mapa.nombre_original, Vector2.ZERO)))
+	if mapa:
+		mapa.add_child(dibujo)
+	await get_tree().create_timer(0.2).timeout
+	if maquina.x >= 0:
+		for i: int in GameState.equipo.size():
+			if i > 0:
+				await get_tree().create_timer(0.2).timeout
+			bolas.append(maquina + Vector2(6 * (i % 2), 4 * (i / 2)))
+			dibujo.queue_redraw()
+	await get_tree().create_timer(0.5).timeout
+	AudioManager.efecto_ui("snd_curar")
+	for vez: int in 4:
+		alfa = 0.6
+		pantalla = 1
+		dibujo.queue_redraw()
+		await get_tree().create_timer(0.2).timeout
+		alfa = 1.0
+		pantalla = 2
+		dibujo.queue_redraw()
+		await get_tree().create_timer(0.2).timeout
+	pantalla = 0
+	dibujo.queue_redraw()
+	await get_tree().create_timer(0.2).timeout
+	dibujo.queue_free()
+	if npc:
+		npc.frame_fijo = 0
+		npc.queue_redraw()
 
 
 ## decir/narrar: un número es una línea de txt_dialog; lo demás, el texto tal cual. Lo que sigue son

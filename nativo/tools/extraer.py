@@ -29,6 +29,7 @@ import gml_visual  # noqa: E402
 import conexiones
 import encuentros_original
 import entrenadores_original
+import centros_original
 import mapas_original  # noqa: E402
 
 NATIVO = Path(__file__).resolve().parent.parent
@@ -64,12 +65,12 @@ SPRITES_UI = [
     "spr_simbolito_atfs", "spr_simbolito_atsp", "spr_simbolito_atst",
     # Intro y título (obj_blackIntro, InicioROOM) y los cuadros de pregunta (ShowDialogQuestion).
     "spr_credits_intro", "spr_title", "spr_title2", "spr_title3", "spr_lineafreak",
-    "spr_bckConfirm", "spr_bckConfirmImportant", "spr_bckMessage", "spr_dialogo", "spr_dialogo_face", "spr_EXC",
+    "spr_bckConfirm", "spr_bckConfirmImportant", "spr_bckMessage", "spr_dialogo", "spr_dialogo_face", "spr_EXC", "spr_nanoball", "spr_pantalla",
 ]
 # Fondos de la intro y el título (IntroROOM, InicioROOM) → sprites/ui/fondos/.
 FONDOS_UI = ["BackIntro", "BackIntroLetras", "GradienteNight", "BackFerProductions"]
 # Sonidos de los menús → audio/sfx/ui/.
-SONIDOS_UI = ["snd_click"]
+SONIDOS_UI = ["snd_click", "snd_curar", "snd_get"]
 CARPETAS = {
     "datos": [DATA / "pokemon", DATA / "moves", DATA / "textos"],
     "sprites": [ASSETS / "sprites" / "pokemon"],
@@ -82,7 +83,7 @@ CARPETAS = {
     "gritos": [ASSETS / "audio" / "sfx" / "gritos"],
     "entrenadores": [ASSETS / "sprites" / "trainers"],
     "mapas": [ASSETS / "mapas", ASSETS / "sprites" / "overworld", DATA / "personajes.json", DATA / "dialogo_personajes.json",
-              DATA / "entrenadores", DATA / "eventos"],
+              DATA / "entrenadores", DATA / "eventos", DATA / "centros.json"],
     "conexiones": [DATA / "conexiones.json", DATA / "mapas_geometria.json"],
     "encuentros": [DATA / "encuentros"],
 }
@@ -759,6 +760,7 @@ def extraer_mapas(plan: Plan, juego: Path, ext: Path, tilesets: dict, filtro: li
             f"id = {n}", f"nombre = {mapas_original.gd_str(visto.get('nombre', ''))}",
             f"sprindex = {mapas_original.f(sprindex)}", f"lider = {'true' if visto.get('lider') else 'false'}",
             "equipo = Array[Resource]([%s])" % ", ".join(refs)]))
+    plan.escribir(DATA / "centros.json", json.dumps(centros_original.centros(original), ensure_ascii=False, indent=1))
     for (room, nodo), texto in sorted(original.eventos_generados.items()):
         plan.escribir(DATA / "eventos" / snake(room) / f"{nodo}.evento", texto)
     print(f"  {len(original.entrenadores_vistos)} entrenadores colocados, {len(original.eventos_generados)} eventos")

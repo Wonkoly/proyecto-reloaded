@@ -52,6 +52,8 @@ const DIR_TECLA: Dictionary[int, Vector2] = {37: Vector2.LEFT, 38: Vector2.UP, 3
 @export var no_pasar: int = 0
 ## INDEX del entrenador (obj_Entrenador; 0 = no es entrenador): su equipo en Datos.entrenador().
 @export var entrenador: int = 0
+## Frame fijo del sprite (la enfermera: 0 normal, 1 curando, 2 reverencia); -1 = según la dirección.
+@export var frame_fijo: int = -1
 @export var objeto_original: String = ""
 
 var _acumulado: float = 0.0
@@ -371,7 +373,10 @@ func _draw() -> void:
 		draw_set_transform(Vector2.ZERO)
 	var frame: int = int(_frame)
 	var voltear: bool = mira == 4
-	if es_estatico():
+	if frame_fijo >= 0:
+		frame = frame_fijo
+		voltear = false
+	elif es_estatico():
 		frame = {8: 0, 4: 1, 6: 1, 2: 2}.get(mira, 2)
 	s.dibujar(self, frame, Vector2.ZERO, Vector2(-1 if voltear else 1, 1))
 	if _exclamacion and ResourceLoader.exists(EXCLAMACION):

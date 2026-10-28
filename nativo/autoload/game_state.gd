@@ -49,6 +49,8 @@ var nombre_rival: String = ""
 ## Quién es el rival (global.rival_index: uno de los protagonistas 0-9, se elige con el personaje).
 ## Mientras no existe la selección de personaje es Gary (1).
 var rival_personaje: int = 1
+## global.lastcenter: el último Centro Pokémon (data/extraido/centros.json; -100 = la casa).
+var ultimo_centro: int = -100
 ## Slot de la partida (1-9, como global.Slot); 0 = todavía no se guardó.
 var slot: int = 0
 ## Segundos jugados (cuenta mientras hay partida y el juego no está en pausa).
@@ -94,6 +96,7 @@ func _ready() -> void:
 func nueva_partida(nombre: String = "") -> void:
 	dificultad = Dificultad.NORMAL
 	nombre_jugador = nombre
+	ultimo_centro = -100
 	rival_personaje = 1
 	nombre_rival = Textos.linea("txt_character", rival_personaje + 1)  # NameMainProta
 	slot = 0
@@ -129,6 +132,7 @@ func a_dict() -> Dictionary:
 		"nombre_jugador": nombre_jugador,
 		"nombre_rival": nombre_rival,
 		"rival_personaje": rival_personaje,
+		"ultimo_centro": ultimo_centro,
 		"dificultad": dificultad,
 		"equipo": equipo.map(func(p: PokemonInstance) -> Dictionary: return p.a_dict()),
 		"mapa_actual": mapa_actual,
@@ -156,6 +160,7 @@ func desde_dict(d: Dictionary, slot_: int) -> void:
 	nueva_partida(str(d.get("nombre_jugador", "")))
 	slot = slot_
 	rival_personaje = int(d.get("rival_personaje", 1))
+	ultimo_centro = int(d.get("ultimo_centro", -100))
 	nombre_rival = str(d.get("nombre_rival", Textos.linea("txt_character", rival_personaje + 1)))
 	dificultad = clampi(int(d.get("dificultad", Dificultad.NORMAL)), Dificultad.FACIL, Dificultad.SEXTA) as Dificultad
 	if d.has("equipo"):
@@ -195,6 +200,13 @@ func _equipo_inicial() -> void:
 	var charmander: PokemonData = Datos.especie(4)
 	if charmander:
 		equipo.append(PokemonInstance.crear(charmander, 5))
+
+
+## CentroPokemon(1): HP y energía al máximo (y sin estados, cuando los haya).
+func curar_equipo() -> void:
+	for p: PokemonInstance in equipo:
+		p.hp_actual = p.calcular_stats()["hp"]
+		p.energia_actual = p.calcular_energia_maxima()
 
 
 ## El primero del equipo que puede combatir, o null si todos están debilitados.

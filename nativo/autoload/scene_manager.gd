@@ -92,6 +92,8 @@ func ir_a_batalla(salvaje: PokemonInstance, jugador: Jugador = null) -> void:
 
 func volver_de_batalla() -> void:
 	GameState.salvaje = null
+	if GameState.pokemon_para_combatir() == null:
+		_preparar_centro()  # todo el equipo debilitado
 	if not en_transicion:
 		await _con_fundido(_cargar_mapa)
 
@@ -105,16 +107,47 @@ func ir_a_combate(n: int, jugador: Jugador = null) -> void:
 	await _con_fundido(func() -> void: get_tree().change_scene_to_file(ESCENA_BATALLA))
 
 
-## Vuelve del combate al mismo lugar y el evento sigue con el resultado. Si perdió, como todavía no
-## hay Centro Pokémon, el equipo se cura donde está.
+## Vuelve del combate al mismo lugar y el evento sigue con el resultado. Si perdió, al último Centro
+## Pokémon (GoCentroPokemon) y el evento termina ahí.
 func volver_de_combate(gano: bool) -> void:
 	GameState.combate_entrenador = 0
 	if not gano:
-		for p: PokemonInstance in GameState.equipo:
-			p.hp_actual = p.calcular_stats()["hp"]
-			p.energia_actual = p.calcular_energia_maxima()
+		_preparar_centro()
 	await _con_fundido(_cargar_mapa)
 	Eventos.combate_terminado.emit(gano)
+
+
+const CENTROS: String = "res://data/extraido/centros.json"
+static var _centros: Dictionary = {}
+
+
+static func centros() -> Dictionary:
+	if _centros.is_empty() and FileAccess.file_exists(CENTROS):
+		_centros = JSON.parse_string(FileAccess.get_file_as_string(CENTROS))
+	return _centros
+
+
+## GoCentroPokemon: cura al equipo y deja al jugador en el último centro (la casa si no hay), con la
+## salida apuntando a su ciudad.
+func _preparar_centro() -> void:
+	GameState.curar_equipo()
+	var d: Dictionary = centros().get("destinos", {}).get(str(GameState.ultimo_centro), {})
+	if d.is_empty() or not existe_mapa(str(d.get("mapa", ""))):
+		d = {"mapa": GameState.INICIO_MAPA, "x": GameState.INICIO_POSICION.x, "y": GameState.INICIO_POSICION.y,
+			"mira": 2, "indice_lugar": 0, "salida_mapa": GameState.INICIO_SALIDA_MAPA,
+			"salida_x": GameState.INICIO_SALIDA_POSICION.x, "salida_y": GameState.INICIO_SALIDA_POSICION.y}
+	GameState.mapa_actual = d.mapa
+	GameState.posicion_jugador = Vector2(float(d.x), float(d.y))
+	GameState.mira = int(d.get("mira", 2))
+	GameState.indice_lugar = int(d.get("indice_lugar", 0))
+	GameState.mapa_salida = str(d.get("salida_mapa", ""))
+	GameState.posicion_salida = Vector2(float(d.get("salida_x", 0)), float(d.get("salida_y", 0)))
+
+
+## Al último Centro Pokémon (orden de evento "ir_al_centro").
+func ir_al_centro() -> void:
+	_preparar_centro()
+	await _con_fundido(_cargar_mapa)
 
 
 func _cargar_mapa() -> void:

@@ -47,6 +47,8 @@ var historia: Dictionary[String, int] = {"fy_002": 1, "movil": 1}
 var indice_lugar: int = 0
 
 var dinero: int = 0
+## La mochila: id del objeto → cantidad (ver scripts/inventario.gd).
+var objetos: Dictionary[int, int] = {}
 ## Nombre del protagonista (global.protaname); al empezar, el del perfil.
 var nombre_jugador: String = ""
 ## Nombre del rival (global.rivalname; lo elige la presentación del profesor, que aún no existe).
@@ -119,6 +121,7 @@ func nueva_partida(nombre: String = "") -> void:
 	historia = {"fy_002": 1, "movil": 1}
 	indice_lugar = 0
 	dinero = 0
+	objetos.clear()
 	prota_id = randi_range(0, 99999)
 	apodo_jugador = ""
 	personaje = 0
@@ -150,6 +153,7 @@ func a_dict() -> Dictionary:
 		"historia": historia.duplicate(),
 		"indice_lugar": indice_lugar,
 		"dinero": dinero,
+		"objetos": objetos.keys().map(func(k: int) -> Array: return [k, objetos[k]]),
 		"prota_id": prota_id,
 		"apodo_jugador": apodo_jugador,
 		"personaje": personaje,
@@ -188,6 +192,10 @@ func desde_dict(d: Dictionary, slot_: int) -> void:
 			historia[str(k)] = int(d.historia[k])
 	indice_lugar = int(d.get("indice_lugar", 0))
 	dinero = int(d.get("dinero", 0))
+	objetos.clear()
+	for par: Variant in d.get("objetos", []):
+		if par is Array and par.size() == 2 and int(par[1]) > 0:
+			objetos[int(par[0])] = int(par[1])
 	prota_id = int(d.get("prota_id", prota_id))
 	apodo_jugador = str(d.get("apodo_jugador", ""))
 	personaje = int(d.get("personaje", 0))

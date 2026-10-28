@@ -18,6 +18,7 @@ from pathlib import Path
 
 import capas_tiles
 import dialogos_original
+import tiendas_original
 
 import gml_visual
 
@@ -1003,6 +1004,25 @@ def escena_mapa(room: dict, juego: Juego, tilesets: dict, sprite_tres, snake, re
             nopass = inst.get("nopass", 37.0 if no_pasa else None)
             if isinstance(nopass, float):
                 props.append(f"no_pasar = {int(nopass)}")
+            if obj == "obj_tendero":
+                juego.eventos_generados[(room["name"], nombre)] = tiendas_original.evento_tienda(juego, ridx, room["name"])
+            if obj == "obj_Regalar" and isinstance(inst.get("index"), float):
+                # RegalarHabla: dice su texto, da el objeto (PillaObject), dice str2 y pone la bandera de INDEX.
+                if not hasattr(juego, "_banderas_regalo"):
+                    juego._banderas_regalo = tiendas_original.banderas_regalo(juego)
+                lineas = ["# Regala un objeto (RegalarHabla). Generado por tools/extraer.py (ver docs/eventos.md)."]
+                d = _linea_decir(texto)
+                if d:
+                    lineas.append(d)
+                cant = inst.get("cantidad", 1.0)
+                lineas.append(f"dar_objeto {int(inst['index'])} {int(cant) if isinstance(cant, float) else 1}")
+                d2 = _linea_decir(inst.get("str2"))
+                if d2:
+                    lineas.append(d2.replace("decir", "narrar", 1))
+                bandera = juego._banderas_regalo.get(int(inst["INDEX"])) if isinstance(inst.get("INDEX"), float) else None
+                if bandera:
+                    lineas.append(f"bandera {bandera} = 1")
+                juego.eventos_generados[(room["name"], nombre)] = "\n".join(lineas) + "\n"
             if obj == "obj_enfermera":
                 # EnfermeraHabla: DialogoIndexFace(2460, 1290), HealingPokeCenter, DialogoIndexFace(2461, 1290).
                 props += ["frame_fijo = 0", "sprindex = 1290"]

@@ -57,6 +57,10 @@ sino:
 | `esperar segundos` | Pausa. |
 | `empujar dirección pasos` | Mueve al jugador (`izquierda`, `derecha`, `arriba`, `abajo`; 4 px por paso). |
 | `ir_a Mapa x y [mira]` | Lleva al jugador a otro mapa (`ir_a PuebloAlba 417 199 2`). |
+| `dar_objeto id [cantidad]` / `quitar_objeto id [cantidad]` | Objetos de la mochila (ids del original: `data/extraido/objetos.json`). |
+| `elegir titulo op1 op2 …` | Lista para elegir (números = líneas de `txt_dialog`). Deja `opcion` en 1, 2…; la última opción o cancelar dejan 0. |
+| `tienda_poner casilla id id…` | Pone objetos en la lista de la tienda desde esa casilla (pisa lo que había, como `ItemDistribution`). |
+| `tienda` / `vender` | Abre la compra con la lista armada, o la venta de la mochila. |
 | `fin` | Termina el evento. |
 
 ### Condiciones (`si … :`, `sino si … :`, `sino:`)
@@ -65,6 +69,8 @@ sino:
 - `y`, `o`, `no`, paréntesis y números: `si (fy_002 == 1 y no movil) o trainer_2 == 1:`
 - `gano`: si ganaste el último `combate`.
 - `pregunta "¿Texto?"`: pregunta Sí/No (`si pregunta "¿Quieres pelear?":`).
+- `opcion` (la última `elegir`), `lugar` (`global.index_place`: en qué ciudad está una sala compartida,
+  como la tienda) y `objeto_N` (cuántos tienes del objeto N: `si objeto_15 > 0:`).
 
 ### Errores
 Si un evento tiene un error de formato no se ejecuta y la consola de Godot dice el archivo y la línea

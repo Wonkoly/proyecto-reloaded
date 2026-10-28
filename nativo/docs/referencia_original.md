@@ -209,8 +209,11 @@ treparrocas y gran ojo.
   premio, el menú para elegir tu siguiente Pokémon, los patrones de mira (`mirafijo` 24, 246…), dobles y
   triples, el Centro Pokémon al perder (ahora se cura donde está) y que el NPC de después aparezca donde
   terminó de caminar.
-- Falta: los NPC con conversación propia (`obj_Watcher`, tiendas, `obj_Regalar`, personajes de la
-  historia), las rutas (`TimelineIndex` de vueltas y patrullas), `minX/maxX`, el empujón al
+- **Objetos, tiendas y regalos**: `scripts/inventario.gd` (objetos.json: `tools/objetos_original.py`),
+  `scenes/ui/tienda.gd` (KeyActionsCompra/Venta), `scenes/ui/mochila.gd` (tecla O; usar objetos de curar
+  como UseDirectObject), eventos de `obj_tendero` (TenderoHabla) y `obj_Regalar` (RegalarHabla):
+  `tools/tiendas_original.py`. Falta: ordenar bolsillos, tirar, equipar objetos, usarlos en combate.
+- Falta: los NPC con conversación propia (`obj_Watcher`, personajes de la historia), las rutas (`TimelineIndex` de vueltas y patrullas), `minX/maxX`, el empujón al
   aparecer encima del jugador (`TalkCollitionProta`) y 6 textos con un parámetro que depende de la partida.
 
 ## Códigos (`ExecuteCheat`)

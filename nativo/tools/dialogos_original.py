@@ -38,6 +38,8 @@ class Funciones(gml_eval.Funciones):
     def _llamar(self, nombre: str, args: list, profundidad: int):
         if nombre in self.ARCHIVOS:
             return self.linea(self.ARCHIVOS[nombre], int(args[0]))
+        if nombre == "TextReader" and len(args) == 2 and isinstance(args[0], str):
+            return self.linea(args[0], int(args[1]))
         if nombre == "chr":
             return chr(int(args[0]))
         if nombre == "ord":

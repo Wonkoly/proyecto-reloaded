@@ -64,6 +64,12 @@ func _algun_entrenador_viene() -> bool:
 
 ## Z (interactuar): el primer NPC que responde (lo mira de frente o lo toca) habla.
 func _unhandled_input(evento: InputEvent) -> void:
+	# O (key_menu_mochila): la mochila.
+	if evento is InputEventKey and evento.pressed and not evento.echo and evento.physical_keycode == KEY_O \
+			and not SceneManager.en_transicion and not Eventos.en_curso and quieto():
+		get_viewport().set_input_as_handled()
+		Mochila.abrir(self)
+		return
 	if not evento.is_action_pressed("interactuar") or evento.is_echo() or SceneManager.en_transicion or _salto \
 			or Eventos.en_curso:
 		return

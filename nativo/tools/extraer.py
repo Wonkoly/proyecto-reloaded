@@ -30,6 +30,8 @@ import conexiones
 import encuentros_original
 import entrenadores_original
 import centros_original
+import dialogos_original
+import objetos_original
 import mapas_original  # noqa: E402
 
 NATIVO = Path(__file__).resolve().parent.parent
@@ -72,7 +74,7 @@ FONDOS_UI = ["BackIntro", "BackIntroLetras", "GradienteNight", "BackFerProductio
 # Sonidos de los menús → audio/sfx/ui/.
 SONIDOS_UI = ["snd_click", "snd_curar", "snd_get"]
 CARPETAS = {
-    "datos": [DATA / "pokemon", DATA / "moves", DATA / "textos"],
+    "datos": [DATA / "pokemon", DATA / "moves", DATA / "textos", DATA / "objetos.json"],
     "sprites": [ASSETS / "sprites" / "pokemon"],
     "fondos": [ASSETS / "sprites" / "battlebacks"],
     "ui": [ASSETS / "sprites" / "ui", ASSETS / "audio" / "sfx" / "ui", ASSETS / "audio" / "intro"],
@@ -968,6 +970,9 @@ def main() -> None:
         plan = Plan()
         if cat == "datos":
             extraer_datos(plan, EXT, json.loads((EXT / "pkmnbattle" / "index.json").read_text()))
+            # Objetos: nombre, descripción, precio y bolsillo (objetos_original.py).
+            funciones = dialogos_original.Funciones(EXT / "scripts", EXT / "text" / "es")
+            plan.escribir(DATA / "objetos.json", json.dumps(objetos_original.objetos(funciones), ensure_ascii=False, indent=1))
         elif cat == "sprites":
             extraer_sprites(plan, EXT, parse_rangos(args.pokemon))
         elif cat == "fondos":

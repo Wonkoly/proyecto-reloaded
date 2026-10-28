@@ -21,6 +21,10 @@ signal combate_terminado(gano: bool)
 var en_curso: bool = false
 ## Resultado del último combate (la condición "gano").
 var gano: bool = false
+## La opción elegida con "elegir" (la condición "opcion": 1, 2... o 0 si se canceló o eligió la última).
+var opcion: int = 0
+## La lista de la tienda que arman las órdenes "tienda_poner" (casilla → objeto).
+var _tienda: Dictionary[int, int] = {}
 var _cache: Dictionary[String, Evento] = {}
 ## El NPC del evento en curso: mapa y nombre del nodo (se vuelve a buscar tras un combate).
 var _npc_nombre: String = ""
@@ -53,6 +57,7 @@ func ejecutar(evento: Evento, npc: Npc = null) -> bool:
 	_npc_nombre = String(npc.name) if npc else ""
 	_hablante = -2.0
 	_hablante_nombre = ""
+	_tienda.clear()
 	await _bloque(evento.ordenes, evento.ruta)
 	en_curso = false
 	return true
@@ -83,10 +88,10 @@ func condicion(texto: String, ruta: String = "", linea: int = 0) -> bool:
 		var partes: PackedStringArray = Evento.partir(texto)
 		return await CuadroOriginal.preguntar(self, _texto(partes.slice(1)))
 	var e := Expression.new()
-	if e.parse(_expresion(texto), ["h", "gano"]) != OK:
+	if e.parse(_expresion(texto), ["h", "gano", "opcion", "lugar", "o"]) != OK:
 		_aviso(ruta, linea, "condición inválida: " + texto)
 		return false
-	var v: Variant = e.execute([GameState.historia, gano])
+	var v: Variant = e.execute([GameState.historia, gano, opcion, GameState.indice_lugar, GameState.objetos])
 	if e.has_execute_failed():
 		_aviso(ruta, linea, "no se pudo evaluar: " + texto)
 		return false
@@ -96,9 +101,9 @@ func condicion(texto: String, ruta: String = "", linea: int = 0) -> bool:
 ## Una condición sin pregunta (no espera): para los datos (MiembroEquipo.condicion).
 func condicion_simple(texto: String) -> bool:
 	var e := Expression.new()
-	if e.parse(_expresion(texto), ["h", "gano"]) != OK:
+	if e.parse(_expresion(texto), ["h", "gano", "opcion", "lugar", "o"]) != OK:
 		return false
-	return bool(e.execute([GameState.historia, gano]))
+	return bool(e.execute([GameState.historia, gano, opcion, GameState.indice_lugar, GameState.objetos]))
 
 
 ## La condición como expresión de Godot: cada palabra que no es número ni palabra clave es una bandera.
@@ -113,6 +118,10 @@ static func _expresion(texto: String) -> String:
 			out += w
 		elif w == "gano":
 			out += "gano"
+		elif w == "opcion" or w == "lugar":
+			out += w
+		elif w.begins_with("objeto_") and w.substr(7).is_valid_int():
+			out += "o.get(%s, 0)" % w.substr(7)
 		elif PALABRAS.has(w):
 			out += " %s " % PALABRAS[w]
 		else:
@@ -208,6 +217,37 @@ func _orden(o: Dictionary, ruta: String) -> void:
 				await SceneManager.mapa_cargado
 		"fin":
 			_detener = true
+		"dar_objeto":  # dar_objeto id [cantidad]
+			if a.size() > 0:
+				if Inventario.dar(int(a[0]), int(a[1]) if a.size() > 1 else 1):
+					AudioManager.efecto_ui("snd_get")
+				else:
+					await CuadroOriginal.mensaje(self, Textos.linea("txt_menu", 275))
+		"quitar_objeto":
+			if a.size() > 0:
+				Inventario.quitar(int(a[0]), int(a[1]) if a.size() > 1 else 1)
+		"elegir":  # elegir titulo op1 op2 ... (números = líneas de txt_dialog): opcion = 1, 2...; la última o cancelar = 0
+			var textos: Array = []
+			for x: String in a:
+				textos.append(Textos.linea("txt_dialog", int(x)) if x.is_valid_int() else x)
+			if textos.size() >= 2:
+				var filas: Array = textos.slice(1).map(func(t: String) -> Dictionary: return {"texto": t})
+				var i: int = await MenuLista.elegir(self, textos[0], filas)
+				opcion = 0 if i < 0 or i == filas.size() - 1 else i + 1
+		"tienda_poner":  # tienda_poner casilla id id... (ItemDistribution)
+			if a.size() > 1:
+				for k: int in range(1, a.size()):
+					_tienda[int(a[0]) + k - 1] = int(a[k])
+		"tienda":
+			var casillas: Array = _tienda.keys()
+			casillas.sort()
+			var lista: Array[int] = []
+			for c: int in casillas:
+				if _tienda[c] > 0 and not Inventario.datos(_tienda[c]).is_empty():
+					lista.append(_tienda[c])
+			await Tienda.comprar(self, lista)
+		"vender":
+			await Tienda.vender(self)
 		_:
 			_aviso(ruta, o.linea, "orden desconocida: " + o.orden)
 
@@ -283,10 +323,10 @@ func _bandera(a: PackedStringArray, ruta: String, linea: int) -> void:
 		return
 	var nombre: String = a[0].replace("[", "_").replace("]", "")
 	var e := Expression.new()
-	if e.parse(_expresion(" ".join(a.slice(2))), ["h", "gano"]) != OK:
+	if e.parse(_expresion(" ".join(a.slice(2))), ["h", "gano", "opcion", "lugar", "o"]) != OK:
 		_aviso(ruta, linea, "valor inválido")
 		return
-	var v: int = int(e.execute([GameState.historia, gano]))
+	var v: int = int(e.execute([GameState.historia, gano, opcion, GameState.indice_lugar, GameState.objetos]))
 	if a[1] == "+=":
 		v = GameState.bandera(nombre) + v
 	elif a[1] == "-=":

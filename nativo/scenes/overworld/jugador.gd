@@ -57,7 +57,7 @@ func _ready() -> void:
 
 func _algun_entrenador_viene() -> bool:
 	for npc: Npc in get_tree().get_nodes_in_group("npcs"):
-		if npc._yendo == self or (npc.entrenador != 0 and npc._hablando):
+		if npc._yendo == self or ((npc.entrenador != 0 or npc.vigila) and npc._hablando):
 			return true
 	return false
 

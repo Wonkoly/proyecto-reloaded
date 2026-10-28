@@ -957,6 +957,13 @@ def escena_mapa(room: dict, juego: Juego, tilesets: dict, sprite_tres, snake, re
             if sprite:
                 decorado(f"{nombre}_sprite", sprite, x, y)
         elif juego.es(obj, "obj_people"):
+            if obj == "obj_Watcher":
+                # DefineWatcher: sprINDEX 411, "Vigilante", alcance 80, TextDialog(5179), mira al azar.
+                inst.setdefault("sprINDEX", 411.0)
+                inst.setdefault("name", juego.dialogos.linea("txt_character", 711))
+                inst.setdefault("distancia", 80.0)
+                inst.setdefault("str", {"dialogo": 5179})
+                inst.setdefault("mirafijo", 0.0)
             props = [f"position = Vector2({f(x)}, {f(y)})", f"collision_layer = {CAPA_PAREDES}", "collision_mask = 0",
                      f"objeto_original = {gd_str(obj)}", f"mira = {int(inst.get('mira', inst.get('mirafijo', 2)) or 2)}"]
             sprs = tabla_npc.get(int(inst.get("sprINDEX", -1)), {})
@@ -1004,6 +1011,17 @@ def escena_mapa(room: dict, juego: Juego, tilesets: dict, sprite_tres, snake, re
             nopass = inst.get("nopass", 37.0 if no_pasa else None)
             if isinstance(nopass, float):
                 props.append(f"no_pasar = {int(nopass)}")
+            if obj == "obj_Watcher":
+                # WatcherPillaProta: si ve al jugador, va hasta él, habla (WatcherHabla) y en el Castillo
+                # Rekiem lo saca del edificio (ExplorerEscape).
+                props.append("vigila = true")
+                lineas = ["# Vigilante (obj_Watcher). Generado por tools/extraer.py (ver docs/eventos.md)."]
+                d = _linea_decir(texto)
+                if d:
+                    lineas.append(d)
+                if room["name"].startswith("CastleRekiem"):
+                    lineas.append("expulsar")
+                juego.eventos_generados[(room["name"], nombre)] = "\n".join(lineas) + "\n"
             if obj == "obj_tendero":
                 juego.eventos_generados[(room["name"], nombre)] = tiendas_original.evento_tienda(juego, ridx, room["name"])
             if obj == "obj_Regalar" and isinstance(inst.get("index"), float):

@@ -52,6 +52,8 @@ const DIR_TECLA: Dictionary[int, Vector2] = {37: Vector2.LEFT, 38: Vector2.UP, 3
 @export var no_pasar: int = 0
 ## INDEX del entrenador (obj_Entrenador; 0 = no es entrenador): su equipo en Datos.entrenador().
 @export var entrenador: int = 0
+## Vigila como un entrenador (obj_Watcher): si ve al jugador va hasta él y corre su evento.
+@export var vigila: bool = false
 ## TRAINER: este NPC es el entrenador N ya vencido (aparece donde quedó el entrenador).
 @export var entrenador_vencido: int = 0
 ## Frame fijo del sprite (la enfermera: 0 normal, 1 curando, 2 reverencia); -1 = según la dirección.
@@ -83,7 +85,7 @@ func _ready() -> void:
 			and get_tree().current_scene and str(u.get("mapa", "")) == GameState.mapa_actual:
 		position = Vector2(float(u.x), float(u.y))
 		mira = int(u.mira)
-	if entrenador != 0:
+	if entrenador != 0 or vigila:
 		_mira_entrenador(true)
 	queue_redraw()
 
@@ -204,7 +206,7 @@ func _paso() -> void:
 	if _pasos > 0:
 		_caminar()
 		return
-	if entrenador != 0:
+	if entrenador != 0 or vigila:
 		_mira_entrenador(false)
 		var j: Jugador = _jugador()
 		# mirafijo negativo: mira fijo (o al azar con -1) pero no vigila.

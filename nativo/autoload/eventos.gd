@@ -248,6 +248,14 @@ func _orden(o: Dictionary, ruta: String) -> void:
 			await Tienda.comprar(self, lista)
 		"vender":
 			await Tienda.vender(self)
+		"expulsar":  # ExplorerEscape: a la salida del edificio (global.room_out) y termina el evento
+			if GameState.mapa_salida != "":
+				var destino: String = GameState.mapa_salida
+				var pos: Vector2 = GameState.posicion_salida + Vector2(0, 2)
+				GameState.mapa_salida = ""
+				SceneManager.ir_a_mapa(destino, pos, 2)
+				await SceneManager.mapa_cargado
+			_detener = true
 		_:
 			_aviso(ruta, o.linea, "orden desconocida: " + o.orden)
 

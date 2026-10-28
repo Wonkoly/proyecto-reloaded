@@ -26,6 +26,11 @@ func crear_equipo() -> Array[PokemonInstance]:
 		if e == null:
 			continue
 		var p := PokemonInstance.crear(e, m.nivel_para(max_nv))
+		if m.iv >= 0 or m.ntv >= 0:
+			p.iv = m.iv if m.iv >= 0 else p.iv
+			p.ntv = m.ntv if m.ntv >= 0 else p.ntv
+			p.hp_actual = p.calcular_stats()["hp"]
+			p.energia_actual = p.calcular_energia_maxima()
 		if not m.movimientos.is_empty():
 			p.movimientos.clear()
 			for id_mov: int in m.movimientos:

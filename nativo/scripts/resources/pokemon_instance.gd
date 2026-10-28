@@ -2,7 +2,8 @@ class_name PokemonInstance
 extends Resource
 ## Un Pokémon concreto (de una especie).
 ## iv y ntv guardan un dígito (0-9) por stat, de las unidades hacia arriba:
-## hp, ataque, defensa, ataque_esp, defensa_esp, velocidad. Ej.: iv = 0 y ntv = 999999 es "perfecto".
+## hp, ataque, defensa, ataque_esp, defensa_esp, velocidad. Más alto es mejor: iv = ntv = 999999 es
+## "perfecto" (los líderes y la liga: IV2 = 999999 y GenerarPerfectoSelue).
 
 const DIGITO_STAT: Dictionary[String, int] = {
 	"hp": 0, "ataque": 1, "defensa": 2, "ataque_esp": 3, "defensa_esp": 4, "velocidad": 5,

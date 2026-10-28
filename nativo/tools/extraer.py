@@ -734,7 +734,16 @@ def extraer_mapas(plan: Plan, juego: Path, ext: Path, tilesets: dict, filtro: li
         dialogo[clave] = {"nombre": original.personajes.nombre(sprindex), "retrato": r}
     plan.escribir(DATA / "dialogo_personajes.json", json.dumps(dialogo, ensure_ascii=False, indent=1))
     # Entrenadores (TrainerPokemon + lo que TrainerCreation dice de cada uno) y sus eventos de reto.
-    for n, miembros in entrenadores_original.equipos(original.script("TrainerPokemon")).items():
+    equipos = entrenadores_original.equipos(original.script("TrainerPokemon"))
+    # Los de PrepareBattleTrainerSpecific/Liga/Frente (líderes, liga...) mandan: el original los aplica después.
+    especiales = entrenadores_original.equipos_especiales(
+        [original.script(s) for s in ("PrepareBattleTrainerSpecific", "PrepareBattleTrainerLiga", "PrepareBattleTrainerFrente")])
+    for n, e in especiales.items():
+        equipos[n] = e["miembros"]
+    sin_equipo = sorted(n for n in original.entrenadores_vistos if not equipos.get(n))
+    if sin_equipo:
+        avisar(f"entrenadores colocados sin equipo: {sin_equipo}")
+    for n, miembros in sorted(equipos.items()):
         visto = original.entrenadores_vistos.get(n, {})
         tres = Tres("Resource", "EntrenadorData")
         script_miembro = tres.ext_resource("Script", "res://scripts/resources/miembro_equipo.gd")
@@ -753,12 +762,17 @@ def extraer_mapas(plan: Plan, juego: Path, ext: Path, tilesets: dict, filtro: li
                 props.append("movimientos = PackedInt32Array(%s)" % ", ".join(str(x) for x in m["movimientos"]))
             if m["condicion"]:
                 props.append(f"condicion = {mapas_original.gd_str(m['condicion'])}")
+            if "iv" in m:
+                props.append(f"iv = {m['iv']}")
+            if "ntv" in m:
+                props.append(f"ntv = {m['ntv']}")
             refs.append(tres.sub_resource("Resource", props))
         sprindex = visto.get("sprindex", -1.0)
         plan.escribir(DATA / "entrenadores" / f"{n:04d}.tres", tres.texto([
             f"script = {tres.ext_resource('Script', 'res://scripts/resources/entrenador_data.gd')}",
             f"id = {n}", f"nombre = {mapas_original.gd_str(visto.get('nombre', ''))}",
-            f"sprindex = {mapas_original.f(sprindex)}", f"lider = {'true' if visto.get('lider') else 'false'}",
+            f"sprindex = {mapas_original.f(sprindex)}",
+            f"lider = {'true' if visto.get('lider') or especiales.get(n, {}).get('lider') else 'false'}",
             "equipo = Array[Resource]([%s])" % ", ".join(refs)]))
     plan.escribir(DATA / "centros.json", json.dumps(centros_original.centros(original), ensure_ascii=False, indent=1))
     for (room, nodo), texto in sorted(original.eventos_generados.items()):

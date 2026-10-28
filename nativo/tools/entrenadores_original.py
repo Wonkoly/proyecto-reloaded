@@ -81,6 +81,10 @@ def _ejecutar(i, conds: list[str], asignaciones: list) -> None:
             return
         if lv[0] == "campo" and lv[1] == ("id", "z"):
             asignaciones.append((lv[2], None, v, " y ".join(conds)))
+        elif lv[0] == "campo" and lv[1] == ("id", "global"):
+            asignaciones.append(("global." + lv[2], None, v, " y ".join(conds)))
+        elif lv[0] == "indice" and lv[1][0] == "campo" and lv[1][1] == ("id", "global") and lv[2][0] == "num":
+            asignaciones.append(("global." + lv[1][2], int(float(lv[2][1])), v, " y ".join(conds)))
         elif lv[0] == "indice" and lv[1][0] == "campo" and lv[1][1] == ("id", "z") and lv[2][0] == "num":
             asignaciones.append((lv[1][2], int(float(lv[2][1])), v, " y ".join(conds)))
 
@@ -125,4 +129,65 @@ def equipos(gml: str) -> dict[int, list[dict]]:
                     m["nivel"] = nivel
                 miembros.append(m)
         out[int(n)] = miembros
+    return out
+
+
+def _bloques(gml: str) -> dict[int, str]:
+    """Los cuerpos de los if(argument0=N){...} del nivel más externo (contando llaves)."""
+    out = {}
+    for m in re.finditer(r"if\(argument0=(\d+)\)\{", gml):
+        i, prof = m.end(), 1
+        while i < len(gml) and prof:
+            prof += {"{": 1, "}": -1}.get(gml[i], 0)
+            i += 1
+        out.setdefault(int(m.group(1)), gml[m.end():i - 1])
+    return out
+
+
+def equipos_especiales(gmls: list[str]) -> dict[int, dict]:
+    """PrepareBattleTrainerSpecific/Liga/Frente: equipos armados directamente en global.pkmn2[i],
+    nivel2[i], objpoke2[i], IV2[i] y attack2[i,k] (líderes, liga, Frente).
+    {N: {"lider": bool, "miembros": [...]}} (mismo formato de miembro que equipos(), más "iv")."""
+    out = {}
+    for gml in gmls:
+        for n, cuerpo in _bloques(gml).items():
+            if n in out:
+                continue
+            try:
+                arbol = gml_visual.Parser(gml_visual.tokenizar(cuerpo)).programa()
+            except Exception:
+                continue
+            asig: list = []
+            for inst in arbol:
+                _ejecutar(inst, [], asig)
+            perfectos = {int(i) for i in re.findall(r"global\.selue_pk2\[(\d+)\]=GenerarPerfectoSelue", cuerpo)}
+            ataques: dict[int, dict[int, int]] = {}
+            for i, k, mov in re.findall(r"global\.attack2\[(\d+),(\d+)\]=\(?(\d+)\)?;", cuerpo):
+                ataques.setdefault(int(i), {})[int(k)] = int(mov)
+            miembros = []
+            for i in range(6):
+                especies = [(v, c) for campo, idx, v, c in asig if campo == "global.pkmn2" and idx == i]
+                variantes = [(v, c) for v, c in especies if c] or [(v, c) for v, c in especies[-1:]]
+                nivel = next((v for campo, idx, v, c in reversed(asig) if campo == "global.nivel2" and idx == i), 0)
+                objeto = next((v for campo, idx, v, c in reversed(asig) if campo == "global.objpoke2" and idx == i), 0)
+                iv = next((v for campo, idx, v, c in reversed(asig) if campo == "global.IV2" and idx == i), None)
+                movs = [ataques.get(i, {}).get(k, 0) for k in (1, 2, 3, 4)]
+                movs = [x for x in movs if x > 0]
+                for especie, cond in variantes:
+                    if not isinstance(especie, int) or especie <= 0:
+                        continue
+                    m = {"especie": especie, "nivel": 5, "nivel_escala": False, "ajuste": 0,
+                         "objeto": objeto if isinstance(objeto, int) else 0, "movimientos": movs, "condicion": cond}
+                    if isinstance(iv, int):
+                        m["iv"] = iv
+                    if i in perfectos:
+                        m["ntv"] = 999999
+                    if isinstance(nivel, dict):
+                        m.update(nivel=max(1, nivel["min"]), nivel_escala=True, ajuste=nivel["ajuste"])
+                    elif isinstance(nivel, int) and nivel > 0:
+                        m["nivel"] = nivel
+                    miembros.append(m)
+            lider = any(campo == "global.lider" and v == 1 for campo, idx, v, c in asig)
+            if miembros:
+                out[n] = {"lider": lider, "miembros": miembros}
     return out

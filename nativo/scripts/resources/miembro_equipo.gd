@@ -14,6 +14,10 @@ extends Resource
 @export var objeto: int = 0
 ## Movimientos propios (ids); vacío = los que aprende por nivel.
 @export var movimientos: PackedInt32Array = PackedInt32Array()
+## Valores individuales fijos (999999 = perfectos, los de líderes y liga); -1 = al azar.
+@export_range(-1, 999999) var iv: int = -1
+## Talento natural fijo (999999 = perfecto: GenerarPerfectoSelue); -1 = al azar.
+@export_range(-1, 999999) var ntv: int = -1
 ## Solo si se cumple (condición de evento sobre las banderas, p. ej. "pkchoose == 1"); vacío = siempre.
 @export var condicion: String = ""
 

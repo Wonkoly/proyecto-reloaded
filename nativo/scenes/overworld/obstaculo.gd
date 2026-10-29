@@ -74,8 +74,12 @@ func usar(desde: Node) -> void:
 	_ocupado = false
 
 
-## RealizaCorte / RealizaGolpeRoca: desaparece (en el original lo rompe el Pokémon que sale).
+## RealizaCorte / RealizaGolpeRoca: desaparece (en el original lo rompe el Pokémon que sale). Los que
+## tienen INDEX no vuelven (PostDestroyObstaculo: obstaculo[INDEX] = true; su condición es esa bandera).
 func _quitar() -> void:
+	var m: RegExMatch = RegEx.create_from_string("obstaculo_(\\d+)").search(str(get_meta("condicion", "")))
+	if m:
+		GameState.cambiar_historia("obstaculo_" + m.get_string(1), 1)
 	collision_layer = 0
 	var t: Tween = create_tween()
 	t.tween_property(self, "modulate:a", 0.0, 0.3)

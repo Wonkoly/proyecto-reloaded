@@ -318,9 +318,9 @@ func pow_dif(lado: int) -> int:
 	return POW_DIF[dificultad].x if lado == 1 else POW_DIF[dificultad].y
 
 
-## MEDALLA_STAR[n] (1-8), como bandera de la historia "medalla_n".
+## MEDALLA_STAR[n] (1-8), como bandera de la historia "MEDALLA_STAR_n".
 func tiene_medalla(n: int) -> bool:
-	return bandera("medalla_%d" % n) != 0
+	return bandera("MEDALLA_STAR_%d" % n) != 0
 
 
 ## El primer Pokémon del equipo con esa habilidad de campo (ConsultaHabExt), o null.

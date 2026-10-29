@@ -235,7 +235,7 @@ static func _medalla(args: PackedStringArray) -> String:
 		return "Uso: medalla <n|todas>"
 	var lista: Array = range(1, 9) if args[0] == "todas" else [args[0].to_int()]
 	for n: int in lista:
-		GameState.cambiar_historia("medalla_%d" % n, 1)
+		GameState.cambiar_historia("MEDALLA_STAR_%d" % n, 1)
 	return "Medallas: %s" % ", ".join(range(1, 9).filter(func(n: int) -> bool: return GameState.tiene_medalla(n)).map(str))
 
 

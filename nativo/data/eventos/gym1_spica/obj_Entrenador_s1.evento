@@ -1,0 +1,15 @@
+# Líder Mino (entrenador 25, GYM1_Spica). El generado más la entrega de la medalla, que en el
+# original salta sola al acabar el combate (LiderMinoEntregaMedalla).
+decir 276
+combate 25
+si gano:
+	bandera trainer_25 = 1
+	hablante 2001
+	decir 3616
+	narrar 3617
+	bandera MEDALLA_STAR_1 = 1
+	decir 3618
+	decir 3619
+	dar_objeto 235 1
+	narrar 3620
+	decir 3621

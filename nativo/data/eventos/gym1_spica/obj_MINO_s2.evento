@@ -1,0 +1,13 @@
+# Líder Mino ya vencido (LiderMinoHabla / LiderMinoEntregaMedalla).
+hablante 2001
+si MEDALLA_STAR_1 == 0:
+	decir 3616
+	narrar 3617
+	bandera MEDALLA_STAR_1 = 1
+	decir 3618
+	decir 3619
+	dar_objeto 235 1
+	narrar 3620
+	decir 3621
+	fin
+decir 3615

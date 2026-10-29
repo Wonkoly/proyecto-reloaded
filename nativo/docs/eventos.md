@@ -61,6 +61,12 @@ sino:
 | `elegir titulo op1 op2 …` | Lista para elegir (números = líneas de `txt_dialog`). Deja `opcion` en 1, 2…; la última opción o cancelar dejan 0. |
 | `tienda_poner casilla id id…` | Pone objetos en la lista de la tienda desde esa casilla (pisa lo que había, como `ItemDistribution`). |
 | `tienda` / `vender` | Abre la compra con la lista armada, o la venta de la mochila. |
+| `ocultar [nodo]` | Quita al NPC (o el nodo de `Objetos` con ese nombre) hasta volver a entrar al mapa, como `instance_destroy`. |
+| `mover nodo dirección px [velocidad]` | El NPC camina esos px (`npc` = el del evento; 90 px/s por defecto, 3 px/step). |
+| `exclamacion [nodo]` | El "!" sobre otro NPC del mapa. |
+| `hablante rival` | Habla el rival con su nombre y retrato. |
+| `mostrar_pokemon id` / `ocultar_pokemon` | El cuadro con un Pokémon (`obj_PKCuadro`). |
+| `asignar_ball id` | La Poké Ball que se lanza con B. |
 | `fin` | Termina el evento. |
 
 ### Condiciones (`si … :`, `sino si … :`, `sino:`)

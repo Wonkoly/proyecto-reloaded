@@ -88,6 +88,7 @@ static func volar(jugador: Jugador, lugar: Dictionary) -> void:
 		return
 	if jugador.surfeando():
 		jugador.terminar_surf()
+	GameState.ciclista = false
 	jugador.mira = 2
 	jugador.process_mode = Node.PROCESS_MODE_DISABLED
 	var s: AnimatedSprite2D = _sprite(p.especie, 8)

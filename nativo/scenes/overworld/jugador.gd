@@ -2,7 +2,7 @@ class_name Jugador
 extends CharacterBody2D
 ## El protagonista en el overworld (obj_Prota: ProtaMovimiento, ProtaSetSprite). Movimiento libre
 ## por píxel en 8 direcciones (en diagonal, velocidad / √2), a 90 px/s andando, 120 corriendo y 60
-## lento; quieto deja el frame 1 sin animar.
+## lento (en bici 180, 210 y 90); quieto deja el frame 1 sin animar.
 
 const VELOCIDAD_ANDAR: float = 90.0     # 3 px/step
 const VELOCIDAD_CORRER: float = 120.0   # 4 px/step
@@ -11,6 +11,16 @@ const VELOCIDAD_LENTO: float = 60.0     # 2 px/step
 const FPS_ANDAR: float = 6.0
 const FPS_CORRER: float = 7.5
 const FPS_LENTO: float = 4.5
+## En bici (ProtaMovimiento con global.ciclista): 6 px/step, 7 corriendo y 3 lento.
+const VELOCIDAD_BICI: float = 180.0
+const VELOCIDAD_BICI_CORRER: float = 210.0
+const VELOCIDAD_BICI_LENTO: float = 90.0
+## Las cañas (Caña Vieja, Buena y Súper) y su subtabla de encuentros (Pescando).
+const CANAS: Dictionary[int, SubtablaEncuentros.Metodo] = {181: SubtablaEncuentros.Metodo.CANA_VIEJA,
+	182: SubtablaEncuentros.Metodo.CANA_BUENA, 183: SubtablaEncuentros.Metodo.SUPERCANA}
+const OBJETO_BICI: int = 184
+## Rooms de las que no se baja de la bici (Ciclovía: TextDialog 2434).
+const SIN_BAJAR_DE_BICI: Array[String] = ["Ruta_13_1", "Ruta_14", "CarrilBicis", "CarrilBicis_2", "CarrilBicis_3"]
 ## Vista del original: 320×180 y la sigue con un borde horizontal de 120 px (hborder).
 const BORDE_VISTA: float = 120.0
 ## Capa de física de las zonas (hierba).
@@ -27,6 +37,11 @@ const VECTOR_MIRA: Dictionary[int, Vector2] = {2: Vector2.DOWN, 8: Vector2.UP, 4
 @export var sprite_abajo: SpriteOriginal
 @export var sprite_arriba: SpriteOriginal
 @export var sprite_derecha: SpriteOriginal
+## En bici (sprDB/UB/RB) y pescando (sprDP/UP/RP): abajo, arriba, derecha (data/extraido/personajes.json).
+var sprites_bici: Array[SpriteOriginal] = []
+var sprites_pesca: Array[SpriteOriginal] = []
+## PESCA: con la caña echada (90 steps).
+var _pescando: bool = false
 
 ## Notación de teclado numérico, como mira en el original.
 var mira: int = 2
@@ -92,6 +107,16 @@ func _unhandled_input(evento: InputEvent) -> void:
 	if tecla_mo == KEY_2 and quieto():
 		get_viewport().set_input_as_handled()
 		Vuelo.intentar(self)
+		return
+	# V (key_ex_bicicleta): subir o bajar de la bici (también en marcha).
+	if tecla_mo == KEY_V:
+		get_viewport().set_input_as_handled()
+		alternar_bici()
+		return
+	# C (key_ex_pescar): con una caña, de cara al agua.
+	if tecla_mo == KEY_C and quieto() and not _pescando:
+		get_viewport().set_input_as_handled()
+		pescar()
 		return
 	# 5 (key_ex_mo5_destello): en una cueva oscura, Destello.
 	if tecla_mo == KEY_5 and quieto() and _mapa() and _mapa().has_node("Oscuridad"):
@@ -195,6 +220,10 @@ func _physics_process(delta: float) -> void:
 	if _trepando:
 		_paso_trepar(delta)
 		return
+	if _pescando:  # image_speed 0.2 con la caña echada
+		_frame = fmod(_frame + 6.0 * delta, maxf(_sprite().frames.size() if _sprite() else 1, 1))
+		queue_redraw()
+		return
 	if _empuje_restante > 0.0:
 		_empuje_restante -= delta
 		var frames_empuje: int = _sprite().frames.size() if _sprite() else 1
@@ -209,13 +238,13 @@ func _physics_process(delta: float) -> void:
 	var x: float = Input.get_axis("mover_izquierda", "mover_derecha")
 	var y: float = Input.get_axis("mover_arriba", "mover_abajo")
 	var dir: Vector2 = Vector2(signf(x) if absf(x) > 0.3 else 0.0, signf(y) if absf(y) > 0.3 else 0.0)
-	var velocidad: float = VELOCIDAD_ANDAR
+	var velocidad: float = VELOCIDAD_BICI if GameState.ciclista else VELOCIDAD_ANDAR
 	var fps: float = FPS_ANDAR
 	if Input.is_action_pressed("correr"):
-		velocidad = VELOCIDAD_CORRER
+		velocidad = VELOCIDAD_BICI_CORRER if GameState.ciclista else VELOCIDAD_CORRER
 		fps = FPS_CORRER
 	elif Input.is_action_pressed("andar_lento"):
-		velocidad = VELOCIDAD_LENTO
+		velocidad = VELOCIDAD_BICI_LENTO if GameState.ciclista else VELOCIDAD_LENTO
 		fps = FPS_LENTO
 	_moviendose = dir != Vector2.ZERO
 	if _moviendose:
@@ -274,7 +303,8 @@ func en_hierba() -> bool:
 ## de ActivacionSalvajes (salvajes sin hierba, con la tabla de hierba). -1 si ninguno.
 func metodo_actual() -> int:
 	if surfeando():
-		return SubtablaEncuentros.Metodo.SURF  # global.hierba = 2
+		# global.hierba = 2 (sobre la lava, su propia subtabla).
+		return SubtablaEncuentros.Metodo.LAVA if GameState.surf_lava else SubtablaEncuentros.Metodo.SURF
 	var aqui: Array[int] = _metodos_en(Vector2.ZERO)
 	if SubtablaEncuentros.Metodo.HIERBA_INVISIBLE in aqui:
 		return SubtablaEncuentros.Metodo.HIERBA_INVISIBLE
@@ -366,27 +396,96 @@ func _revisar_salidas() -> void:
 
 ## Sprites del personaje elegido (código Q/CARA): data/extraido/personajes.json.
 func _aplicar_personaje() -> void:
-	if GameState.personaje == 0 and sprite_abajo:
-		return
 	var f: FileAccess = FileAccess.open("res://data/extraido/personajes.json", FileAccess.READ)
 	if f == null:
 		return
 	var tabla: Dictionary = JSON.parse_string(f.get_as_text())
 	var nombres: Variant = tabla["entrenadores"].get(str(GameState.personaje_entrenador)) if GameState.personaje == 10 \
 		else tabla["protagonistas"].get(str(GameState.personaje))
-	if nombres is Array and (nombres as Array).size() == 3:
-		var cargar: Callable = func(n: String) -> SpriteOriginal: return load("res://assets/extraido/sprites/overworld/%s.tres" % n)
+	if not nombres is Array or (nombres as Array).size() < 3:
+		return
+	var cargar: Callable = func(n: String) -> SpriteOriginal: return load("res://assets/extraido/sprites/overworld/%s.tres" % n)
+	if GameState.personaje != 0 or sprite_abajo == null:
 		sprite_abajo = cargar.call(nombres[0])
 		sprite_arriba = cargar.call(nombres[1])
 		sprite_derecha = cargar.call(nombres[2])
+	if (nombres as Array).size() == 9:
+		sprites_bici.assign([cargar.call(nombres[3]), cargar.call(nombres[4]), cargar.call(nombres[5])])
+		sprites_pesca.assign([cargar.call(nombres[6]), cargar.call(nombres[7]), cargar.call(nombres[8])])
 
 
 func _sprite() -> SpriteOriginal:
-	if mira == 2:
-		return sprite_abajo
-	if mira == 8:
-		return sprite_arriba
-	return sprite_derecha
+	var trio: Array[SpriteOriginal] = [sprite_abajo, sprite_arriba, sprite_derecha]
+	if _pescando and sprites_pesca.size() == 3:
+		trio = sprites_pesca
+	elif GameState.ciclista and not surfeando() and sprites_bici.size() == 3:
+		trio = sprites_bici
+	return trio[0] if mira == 2 else trio[1] if mira == 8 else trio[2]
+
+
+## KeyActionsProta (V): con la Bicicleta y sin surfear, sube o baja. En un interior solo en las cuevas
+## (obj_cueva; si no, TextDialog 2435) y en la Ciclovía no se baja (2434).
+func alternar_bici() -> void:
+	if surfeando():
+		return
+	if not GameState.objetos.has(OBJETO_BICI):
+		GameState.ciclista = false
+		return
+	var mapa: Mapa = _mapa()
+	if GameState.mapa_salida != "" and not _es_cueva(mapa):
+		await CajaDialogo.decir(self, Textos.linea("txt_dialog", 2435))
+		return
+	if GameState.ciclista and mapa and mapa.nombre_original in SIN_BAJAR_DE_BICI:
+		await CajaDialogo.decir(self, Textos.linea("txt_dialog", 2434))
+		return
+	GameState.ciclista = not GameState.ciclista
+	queue_redraw()
+
+
+static func _es_cueva(mapa: Mapa) -> bool:
+	return mapa != null and mapa.get_node("Marcadores").get_children().any(
+		func(n: Node) -> bool: return n.get_meta("objeto", "") == "obj_cueva")
+
+
+## KeyActionsProta (C) + ProtaPesca + Pescando: con una caña (si hay varias se elige; TextDialog
+## 2416-2419) y el agua justo enfrente, se echa (2420) y a los 90 steps pica la mitad de las veces
+## (si no, 72): sale un salvaje de la subtabla de esa caña (73) o, si no hay, 71.
+func pescar() -> void:
+	var canas: Array[int] = []
+	for c: int in CANAS:
+		if GameState.objetos.has(c):
+			canas.append(c)
+	if canas.is_empty() or not sobre_agua(global_position + VECTOR_MIRA.get(mira, Vector2.DOWN) * 10.0):
+		return
+	if GameState.bandera("historia_manaphy") >= 5:
+		await CajaDialogo.decir(self, Textos.linea("txt_dialog", 2411))
+		return
+	var cana: int = canas[0]
+	if canas.size() > 1:
+		# Vieja + Buena 2416, Vieja + Súper 2417, Buena + Súper 2418, las tres 2419.
+		var texto: int = 2419 if canas.size() == 3 else {363: 2416, 364: 2417, 365: 2418}[canas[0] + canas[1]]
+		var sel: int = await MenuLista.elegir(self, Textos.linea("txt_dialog", texto),
+			canas.map(func(c: int) -> Dictionary: return {"texto": Inventario.nombre(c)}))
+		if sel < 0:
+			return
+		cana = canas[sel]
+	await CajaDialogo.decir(self, Textos.par(Textos.linea("txt_dialog", 2420), Inventario.nombre(cana)))
+	_pescando = true
+	_frame = 0.0
+	await get_tree().create_timer(90.0 / STEPS_POR_SEGUNDO, false).timeout
+	_pescando = false
+	_frame = 1.0
+	queue_redraw()
+	if randi_range(1, 2) == 2:
+		await CajaDialogo.decir(self, Textos.linea("txt_dialog", 72))
+		return
+	var sub: SubtablaEncuentros = _tabla.subtabla(CANAS[cana], Reloj.es_de_dia(), global_position, _mapa().cumple) if _tabla else null
+	var salvaje: PokemonInstance = crear_salvaje(sub.sortear(_mapa().cumple)) if sub else null
+	if salvaje == null:
+		await CajaDialogo.decir(self, Textos.linea("txt_dialog", 71))
+		return
+	await CajaDialogo.decir(self, Textos.linea("txt_dialog", 73))
+	SceneManager.ir_a_batalla(salvaje, self)
 
 
 func surfeando() -> bool:
@@ -422,6 +521,7 @@ func intentar_surf() -> void:
 		await CuadroOriginal.mensaje(self, Textos.linea("txt_dialog", 2394 if lava else 2393))
 		return
 	GameState.surf_lava = lava
+	GameState.ciclista = false
 	GameState.surfer = p.especie.id_original
 	_entrando_agua = true
 	_actualizar_montura()

@@ -170,6 +170,8 @@ func _cargar_mapa() -> void:
 	GameState.fuerza_activa = false
 	Vuelo.marcar(mapa.nombre_original)
 	Campo.al_entrar(mapa)
+	if GameState.mapa_salida != "" and not Jugador._es_cueva(mapa):
+		GameState.ciclista = false  # DoorEnter: al entrar a un edificio se baja de la bici
 	AudioManager.musica_mapa(mapa.nombre_original)
 	mapa.objetos().add_child(jugador)
 	get_tree().change_scene_to_node(mapa)

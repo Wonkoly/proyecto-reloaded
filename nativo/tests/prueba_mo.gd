@@ -1,6 +1,6 @@
 extends SceneTree
 ## MO en el mapa: Destello, Cascada (la corriente no deja subir; con Cascada sí), Buceo (bajar y subir),
-## Ola Lava y Treparrocas.
+## Ola Lava, Treparrocas, bici y pesca.
 ##   ../tools/Godot_v4.7.2-stable_linux.x86_64 --headless --path . -s res://tests/prueba_mo.gd
 ## Sin --headless guarda capturas en user://mo_*.png.
 
@@ -33,6 +33,8 @@ func _initialize() -> void:
 	await _buceo()
 	await _ola_lava()
 	await _treparrocas()
+	await _bici()
+	await _pesca()
 	print("RESULTADO: ", "todo bien" if _fallas == 0 else "%d fallas" % _fallas)
 	quit(_fallas)
 
@@ -199,6 +201,76 @@ func _treparrocas() -> void:
 	await create_timer(2.0).timeout
 	_ok(j.global_position.y < rocas.position.y and j._trepando == 0, "la trepa hasta arriba (y %.0f, la pared empieza en %.0f)" % [j.global_position.y, rocas.position.y])
 	await _captura("mo_trepa")
+
+
+## V con la Bicicleta: va a 6 px/step (180 px/s) y al entrar a un edificio se baja.
+func _bici() -> void:
+	gs.mapa_salida = ""  # afuera (la partida nueva empieza dentro de casa)
+	await _ir("PuebloAlba", Vector2(417, 240))
+	var j: Node = _jugador()
+	await _tecla(KEY_V)
+	_ok(not gs.ciclista, "sin la Bicicleta la V no hace nada")
+	gs.objetos[184] = 1
+	await _tecla(KEY_V)
+	_ok(gs.ciclista, "con la Bicicleta, V sube")
+	var x0: float = j.global_position.x
+	Input.action_press("mover_izquierda")
+	await create_timer(0.5).timeout
+	Input.action_release("mover_izquierda")
+	var v: float = (x0 - j.global_position.x) / 0.5
+	_ok(v > 150.0, "en bici va a ~180 px/s (%.0f)" % v)
+	await _captura("mo_bici")
+	await _tecla(KEY_V)
+	_ok(not gs.ciclista, "V baja")
+	gs.ciclista = true
+	gs.mapa_salida = "PuebloAlba"
+	await _ir("Lab_Oak")
+	_ok(not gs.ciclista, "al entrar al laboratorio se baja de la bici")
+	gs.mapa_salida = ""
+
+
+## C con una caña de cara al agua: se echa y, cuando pica, empieza un combate.
+func _pesca() -> void:
+	gs.surfer = 0
+	gs.objetos[181] = 1
+	seed(3)
+	await _ir("Ruta_3")
+	var j: Node = _jugador()
+	var listo: bool = false
+	for c: Node in current_scene.get_node("Agua").get_children():
+		var r: Rect2 = (c as CollisionShape2D).shape.get_rect()
+		r.position += (c as CollisionShape2D).global_position
+		if r.size.x < 32 or r.size.y < 32:
+			continue
+		for lado: Array in [[Vector2(r.position.x - 9, r.get_center().y), 6], [Vector2(r.end.x + 9, r.get_center().y), 4],
+				[Vector2(r.get_center().x, r.position.y - 9), 2], [Vector2(r.get_center().x, r.end.y + 9), 8]]:
+			j.global_position = lado[0]
+			j.mira = lado[1]
+			await physics_frame
+			if not j.sobre_agua(j.global_position) and j.sobre_agua(j.global_position + j.VECTOR_MIRA[j.mira] * 10.0) \
+					and j.global_position.distance_to(lado[0]) < 1.0:
+				listo = true
+				break
+		if listo:
+			break
+	_ok(listo, "en la orilla de cara al agua (%s, mira %d)" % [j.global_position, j.mira])
+	var combate: bool = false
+	for intento: int in 6:
+		j = _jugador()
+		j.pescar()
+		await create_timer(0.3).timeout
+		await _captura("mo_pesca") if intento == 0 else null
+		for k: int in 40:
+			await _tecla(KEY_Z)
+			await create_timer(0.1).timeout
+			if current_scene and current_scene.name == "BattleArena":
+				combate = true
+				break
+			if not j._pescando and k > 35:
+				break
+		if combate:
+			break
+	_ok(combate, "con la Caña Vieja pica algo y empieza el combate")
 
 
 func _tecla(k: Key) -> void:

@@ -41,8 +41,10 @@ mapa por mapa, y al final los modos extra.
   Cascada (Z junto a la cascada surfeando, medalla 8: sin ella la corriente no deja subir) y Buceo
   (tecla 7, medalla 7: `GoDiving` en `data/extraido/buceo.json`), Destello (tecla 5 en las cuevas
   oscuras de `data/extraido/campo.json`, medalla 3), Ola Lava (tecla 3 junto a la lava, medalla 8) y
-  Treparrocas (Z frente a la pared trepable, medalla 7). Faltan el Pokémon que sale a usar la MO, el
-  sprite de buzo bajo el agua, los encuentros sobre la lava, bici y montura; en Vuelo, elegir entre las llegadas de los lugares que tienen varias (Isla Sol, el Frente) y
+  Treparrocas (Z frente a la pared trepable, medalla 7). Bici (V, 6 px/step, se baja al entrar a un
+  edificio que no sea cueva) y pesca (C con una caña de cara al agua: a los 90 steps pica la mitad de
+  las veces y sale un salvaje de la subtabla de esa caña). Faltan la montura (habilidad de campo 8),
+  el Pokémon que sale a usar la MO y el sprite de buzo bajo el agua; en Vuelo, elegir entre las llegadas de los lugares que tienen varias (Isla Sol, el Frente) y
   el grito del Pokémon (los gritos no se extraen por defecto).
 - Historia completa: eventos de los 517 NPCs con scripts propios, rutas de NPCs por historia.
 - Modos: Torre/Fábrica/Palacio/Torneo, guardería y huevos, minijuegos, multijugador local.

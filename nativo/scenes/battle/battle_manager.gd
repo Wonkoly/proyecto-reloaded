@@ -6,6 +6,8 @@ extends Node
 signal batalla_terminada(ganador: BattlePokemon)
 ## Entró otro Pokémon de un equipo (para refrescar el HUD).
 signal cambio_pokemon(bp: BattlePokemon)
+## Una línea para el panel de mensajes (AddTextToBuffer).
+signal mensaje_panel(texto: String)
 
 const MENU_PRUEBAS: String = "res://scenes/debug/menu_pruebas.tscn"
 const ESPERA_FIN: float = 3.0
@@ -14,6 +16,10 @@ const ESPERA_FIN: float = 3.0
 const ESPERA_CAMBIO: float = 1.0
 ## Desde dónde sale la Poké Ball: el entrenador del jugador (Trainer1 en t1x = 114, y = 64).
 const ORIGEN_BALL: Vector2 = Vector2(114, 64)
+## limiteCambEnt1: como mucho 18 cambios por combate (TextBattle 255).
+const LIMITE_CAMBIOS: int = 18
+## Trainer1 canshoot: alarm[2] = 30 steps entre cambios.
+const ESPERA_ENTRE_CAMBIOS: float = 1.0
 
 var terminada: bool = false
 var _gano: bool = false
@@ -26,6 +32,8 @@ var _subidos: Array[PokemonInstance] = []
 var _ball: BallLanzada
 ## Segundos de combate (fight_time, para las balls Turno y Veloz).
 var _segundos: float = 0.0
+var _cambios: int = 0
+var _espera_cambio: float = 0.0
 
 
 func iniciar(jugador: BattlePokemon, rival: BattlePokemon, equipo_jugador: Array = [], equipo_rival: Array = []) -> void:
@@ -126,6 +134,7 @@ func _dinero(gano: bool) -> void:
 func _process(delta: float) -> void:
 	if not terminada:
 		_segundos += delta
+	_espera_cambio = maxf(0.0, _espera_cambio - delta)
 
 
 ## Sin controladores no hay más movimientos ni ataques.
@@ -152,10 +161,33 @@ func _unhandled_input(event: InputEvent) -> void:
 		KEY_E:  # key_bt_escapar
 			get_viewport().set_input_as_handled()
 			huir()
+		KEY_1, KEY_2, KEY_3, KEY_4, KEY_5, KEY_6:  # key_bt_pkmn1..6
+			get_viewport().set_input_as_handled()
+			cambiar_a(tecla.physical_keycode - KEY_1)
 		KEY_O:  # key_menu_mochila
 			if not _equipos[0].is_empty():
 				get_viewport().set_input_as_handled()
 				Mochila.abrir(self)
+
+
+## KeyActionsTrainer1, key_bt_pkmnN + Trainer1CambioPokemon: saca al Pokémon N del equipo
+## ("Jugador: ¡Vuelve, X!"). No con una ball en el aire, ni al que ya está, ni a uno debilitado.
+func cambiar_a(i: int) -> void:
+	var equipo: Array = _equipos[0]
+	if terminada or equipo.is_empty() or i < 0 or i >= equipo.size() or is_instance_valid(_ball) or _espera_cambio > 0.0:
+		return
+	var bp: BattlePokemon = _pokemon[0]
+	var nuevo: PokemonInstance = equipo[i]
+	if nuevo == bp.pokemon or nuevo.hp_actual <= 0 or bp.esta_debilitado():
+		return
+	if _cambios >= LIMITE_CAMBIOS:
+		mensaje_panel.emit(Textos.batalla(255))
+		return
+	_cambios += 1
+	_espera_cambio = ESPERA_ENTRE_CAMBIOS
+	mensaje_panel.emit(Textos.par(Textos.batalla(216), GameState.nombre_jugador, Progreso.nombre(bp.pokemon)))
+	bp.configurar(nuevo)
+	cambio_pokemon.emit(bp)
 
 
 ## KeyActionsBattle, key_bt_ball: lanza la ball asignada (solo contra salvajes).

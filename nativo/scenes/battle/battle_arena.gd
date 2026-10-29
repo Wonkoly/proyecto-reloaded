@@ -64,6 +64,7 @@ func _ready() -> void:
 	manager.batalla_terminada.connect(
 		func(ganador: BattlePokemon) -> void: hud.mostrar_resultado("¡Gana %s!" % ganador.pokemon.especie.nombre))
 	manager.cambio_pokemon.connect(hud.cambiar_pokemon)
+	manager.mensaje_panel.connect(hud.mensaje)
 	manager.iniciar(jugador, rival, GameState.equipo if desde_overworld else [], equipo_rival)
 	for bp: BattlePokemon in [jugador, rival]:
 		bp.golpeado.connect(_mostrar_danio.bind(bp))

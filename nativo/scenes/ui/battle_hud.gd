@@ -64,6 +64,11 @@ func conectar(jugador: BattlePokemon, rival: BattlePokemon, rival_entrenador: bo
 		bp.movido.connect(_mensajes.on_pokemon_movido.bind(bp))
 
 
+## AddTextToBuffer: una línea más en el panel de mensajes de abajo.
+func mensaje(texto: String) -> void:
+	_mensajes.agregar(texto)
+
+
 ## Entró otro Pokémon de un equipo: nombre, nivel, tipos y ataques del panel de su lado.
 func cambiar_pokemon(bp: BattlePokemon) -> void:
 	var lado: Lado = _jugador if bp.lado == 1 else _rival

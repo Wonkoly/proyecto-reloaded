@@ -54,6 +54,14 @@ const DIR_TECLA: Dictionary[int, Vector2] = {37: Vector2.LEFT, 38: Vector2.UP, 3
 @export var entrenador: int = 0
 ## Vigila como un entrenador (obj_Watcher): si ve al jugador va hasta él y corre su evento.
 @export var vigila: bool = false
+## Ruta fija (TimelineMovimientoPeople): 10 va y vuelve en horizontal, 11 en vertical, 0 da vueltas
+## en sentido horario y 1 antihorario por el borde de ruta_caja; -1 = ninguna.
+@export var ruta: int = -1
+@export var ruta_caja: Rect2 = Rect2()
+## px por step (vel: 2 los vigilantes, 3 el resto).
+@export var ruta_velocidad: float = 3.0
+## Hacia dónde empieza (direction de GM: 0 derecha, 90 arriba, 180 izquierda, 270 abajo).
+@export var ruta_direccion: int = 0
 ## TRAINER: este NPC es el entrenador N ya vencido (aparece donde quedó el entrenador).
 @export var entrenador_vencido: int = 0
 ## Frame fijo del sprite (la enfermera: 0 normal, 1 curando, 2 reverencia); -1 = según la dirección.
@@ -206,6 +214,9 @@ func _paso() -> void:
 	if _pasos > 0:
 		_caminar()
 		return
+	if ruta >= 0:
+		_seguir_ruta()
+		return
 	if entrenador != 0 or vigila:
 		_mira_entrenador(false)
 		var j: Jugador = _jugador()
@@ -220,6 +231,7 @@ func _paso() -> void:
 		return
 	if objeto_original != "obj_Talk":
 		return
+	_apartarse()
 	# TalkSetSprite: quieto y sin mira fija, de vez en cuando mira a otro lado.
 	if mira_fija == -1 and randi_range(1, 200) == 200:
 		mira = 2 * randi_range(1, 4)
@@ -232,6 +244,21 @@ func _paso() -> void:
 			queue_redraw()
 		else:
 			_empezar_paso(dir)
+
+
+## TalkCollitionProta: si quedó encima del jugador se corre 2, 12 o 24 px (derecha, izquierda, abajo o
+## arriba) al primer lugar libre de paredes y del jugador.
+func _apartarse() -> void:
+	var j: Jugador = _jugador()
+	if j == null or not _rect().intersects(Npc._rect_de(j)):
+		return
+	for d: float in [2.0, 12.0, 24.0]:
+		for v: Vector2 in [Vector2.RIGHT, Vector2.LEFT, Vector2.DOWN, Vector2.UP]:
+			var r: Rect2 = Rect2(_rect().position + v * d, _rect().size)
+			if not r.intersects(Npc._rect_de(j)) and not test_move(global_transform, v * d):
+				position += v * d
+				queue_redraw()
+				return
 
 
 ## People_PasoN, step 0: si los 16 px de enfrente están libres, empieza a caminar hacia ahí.
@@ -257,6 +284,52 @@ func _caminar() -> void:
 	_frame = fposmod(_frame + 0.2, s.frames.size()) if s and not s.frames.is_empty() else 1.0
 	if _pasos == 0:
 		_frame = 1.0
+	queue_redraw()
+
+
+## PeopleHorizontal / PeopleVertical / PeopleVueltasHorario / PeopleVueltasAntiHorario: recorre el
+## borde de ruta_caja; si choca con el jugador se para (PILLA: el vigilante o entrenador corre su evento).
+func _seguir_ruta() -> void:
+	var r: Rect2 = ruta_caja
+	position = position.clamp(r.position, r.end)
+	match ruta:
+		10:
+			if position.x <= r.position.x: ruta_direccion = 0
+			elif position.x >= r.end.x: ruta_direccion = 180
+		11:
+			if position.y >= r.end.y: ruta_direccion = 90
+			elif position.y <= r.position.y: ruta_direccion = 270
+		0:
+			if ruta_direccion == 270 and position.y >= r.end.y: ruta_direccion = 180
+			elif ruta_direccion == 180 and position.x <= r.position.x: ruta_direccion = 90
+			elif ruta_direccion == 90 and position.y <= r.position.y: ruta_direccion = 0
+			elif ruta_direccion == 0 and position.x >= r.end.x: ruta_direccion = 270
+		1:
+			if ruta_direccion == 0 and position.x >= r.end.x: ruta_direccion = 90
+			elif ruta_direccion == 90 and position.y <= r.position.y: ruta_direccion = 180
+			elif ruta_direccion == 180 and position.x <= r.position.x: ruta_direccion = 270
+			elif ruta_direccion == 270 and position.y >= r.end.y: ruta_direccion = 0
+	var v: Vector2 = {0: Vector2.RIGHT, 90: Vector2.UP, 180: Vector2.LEFT, 270: Vector2.DOWN}.get(ruta_direccion, Vector2.RIGHT)
+	var nuevo_mira: int = {0: 6, 90: 8, 180: 4, 270: 2}.get(ruta_direccion, mira)
+	if nuevo_mira != mira:
+		mira = nuevo_mira
+	var j: Jugador = _jugador()
+	if j and not Eventos.en_curso:
+		if Rect2(_rect().position + v * ruta_velocidad, _rect().size).intersects(Npc._rect_de(j)):
+			_frame = 1.0
+			queue_redraw()
+			if vigila or entrenador != 0:
+				j.detener()
+				ruta = -1
+				_yendo = j
+			return
+		if (vigila or entrenador != 0) and _ve(j):
+			ruta = -1
+			_pillar(j)
+			return
+	position = (position + v * ruta_velocidad).clamp(r.position, r.end)
+	var s: SpriteOriginal = _sprite()
+	_frame = fposmod(_frame + 0.2, s.frames.size()) if s and not s.frames.is_empty() else 1.0
 	queue_redraw()
 
 

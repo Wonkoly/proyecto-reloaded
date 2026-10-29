@@ -316,7 +316,14 @@ class Evaluador:
                 pass
         elif k == "with":
             if i[1][0] == "id" and isinstance(self.locales.get(i[1][1]), dict) and i[2][0] == "expr":
-                self.locales[i[1][1]]["with_" + i[2][1][1]] = True
+                llamada = i[2][1]
+                args = []
+                if llamada[0] == "llamada":
+                    try:
+                        args = [self.valor(a) for a in llamada[2]]
+                    except _Desconocido:
+                        args = []
+                self.locales[i[1][1]]["with_" + llamada[1]] = args or True
 
     def valor(self, e):
         k = e[0]
@@ -958,7 +965,9 @@ def escena_mapa(room: dict, juego: Juego, tilesets: dict, sprite_tres, snake, re
                 decorado(f"{nombre}_sprite", sprite, x, y)
         elif juego.es(obj, "obj_people"):
             if obj == "obj_Watcher":
-                # DefineWatcher: sprINDEX 411, "Vigilante", alcance 80, TextDialog(5179), mira al azar.
+                # DefineWatcher: sprINDEX 411, "Vigilante", alcance 80, TextDialog(5179), mira al azar, MOVE.
+                inst.setdefault("MOVE", True)
+                inst.setdefault("vel", 2.0)
                 inst.setdefault("sprINDEX", 411.0)
                 inst.setdefault("name", juego.dialogos.linea("txt_character", 711))
                 inst.setdefault("distancia", 80.0)
@@ -996,6 +1005,16 @@ def escena_mapa(room: dict, juego: Juego, tilesets: dict, sprite_tres, snake, re
                 mirafijo = 0.0  # DefineEntrenador: mirafijo = false (mira al azar y vigila)
             if isinstance(mirafijo, float):
                 props.append(f"mira_fija = {int(mirafijo)}")
+            # TimelineMovimientoPeople: 10 horizontal, 11 vertical, 0 vueltas en sentido horario, 1 antihorario,
+            # dentro de minX..maxX, minY..maxY, a vel px/step, empezando hacia direction.
+            ruta = inst.get("with_TimelineMovimientoPeople")
+            if isinstance(ruta, list) and ruta and isinstance(ruta[0], float) and int(ruta[0]) in (0, 1, 10, 11):
+                caja_ruta = [inst.get(k) for k in ("minX", "minY", "maxX", "maxY")]
+                if all(isinstance(v, float) for v in caja_ruta):
+                    vel = inst.get("vel", 2.0 if obj == "obj_Watcher" else 3.0)
+                    props += [f"ruta = {int(ruta[0])}",
+                              f"ruta_caja = Rect2({f(caja_ruta[0])}, {f(caja_ruta[1])}, {f(caja_ruta[2] - caja_ruta[0])}, {f(caja_ruta[3] - caja_ruta[1])})",
+                              f"ruta_velocidad = {f(vel)}", f"ruta_direccion = {int(inst.get('direction', 0.0) or 0)}"]
             if isinstance(inst.get("TRAINER"), float) and inst["TRAINER"] > 0:
                 props.append(f"entrenador_vencido = {int(inst['TRAINER'])}")
             # Distancia para hablar: obj_Talk 10 (DefineTalk), obj_NoPass 64 (DefineNoPass), el resto 12

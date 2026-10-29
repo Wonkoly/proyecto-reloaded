@@ -49,6 +49,11 @@ def evoluciones(use_object: str, confirmacion: str, misma_familia) -> dict[int, 
     return resultado
 
 
+# CheckTeamEvolution: Nincada necesita un hueco (y deja a Shedinja), Mantyke un Remoraid y la 769 un
+# Pokémon de tipo Siniestro (13) en el equipo. Las demás (lluvia, contadores) no se leen todavía.
+EQUIPO = {290: "hueco", 458: "especie:223", 769: "tipo:13"}
+
+
 def reglas_nivel(check: str, confirmacion: str, misma_familia) -> dict[int, list[dict]]:
     """CheckEvolution en orden: {especie: [{nivel, objeto, objeto_no, ball, dia, destino}]}. La primera
     regla que se cumple manda. Se saltan las que piden sexo o condiciones del equipo (condicion,
@@ -67,12 +72,21 @@ def reglas_nivel(check: str, confirmacion: str, misma_familia) -> dict[int, list
     for m in re.finditer(r"if\((pk=\d+(?:[^(){}]|\(\d+\))*?)\)\s*(?:\{global\.EvolMode=(\d+);return true;\}|return true;)", cuerpo_check):
         cond, modo = m.group(1), int(m.group(2)) if m.group(2) else 1
         sexo = re.search(r"sex=\((\d)\)", cond)
+        # CheckTeamEvolution: las condiciones que dependen solo del equipo.
+        equipo = None
+        if "condicion" in cond:
+            equipo = EQUIPO.get(int(re.match(r"pk=(\d+)", cond).group(1)))
+            if equipo is None:
+                continue
+            cond = cond.replace(" && condicion", "")
         cond = re.sub(r" && sex=\(\d\)", "", cond)
         if re.search(r"condicion|sex|instance_exists|\(", cond):
             continue
         r: dict = {"nivel": 0}
         if sexo:
             r["sexo"] = int(sexo.group(1))
+        if equipo:
+            r["equipo"] = equipo
         for clave, valor in re.findall(r"(pk|nv>|obj!|obj|ball|global\.day)=+(\w+)", cond):
             if clave == "pk":
                 pk = int(valor)

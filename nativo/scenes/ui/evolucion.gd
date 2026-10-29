@@ -29,8 +29,12 @@ static func revisar_equipo(desde: Node, subidos: Array[PokemonInstance]) -> void
 		var nueva: PokemonData = p.evolucion_pendiente()
 		if nueva:
 			var objeto_necesario: bool = p.regla_evolucion().has("objeto")
-			if await evolucionar(desde, p, nueva) and objeto_necesario:
-				p.objeto = 0  # LostItemEvolution: se usa el objeto equipado
+			var era: int = p.especie.id_original
+			if await evolucionar(desde, p, nueva):
+				if objeto_necesario:
+					p.objeto = 0  # LostItemEvolution: se usa el objeto equipado
+				if era == 290 and GameState.equipo.size() < 6:
+					_shedinja(p)
 
 
 static func evolucionar(desde: Node, p: PokemonInstance, nueva: PokemonData, cancelable: bool = true) -> bool:
@@ -116,6 +120,20 @@ func _unhandled_input(evento: InputEvent) -> void:
 			await CuadroOriginal.mensaje(self, Textos.linea("txt_dialog", 6888))
 			_terminada.emit(false)
 		_preguntando = false
+
+
+## EvolutionConfirmation (Nincada): en el hueco libre aparece Shedinja con su nivel, IV y ataques.
+static func _shedinja(p: PokemonInstance) -> void:
+	var e: PokemonData = Datos.especie(292)
+	if e == null:
+		return
+	var s: PokemonInstance = PokemonInstance.crear(e, p.nivel)
+	s.iv = p.iv
+	s.movimientos = p.movimientos.duplicate()
+	s.sexo = 0
+	s.hp_actual = s.calcular_stats()["hp"]
+	GameState.equipo.append(s)
+	GameState.marcar_pokedex(e, 2)
 
 
 ## EvolutionAprendizaje: los movimientos de la nueva especie en su nivel actual.

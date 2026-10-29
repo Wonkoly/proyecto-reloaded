@@ -31,12 +31,13 @@ El objetivo es que una partida nueva llegue a la medalla 1 sin trucos.
   mano llega igual.
 
 ## Fase 2 — Objetos que faltan
-**Estado: casi hecha** (`feat/objetos`). Hechos: Caramelo Raro, vitaminas y Mochis, objetos evolutivos,
-MT/DT, evoluciones especiales (nivel + objeto, Amigo Ball, día/noche), equipar y quitar objetos, los IV
-que crecen al subir de nivel, y en combate Cintas/Gafas Elección, Cinta Experto, Gafas Especiales,
-Vidasfera, Chaleco Asalto y Restos. Faltan: el resto de los ~60 objetos de combate (bayas con la tecla de
-objeto asignado, potenciadores de tipo, Bolas de cada especie...), y las evoluciones por sexo o por
-condiciones del equipo.
+**Estado: hecha** (`feat/objetos`). Caramelo Raro, vitaminas y Mochis, objetos evolutivos, MT/DT,
+evoluciones especiales (nivel + objeto, Amigo Ball, día/noche, sexo, y por equipo: Nincada deja a
+Shedinja en un hueco, Mantyke con Remoraid, la 769 con un Siniestro), equipar y quitar objetos, el objeto
+asignado a la tecla A en combate, los IV que crecen al subir de nivel, y en combate Cintas/Gafas
+Elección, Cinta Experto, Gafas Especiales, Vidasfera, Chaleco Asalto, Restos, potenciadores de tipo,
+gemas y objetos de especie. Quedan para la fase 4: el resto de objetos de combate que dependen de
+habilidades o clima, y las evoluciones por lluvia o contadores (`extraInfo`).
 - Caramelo Raro y objetos que suben stats, usados desde la mochila (`UseDirectObject`).
 - Piedras evolutivas y el resto de evoluciones especiales (`EvolutionConfirmation`,
   `CheckTeamEvolution`: objeto, intercambio, amistad, condiciones).

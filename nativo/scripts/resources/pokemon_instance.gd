@@ -245,10 +245,27 @@ func regla_evolucion() -> Dictionary:
 			continue
 		if r.has("sexo") and sexo != int(r.sexo):
 			continue
+		if r.has("equipo") and not _equipo_cumple(str(r.equipo)):
+			continue
 		if r.has("dia") and bool(r.dia) != Reloj.es_de_dia():
 			continue
 		return r
 	return {}
+
+
+## CheckTeamEvolution: "hueco" (un lugar libre en el equipo), "especie:N" (alguien de esa especie),
+## "tipo:N" (alguien de ese tipo del original).
+static func _equipo_cumple(condicion: String) -> bool:
+	var equipo: Array[PokemonInstance] = GameState.equipo
+	match condicion.get_slice(":", 0):
+		"hueco":
+			return equipo.size() < 6
+		"especie":
+			return equipo.any(func(q: PokemonInstance) -> bool: return q.especie.id_original == condicion.get_slice(":", 1).to_int())
+		"tipo":
+			var t: int = FormulasBatalla.TIPO_ORIGINAL.find(condicion.get_slice(":", 1).to_int())
+			return equipo.any(func(q: PokemonInstance) -> bool: return t in q.especie.tipos)
+	return false
 
 
 func evolucion_pendiente() -> PokemonData:

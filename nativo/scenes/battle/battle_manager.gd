@@ -34,6 +34,9 @@ var _indice_ultima_ball: int = 0
 ## Segundos de combate (fight_time, para las balls Turno y Veloz).
 var _segundos: float = 0.0
 var _cambios: int = 0
+## Objetos usados con la tecla A en este combate (global.objetos_usados; como mucho 6).
+var _objetos_usados: int = 0
+const LIMITE_OBJETOS: int = 6
 var _espera_cambio: float = 0.0
 
 
@@ -165,6 +168,10 @@ func _unhandled_input(event: InputEvent) -> void:
 		KEY_1, KEY_2, KEY_3, KEY_4, KEY_5, KEY_6:  # key_bt_pkmn1..6
 			get_viewport().set_input_as_handled()
 			cambiar_a(tecla.physical_keycode - KEY_1)
+		KEY_A:  # key_bt_obj_asig
+			if not _equipos[0].is_empty():
+				get_viewport().set_input_as_handled()
+				_usar_objeto_asignado()
 		KEY_O:  # key_menu_mochila
 			if not _equipos[0].is_empty():
 				get_viewport().set_input_as_handled()
@@ -189,6 +196,26 @@ func cambiar_a(i: int) -> void:
 	mensaje_panel.emit(Textos.par(Textos.batalla(216), GameState.nombre_jugador, Progreso.nombre(bp.pokemon)))
 	bp.configurar(nuevo)
 	cambio_pokemon.emit(bp)
+
+
+## KeyActionsBattle, key_bt_obj_asig: el objeto asignado sobre el Pokémon que está combatiendo.
+func _usar_objeto_asignado() -> void:
+	var id: int = GameState.objeto_asignado
+	if id < 0 or Inventario.cantidad(id) < 1:
+		mensaje_panel.emit(Textos.par(Textos.batalla(162), "A", "A"))
+		return
+	if _objetos_usados >= LIMITE_OBJETOS:
+		mensaje_panel.emit(Textos.par(Textos.batalla(164), str(LIMITE_OBJETOS)))
+		return
+	var bp: BattlePokemon = _pokemon[0]
+	var curado: int = Inventario.usar_en(id, bp.pokemon)
+	if curado <= 0:
+		mensaje_panel.emit(Textos.par(Textos.batalla(168), Inventario.nombre(id)))
+		return
+	Inventario.quitar(id)
+	_objetos_usados += 1
+	bp.hp_cambiado.emit(bp.pokemon.hp_actual, bp.hp_max)
+	mensaje_panel.emit(Textos.par(Textos.linea("txt_menu", 511), Progreso.nombre(bp.pokemon), str(curado)))
 
 
 ## KeyActionsBattle, key_bt_ball: lanza la ball asignada (solo contra salvajes).

@@ -28,6 +28,8 @@ const DIGITO_STAT: Dictionary[String, int] = {
 @export var objeto: int = 0
 ## La Poké Ball en la que se capturó (global.info[i,0]: índice de ball, 0 = Poké Ball, 19 = Amigo Ball).
 @export var ball: int = 0
+## global.pkmnsex: 0 sin sexo, 1 macho, 2 hembra.
+@export var sexo: int = 0
 ## Estado alterado (global.STD1): dura después del combate hasta que se cura.
 @export var estado: MoveData.Estado = MoveData.Estado.NINGUNO
 ## Valores individuales: 6 dígitos de 0 a 9 (aleatorios al nacer).
@@ -47,6 +49,9 @@ static func crear(especie_: PokemonData, nivel_: int) -> PokemonInstance:
 	p.ntv = randi_range(0, 999999)
 	p.asignar_movimientos_por_nivel()
 	p.actualizar_habilidades_campo()
+	# PkmnSetSex: según el % de hembras de la especie (sobre un valor de 1 a 100).
+	if especie_.porcentaje_hembra >= 0:
+		p.sexo = 2 if randi_range(1, 100) <= especie_.porcentaje_hembra else 1
 	p.experiencia = p.exp_para_nivel(nivel_)
 	p.hp_actual = p.calcular_stats()["hp"]
 	p.energia_actual = p.calcular_energia_maxima()
@@ -66,6 +71,7 @@ func a_dict() -> Dictionary:
 		"habilidades_campo": habilidades_campo,
 		"objeto": objeto,
 		"ball": ball,
+		"sexo": sexo,
 		"iv": iv,
 		"ntv": ntv,
 		"movimientos": movimientos.filter(func(m: MoveData) -> bool: return m != null).map(
@@ -96,6 +102,7 @@ static func desde_dict(d: Dictionary) -> PokemonInstance:
 	p.habilidades_campo = int(d.get("habilidades_campo", 0))
 	p.objeto = int(d.get("objeto", 0))
 	p.ball = int(d.get("ball", 0))
+	p.sexo = int(d.get("sexo", 0))
 	p.actualizar_habilidades_campo()
 	return p
 
@@ -235,6 +242,8 @@ func regla_evolucion() -> Dictionary:
 		if r.has("objeto_no") and objeto == int(r.objeto_no):
 			continue
 		if r.has("ball") and ball != int(r.ball):
+			continue
+		if r.has("sexo") and sexo != int(r.sexo):
 			continue
 		if r.has("dia") and bool(r.dia) != Reloj.es_de_dia():
 			continue

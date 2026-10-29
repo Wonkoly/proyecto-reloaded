@@ -64,11 +64,15 @@ def reglas_nivel(check: str, confirmacion: str, misma_familia) -> dict[int, list
             destinos.setdefault(int(m.group(1)), d)
     cuerpo_check = check[check.find("if(PS<=0"):]
     reglas: dict[int, list[dict]] = {}
-    for m in re.finditer(r"if\((pk=\d+[^(){}]*?)\)\s*(?:\{global\.EvolMode=(\d+);return true;\}|return true;)", cuerpo_check):
+    for m in re.finditer(r"if\((pk=\d+(?:[^(){}]|\(\d+\))*?)\)\s*(?:\{global\.EvolMode=(\d+);return true;\}|return true;)", cuerpo_check):
         cond, modo = m.group(1), int(m.group(2)) if m.group(2) else 1
+        sexo = re.search(r"sex=\((\d)\)", cond)
+        cond = re.sub(r" && sex=\(\d\)", "", cond)
         if re.search(r"condicion|sex|instance_exists|\(", cond):
             continue
         r: dict = {"nivel": 0}
+        if sexo:
+            r["sexo"] = int(sexo.group(1))
         for clave, valor in re.findall(r"(pk|nv>|obj!|obj|ball|global\.day)=+(\w+)", cond):
             if clave == "pk":
                 pk = int(valor)

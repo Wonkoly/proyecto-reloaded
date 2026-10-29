@@ -578,6 +578,9 @@ def extraer_datos(plan: Plan, ext: Path, indice: dict) -> None:
                                             ("grupo_huevo_2", "GrupoHuevo2", 0), ("sexo_unico", "OneSex", -1)):
                 v = funciones.llamar(funcion, float(pk))
                 props.append(f"{campo} = {int(v) if isinstance(v, float) else defecto}")
+            sexos = [funciones.llamar("PkmnSetSexValor", float(pk), float(v)) for v in range(1, 101)]
+            hembras = -1 if not any(x in (1.0, 2.0) for x in sexos) else sum(1 for x in sexos if x == 2.0)
+            props.append(f"porcentaje_hembra = {hembras}")
             rareza = funciones.llamar("NumRareza", float(pk))
             props.append(f"ratio_captura = {int(rareza) if isinstance(rareza, float) else 45}")
             if pk in evoluciones:

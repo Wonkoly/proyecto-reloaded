@@ -36,6 +36,13 @@ static func _usar(desde: Node, id: int) -> void:
 	if not Inventario.es_de_curar(id):
 		await CuadroOriginal.mensaje(desde, Textos.linea("txt_menu", 291))
 		return
+	# Los de curar también se asignan a la tecla A para usarlos en combate (key_obj_asignar).
+	var como: int = await MenuLista.elegir(desde, Inventario.nombre(id), [{"texto": "Usar"}, {"texto": "Asignar a la tecla A"}])
+	if como == 1:
+		GameState.objeto_asignado = id
+		return
+	if como < 0:
+		return
 	var filas: Array = GameState.equipo.map(func(p: PokemonInstance) -> Dictionary:
 		var nombre: String = p.apodo if p.apodo != "" else p.especie.nombre
 		return {"texto": "%s Nv.%d" % [nombre, p.nivel], "derecha": "%d/%d" % [p.hp_actual, p.calcular_stats()["hp"]]})

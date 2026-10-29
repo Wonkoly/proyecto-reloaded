@@ -51,6 +51,8 @@ var dinero: int = 0
 var objetos: Dictionary[int, int] = {}
 ## La Poké Ball que se lanza con la tecla B en batalla (global.ball_asign); -1 = ninguna.
 var ball_asignada: int = -1
+## El objeto que se usa con la tecla A en combate (global.obj_asign); -1 = ninguno.
+var objeto_asignado: int = -1
 ## PC: cajas de 30 huecos (global.boxpkmn); hay 8 al empezar (global.NumCajas) y hasta 149.
 var cajas: Array[Array] = []
 var nombres_cajas: Array[String] = []
@@ -135,6 +137,7 @@ func nueva_partida(nombre: String = "") -> void:
 	dinero = 0
 	objetos.clear()
 	ball_asignada = -1
+	objeto_asignado = -1
 	surfer = 0
 	_cajas_iniciales()
 	pokedex.clear()
@@ -173,6 +176,7 @@ func a_dict() -> Dictionary:
 		"dinero": dinero,
 		"objetos": objetos.keys().map(func(k: int) -> Array: return [k, objetos[k]]),
 		"ball_asignada": ball_asignada,
+		"objeto_asignado": objeto_asignado,
 		"cajas": cajas.map(func(caja: Array) -> Array: return caja.map(
 			func(p: Variant) -> Variant: return (p as PokemonInstance).a_dict() if p else null)),
 		"nombres_cajas": nombres_cajas,
@@ -221,6 +225,7 @@ func desde_dict(d: Dictionary, slot_: int) -> void:
 		if par is Array and par.size() == 2 and int(par[1]) > 0:
 			objetos[int(par[0])] = int(par[1])
 	ball_asignada = int(d.get("ball_asignada", -1))
+	objeto_asignado = int(d.get("objeto_asignado", -1))
 	if d.get("cajas") is Array:
 		cajas.clear()
 		for caja: Variant in d.cajas:

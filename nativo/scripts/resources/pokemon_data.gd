@@ -38,6 +38,8 @@ enum Crecimiento { MEDIO, RAPIDO, LENTO, PARABOLICO, ERRATICO, FLUCTUANTE }
 ## Grupos huevo (GrupoHuevo1/2; 0 = ninguno).
 @export var grupo_huevo_1: int = 0
 @export var grupo_huevo_2: int = 0
+## % de hembras (PkmnSetSexValor sobre 1-100); -1 = sin sexo.
+@export var porcentaje_hembra: int = 50
 ## OneSex: -1 machos y hembras, 1 solo macho, 2 solo hembra, 0 sin sexo.
 @export var sexo_unico: int = -1
 

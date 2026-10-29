@@ -33,17 +33,43 @@ static func danio_en_batalla(atacante: BattlePokemon, defensor: BattlePokemon, m
 	var danio: float = calcular_danio(atacante.pokemon, defensor.pokemon, move, GameState.pow_dif(atacante.lado), 1.0,
 		atacante.etapa(1 if fisico else 3), defensor.etapa(2 if fisico else 4))
 	return roundi(danio * factor_objetos(atacante.pokemon.objeto, defensor.pokemon.objeto, move,
-		Efectividad.multiplicador(move.tipo, defensor.pokemon.especie.tipos))) if danio > 0 else 0
+		Efectividad.multiplicador(move.tipo, defensor.pokemon.especie.tipos), atacante.pokemon.especie.id_original)) \
+		if danio > 0 else 0
+
+
+## Número de tipo del original (TipoName: 1 Normal, 2 Fuego...) de cada Tipos.Tipo.
+const TIPO_ORIGINAL: Array[int] = [1, 2, 3, 4, 5, 12, 7, 10, 8, 15, 9, 11, 6, 16, 17, 13, 14, 18]
+## ObjetoPotenciador: objetos que suben ×1.2 los ataques de un tipo (por número de tipo del original).
+const POTENCIADORES: Dictionary[int, Array] = {1: [91, 310], 2: [92, 311], 3: [93, 312, 768, 770],
+	4: [94, 313, 769], 5: [95, 314], 6: [96, 60, 767], 7: [97, 59], 8: [98, 315], 9: [99, 58, 773],
+	10: [100, 317], 11: [101, 316], 12: [102, 318], 13: [103, 319], 14: [104, 62], 15: [105, 320],
+	16: [106, 61], 17: [107, 321], 18: [410, 411]}
+## Objetos de una especie que doblan su daño (Bola Luminosa, Bola Hierba... y Hueso Grueso en físicos).
+const OBJETOS_ESPECIE: Dictionary[int, Array] = {330: [25, 172], 331: [447],
+	333: [1, 152, 252, 387, 518, 745, 901, 2037], 334: [4, 155, 255, 390, 521, 748, 904, 2040],
+	335: [7, 158, 258, 393, 524, 751, 907, 2043], 540: [104, 105]}
+
+
+## GemaPotenciadora: la gema del tipo del ataque (383 + número de tipo) lo sube ×1.5 y se gasta.
+static func es_gema_de(objeto: int, move: MoveData) -> bool:
+	return objeto == 383 + TIPO_ORIGINAL[move.tipo]
 
 
 ## Ataque1GolpeaPokemon2: lo que cambian el daño los objetos equipados (sobre DANO ya calculado).
 ## Cinta Elección (358) ×1.5 físicos, Gafas Elección (362) ×1.5 especiales, Gafas Especiales (361)
 ## ×1.1 especiales, Cinta Experto (359) ×1.2 si es muy eficaz, Vidasfera (377) ×1.3; Chaleco Asalto
 ## (539) en quien recibe: ÷1.5 los especiales.
-static func factor_objetos(objeto_atacante: int, objeto_defensor: int, move: MoveData, eff: float) -> float:
+static func factor_objetos(objeto_atacante: int, objeto_defensor: int, move: MoveData, eff: float,
+		especie_atacante: int = 0) -> float:
 	var fisico: bool = move.categoria == MoveData.Categoria.FISICO
 	var especial: bool = move.categoria == MoveData.Categoria.ESPECIAL
 	var f: float = 1.0
+	if objeto_atacante in POTENCIADORES.get(TIPO_ORIGINAL[move.tipo], []):
+		f *= 1.2
+	if es_gema_de(objeto_atacante, move):
+		f *= 1.5
+	if especie_atacante in OBJETOS_ESPECIE.get(objeto_atacante, []) and (objeto_atacante != 540 or fisico):
+		f *= 2.0
 	if objeto_defensor == 539 and especial:
 		f /= 1.5
 	match objeto_atacante:

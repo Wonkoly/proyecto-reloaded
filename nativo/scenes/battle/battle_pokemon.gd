@@ -184,6 +184,9 @@ func efectos_de_golpe(move: MoveData, atacante: BattlePokemon, danio: int) -> vo
 			_cambiar_stats(move, self, move.cambios_rival)
 		if move.modo != MoveData.Modo.ESTADO:
 			_cambiar_stats(move, atacante, move.cambios_propios)
+	# La gema se gasta al potenciar un golpe.
+	if danio > 0 and FormulasBatalla.es_gema_de(atacante.pokemon.objeto, move):
+		atacante.pokemon.objeto = 0
 	# Vidasfera (377): el atacante pierde PS máximo / (10 × PowDif del otro lado).
 	if atacante.pokemon.objeto == 377 and danio > 0:
 		atacante.recibir_danio(ceili(atacante.hp_max / (10.0 * GameState.pow_dif(lado))))

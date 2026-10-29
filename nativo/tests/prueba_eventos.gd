@@ -7,6 +7,9 @@ var _fallas: int = 0
 
 func _ready() -> void:
 	GameState.nueva_partida("Prueba")
+	# Como después del laboratorio y la madre: con un Pokémon y el móvil.
+	GameState.equipo.append(PokemonInstance.crear(Datos.especie(25), 5))
+	GameState.historia["movil"] = 1
 	_lectura()
 	_errores()
 	_condiciones()

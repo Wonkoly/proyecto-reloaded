@@ -80,6 +80,12 @@ func _step() -> void:
 	_avisar()
 
 
+## HorasDespues: pasan `horas` de golpe (al volar, al descansar...).
+func adelantar(horas: int) -> void:
+	hora = (hora + horas) % 24
+	_avisar()
+
+
 func _avisar() -> void:
 	if es_de_dia() != _de_dia:
 		_de_dia = es_de_dia()

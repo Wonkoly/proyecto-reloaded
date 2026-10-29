@@ -79,6 +79,11 @@ func _unhandled_input(evento: InputEvent) -> void:
 		return
 	# Obstáculos de MO (KeyActionsCorte...): con Z o con la tecla de su MO (1 Corte, 4 Fuerza, 6 Golpe Roca).
 	var tecla_mo: Key = (evento as InputEventKey).physical_keycode if evento is InputEventKey and evento.pressed else KEY_NONE
+	# 2 (key_ex_mo2_vuelo): la pantalla de Vuelo.
+	if tecla_mo == KEY_2 and quieto():
+		get_viewport().set_input_as_handled()
+		Vuelo.intentar(self)
+		return
 	# 3 (key_ex_mo3_surf): de cara al agua, a surfear.
 	if tecla_mo == KEY_3 and quieto():
 		get_viewport().set_input_as_handled()

@@ -76,13 +76,17 @@ SPRITES_UI = [
     "spr_acopio_ball", "spr_star_ball", "spr_parque_ball", "spr_rapid_ball", "spr_nivel_ball", "spr_cebo_ball",
     "spr_peso_ball", "spr_amor_ball", "spr_amigo_ball", "spr_luna_ball", "spr_sana_ball", "spr_ocaso_ball",
     "spr_veloz_ball", "spr_gloria_ball", "spr_black_ball", "spr_ente_ball",
+    # Mapa de la región y Vuelo (DrawPantallaVuelo): el mapa en sus tres estilos, el botón de cancelar
+    # (Spr_Objeto 0 ya está en efectos), las flechas de cambio de región, el cursor y la marca de lugar visitado.
+    "spr_MAPA", "spr_MAPA_V2", "spr_MAPA_V3", "spr_cambiarmapaL", "spr_cambiarmapaR", "spr_map_selector",
+    "obj_aquisivuelo",
 ]
 # Fondos de la intro y el título (IntroROOM, InicioROOM) → sprites/ui/fondos/.
 FONDOS_UI = ["BackIntro", "BackIntroLetras", "GradienteNight", "BackFerProductions"]
 # Sonidos de los menús → audio/sfx/ui/.
 SONIDOS_UI = ["snd_click", "snd_curar", "snd_get"]
 CARPETAS = {
-    "datos": [DATA / "pokemon", DATA / "moves", DATA / "textos", DATA / "objetos.json"],
+    "datos": [DATA / "pokemon", DATA / "moves", DATA / "textos", DATA / "objetos.json", DATA / "vuelo.json"],
     "sprites": [ASSETS / "sprites" / "pokemon"],
     "fondos": [ASSETS / "sprites" / "battlebacks"],
     "ui": [ASSETS / "sprites" / "ui", ASSETS / "audio" / "sfx" / "ui", ASSETS / "audio" / "intro"],
@@ -624,6 +628,9 @@ def extraer_datos(plan: Plan, ext: Path, indice: dict) -> None:
                   json.dumps({str(k): v for k, v in sorted(reglas.items())}, indent=0))
     plan.escribir(DATA / "pokemon" / "evoluciones_objeto.json", json.dumps(
         {str(o): {str(k): v for k, v in sorted(d.items())} for o, d in sorted(por_objeto.items())}, indent=0))
+    import vuelo_original  # mapa de la región y Vuelo (obj_pantallavuelo)
+    plan.escribir(DATA / "vuelo.json", json.dumps(vuelo_original.vuelo(
+        EXT / "scripts", json.loads((EXT / "index.json").read_text())["rooms"]), ensure_ascii=False, indent=0))
     print(f"  {total} especies")
     tablas = {"TheoricBaseAttack": poder, "TheoricTypeAttack": tipo_mov, "TheoricPPAtack": costo, "ModeAtack": modo,
               "TypeAPokemon": tipo_a, "TypeBPokemon": tipo_b, "ExpBase": exp_base, "GetOrdenDex": orden_dex,

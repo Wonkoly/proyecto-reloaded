@@ -36,12 +36,14 @@ func _limpiar() -> void:
 
 ## Una partida con de todo un poco.
 func _partida_de_prueba() -> void:
-	GameState.nueva_partida("Prueba")
+	GameState.nueva_partida("Prueba")  # empieza sin Pokémon, como el original
+	GameState.equipo.append(PokemonInstance.crear(Datos.especie(4), 5))
 	GameState.equipo.append(PokemonInstance.crear(Datos.especie(25), 17))
 	GameState.equipo[1].apodo = "Chispa"
 	GameState.equipo[1].hp_actual = 3
 	GameState.equipo[0].experiencia = 1234
 	GameState.historia["fy_010"] = 2
+	GameState.vuelo[3] = 1
 	GameState.mapa_actual = "CiudadNaos"
 	GameState.posicion_jugador = Vector2(412.5, 300)
 	GameState.mira = 6

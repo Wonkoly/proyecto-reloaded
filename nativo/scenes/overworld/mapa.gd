@@ -27,12 +27,14 @@ func _ready() -> void:
 
 
 ## Teclas de KeyActionsExplorer con el jugador quieto: F5 guarda (key_global_guardar), Enter abre el
-## menú principal, Espacio el equipo y F12 la Pokédex.
+## menú principal, Espacio el equipo, F12 la Pokédex y M el mapa de la región (key_ex_mapa, con el Mapa).
 func _unhandled_input(evento: InputEvent) -> void:
 	var tecla := evento as InputEventKey
 	if tecla == null or not tecla.pressed or tecla.echo:
 		return
-	if tecla.physical_keycode not in [KEY_F5, KEY_ENTER, KEY_KP_ENTER, KEY_SPACE, KEY_F12]:
+	if tecla.physical_keycode not in [KEY_F5, KEY_ENTER, KEY_KP_ENTER, KEY_SPACE, KEY_F12, KEY_M]:
+		return
+	if tecla.physical_keycode == KEY_M and not GameState.objetos.has(Vuelo.OBJETO_MAPA):
 		return
 	var jugador: Jugador = get_node_or_null("Objetos/Jugador") as Jugador
 	if _guardando or SceneManager.en_transicion or Eventos.en_curso or jugador == null or not jugador.quieto():
@@ -44,6 +46,7 @@ func _unhandled_input(evento: InputEvent) -> void:
 		KEY_ENTER, KEY_KP_ENTER: await MenuPrincipal.abrir(self, self)
 		KEY_SPACE: await MenuEquipo.abrir(self)
 		KEY_F12: await Pokedex.abrir(self)
+		KEY_M: await PantallaVuelo.abrir(self, false)
 	_guardando = false
 
 

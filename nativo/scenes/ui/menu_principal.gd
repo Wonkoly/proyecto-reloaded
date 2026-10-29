@@ -10,8 +10,11 @@ static func abrir(desde: Node, mapa: Mapa) -> void:
 	opciones.append(2)  # Mochila
 	if not GameState.pokedex.is_empty():
 		opciones.append(3)  # Pokédex
-	opciones.append_array([5, 8, 9, 13])  # Entrenador, Opciones, Guardar, Salir
-	var textos: Dictionary[int, int] = {1: 70, 2: 71, 3: 69, 5: 72, 8: 76, 9: 75, 13: 78}
+	opciones.append(5)  # Entrenador
+	if GameState.bandera("movil") == 1 or GameState.objetos.has(Vuelo.OBJETO_MAPA):
+		opciones.append(7)  # Usar Item
+	opciones.append_array([8, 9, 13])  # Opciones, Guardar, Salir
+	var textos: Dictionary[int, int] = {1: 70, 2: 71, 3: 69, 5: 72, 7: 73, 8: 76, 9: 75, 13: 78}
 	var sel: int = await MenuLista.elegir(desde, "", opciones.map(func(o: int) -> Dictionary:
 		return {"texto": Textos.linea("txt_menu", textos[o])}))
 	if sel < 0:
@@ -21,10 +24,29 @@ static func abrir(desde: Node, mapa: Mapa) -> void:
 		2: await Mochila.abrir(desde)
 		3: await Pokedex.abrir(desde)
 		5: await _entrenador(desde)
+		7: await usar_item(desde)
 		9: if mapa: await mapa.guardar_partida()
 		13:
 			if await CuadroOriginal.preguntar(desde, "¿Volver a la pantalla de título?", true):
 				desde.get_tree().change_scene_to_file("res://scenes/titulo/titulo.tscn")
+		_: await CuadroOriginal.mensaje(desde, "Todavía no está disponible.")
+
+
+## Usar Item (key_ex_use_items): los objetos clave que se usan desde el menú.
+static func usar_item(desde: Node) -> void:
+	var opciones: Array[int] = []
+	if GameState.bandera("movil") == 1:
+		opciones.append(2303)  # SmartPhone
+	if GameState.objetos.has(Vuelo.OBJETO_MAPA):
+		opciones.append(2304)  # Mapa
+	if opciones.is_empty():
+		return
+	var sel: int = await MenuLista.elegir(desde, Textos.linea("txt_menu", 73), opciones.map(func(o: int) -> Dictionary:
+		return {"texto": Textos.linea("txt_menu", o)}))
+	if sel < 0:
+		return
+	match opciones[sel]:
+		2304: await PantallaVuelo.abrir(desde, false)
 		_: await CuadroOriginal.mensaje(desde, "Todavía no está disponible.")
 
 

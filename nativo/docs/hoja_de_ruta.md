@@ -34,9 +34,12 @@ mapa por mapa, y al final los modos extra.
   (`EffectStatuses`: parálisis, quemado, sueño, veneno, congelación, maldición, infección). Faltan:
   efectos de confusión y enamorado, drenaje (`AbsorbeAttack`), ataques múltiples, evasión, iconos de
   estado en el HUD, y todo lo que depende de habilidades, objetos equipados, clima y mega/Z/dinamax.
-- Evoluciones por objeto, intercambio, amistad y condiciones especiales (`CheckTeamEvolution`).
 - MO en el mapa: hechas Corte, Golpe Roca, Fuerza (tecla o Z frente al obstáculo) y Surf (tecla 3),
-  con medallas `medalla_1..8` y habilidades de campo (`AttackHabExt`). Faltan Vuelo, Buceo, Cascada,
-  Destello, Ola Lava, Treparrocas, el Pokémon que sale a usar la MO, bici y montura.
+  con medallas `MEDALLA_STAR_n` y habilidades de campo (`AttackHabExt`), y Vuelo (tecla 2, medalla 4):
+  la pantalla del mapa con los lugares visitados (`obj_pantallavuelo`, `data/extraido/vuelo.json`), el
+  Pokémon que despega y aterriza, y las horas que pasan. El mapa también se abre con M o desde Usar Item.
+  Faltan Buceo, Cascada, Destello, Ola Lava, Treparrocas, el Pokémon que sale a usar la MO, bici y
+  montura; en Vuelo, elegir entre las llegadas de los lugares que tienen varias (Isla Sol, el Frente) y
+  el grito del Pokémon (los gritos no se extraen por defecto).
 - Historia completa: eventos de los 517 NPCs con scripts propios, rutas de NPCs por historia.
 - Modos: Torre/Fábrica/Palacio/Torneo, guardería y huevos, minijuegos, multijugador local.

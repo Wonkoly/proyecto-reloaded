@@ -13,6 +13,10 @@ Estado detallado de cada sistema: [hoja_de_ruta.md](hoja_de_ruta.md).
 4. **Un commit por sistema**, subido a la rama de la fase; `hoja_de_ruta.md` al día.
 
 ## Fase 1 — De la casa a la primera medalla
+**Estado: hecha** (`feat/historia-inicio`). `tests/prueba_historia.gd` recorre la casa, el laboratorio,
+el móvil, la ruta y el gimnasio de Mino. Pendientes menores: los textos según el sexo del
+protagonista (`TrainerBoy`), el trío de iniciales del código de iniciales, el rival que reaparece si se
+sale del laboratorio sin elegir, y los eventos opcionales del camino (Terón, Celebi en Bosque Spica).
 El objetivo es que una partida nueva llegue a la medalla 1 sin trucos.
 - **Inicio del juego**: presentación del profesor, nombre, elección del inicial (hoy se regala un
   Charmander) y los eventos de la casa y de Pueblo Alba.

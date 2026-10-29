@@ -294,6 +294,7 @@ func curar_equipo() -> void:
 	for p: PokemonInstance in equipo:
 		p.hp_actual = p.calcular_stats()["hp"]
 		p.energia_actual = p.calcular_energia_maxima()
+		p.estado = MoveData.Estado.NINGUNO
 
 
 ## El primero del equipo que puede combatir, o null si todos están debilitados.

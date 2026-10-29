@@ -147,7 +147,7 @@ func _on_area_entered(area: Area2D) -> void:
 		return
 	var objetivo: BattlePokemon = area.get_parent() as BattlePokemon
 	if objetivo and objetivo.lado != duenio.lado and objetivo.puede_recibir_danio():
-		var danio: int = FormulasBatalla.calcular_danio(duenio.pokemon, objetivo.pokemon, move,
-			GameState.pow_dif(duenio.lado))
+		var danio: int = FormulasBatalla.danio_en_batalla(duenio, objetivo, move)
 		objetivo.recibir_golpe(move, danio, Efectividad.multiplicador(move.tipo, objetivo.pokemon.especie.tipos))
+		objetivo.efectos_de_golpe(move, duenio, danio)
 		queue_free()

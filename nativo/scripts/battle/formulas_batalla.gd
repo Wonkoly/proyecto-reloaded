@@ -5,19 +5,33 @@ class_name FormulasBatalla
 ## Daño de un ataque (Ataque1GolpeaPokemon2), sin los casos especiales de movimientos,
 ## habilidades, objetos, clima ni cambios de stats. mf = 1.5 si viene de "Yo primero".
 static func calcular_danio(atacante: PokemonInstance, defensor: PokemonInstance, move: MoveData,
-		pow_dif: int, mf: float = 1.0) -> int:
+		pow_dif: int, mf: float = 1.0, etapa_at: int = 0, etapa_def: int = 0) -> int:
 	if move.categoria == MoveData.Categoria.ESTADO or move.poder <= 0:
 		return 0
 	var fisico: bool = move.categoria == MoveData.Categoria.FISICO
 	var stats_at: Dictionary[String, int] = atacante.calcular_stats()
 	var stats_def: Dictionary[String, int] = defensor.calcular_stats()
-	var at: float = stats_at["ataque"] if fisico else stats_at["ataque_esp"]
-	var df: float = stats_def["defensa"] if fisico else stats_def["defensa_esp"]
+	var at: float = (stats_at["ataque"] if fisico else stats_at["ataque_esp"]) * factor_etapa(etapa_at)
+	var df: float = (stats_def["defensa"] if fisico else stats_def["defensa_esp"]) * factor_etapa(etapa_def)
 	var stab: float = 1.5 if move.tipo in atacante.especie.tipos else 1.0
 	var eff: float = Efectividad.multiplicador(move.tipo, defensor.especie.tipos)
 	var danio: float = ((2.0 * atacante.nivel / 5.0 + 2.0) * (mf * at * move.poder / df) / 50.0 + 2.0) \
 		* stab * eff * 0.85
+	if fisico and atacante.estado == MoveData.Estado.QUEMADO:
+		danio -= danio * 0.5  # STD = 2 y ataque físico
 	return ceili(danio / pow_dif)
+
+
+## Ataque1GolpeaPokemon2: stat × (4 + s) / 4 subiendo, stat × 4 / (4 − s) bajando (s de −12 a 12).
+static func factor_etapa(s: int) -> float:
+	return (4.0 + s) / 4.0 if s >= 0 else 4.0 / (4.0 - s)
+
+
+## El daño de un golpe entre dos Pokémon en combate, con sus etapas de stats y estados.
+static func danio_en_batalla(atacante: BattlePokemon, defensor: BattlePokemon, move: MoveData) -> int:
+	var fisico: bool = move.categoria == MoveData.Categoria.FISICO
+	return calcular_danio(atacante.pokemon, defensor.pokemon, move, GameState.pow_dif(atacante.lado), 1.0,
+		atacante.etapa(1 if fisico else 3), defensor.etapa(2 if fisico else 4))
 
 
 ## Índice de ball del original (obj_Pokeball.index) según el id del objeto: 1-13 → 0-12,

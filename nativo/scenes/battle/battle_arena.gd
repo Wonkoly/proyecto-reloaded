@@ -70,6 +70,7 @@ func _ready() -> void:
 	manager.iniciar(jugador, rival, GameState.equipo if desde_overworld else [], equipo_rival)
 	for bp: BattlePokemon in [jugador, rival]:
 		bp.golpeado.connect(_mostrar_danio.bind(bp))
+		bp.mensaje.connect(hud.mensaje)
 
 
 func _pokemon_de_prueba(id_especie: int, nivel: int) -> PokemonInstance:

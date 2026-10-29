@@ -15,6 +15,8 @@ const DIGITO_STAT: Dictionary[String, int] = {
 @export var experiencia: int = 0
 @export var hp_actual: int = 0
 @export var energia_actual: int = 0
+## Estado alterado (global.STD1): dura después del combate hasta que se cura.
+@export var estado: MoveData.Estado = MoveData.Estado.NINGUNO
 ## Valores individuales: 6 dígitos de 0 a 9 (aleatorios al nacer).
 @export_range(0, 999999) var iv: int = 0
 ## Talento natural: 6 dígitos de 0 a 9; el juego usa dígito + 1 (1-10). Se puede subir con objetos.
@@ -46,6 +48,7 @@ func a_dict() -> Dictionary:
 		"experiencia": experiencia,
 		"hp": hp_actual,
 		"energia": energia_actual,
+		"estado": estado,
 		"iv": iv,
 		"ntv": ntv,
 		"movimientos": movimientos.filter(func(m: MoveData) -> bool: return m != null).map(
@@ -72,6 +75,7 @@ static func desde_dict(d: Dictionary) -> PokemonInstance:
 			p.movimientos.append(m)
 	p.hp_actual = clampi(int(d.get("hp", 0)), 0, p.calcular_stats()["hp"])
 	p.energia_actual = clampi(int(d.get("energia", 0)), 0, p.calcular_energia_maxima())
+	p.estado = clampi(int(d.get("estado", 0)), 0, MoveData.Estado.INFECCION) as MoveData.Estado
 	return p
 
 

@@ -5,6 +5,8 @@ extends Resource
 ## (30 steps/s): ver docs/referencia_original.md.
 
 enum Categoria { FISICO, ESPECIAL, ESTADO }
+## Estados alterados, con los números de STD del original.
+enum Estado { NINGUNO, PARALISIS, QUEMADO, DORMIDO, ENVENENADO, CONGELADO, CONFUSION, ENAMORADO, MALDICION, INFECCION }
 ## Cómo se ejecuta (ExecuteAtack): el Pokémon se lanza contra el rival, dispara un proyectil, actúa
 ## sobre sí mismo sin proyectil, o es un caso especial (Vuelo, Excavar...).
 enum Modo { CONTACTO, PROYECTIL, ESTADO, ESPECIAL }
@@ -29,3 +31,16 @@ enum Modo { CONTACTO, PROYECTIL, ESTADO, ESPECIAL }
 @export var velocidad_proyectil: float = 360.0
 ## Segundos antes de desaparecer si no choca (original: 200 steps).
 @export var duracion_proyectil: float = 200.0 / 30.0
+
+@export_group("Efectos")
+## Estado que causa al rival al golpear (SecEffect1) y su probabilidad en %.
+@export var estado: Estado = Estado.NINGUNO
+@export var prob_estado: int = 0
+## Etapas de stat que cambia (ModificaStat): 1 Ataque, 2 Defensa, 3 At. Esp., 4 Def. Esp., 5 Velocidad,
+## 6 Precisión → etapas (de -12 a 12).
+@export var cambios_rival: Dictionary[int, int] = {}
+@export var cambios_propios: Dictionary[int, int] = {}
+@export var prob_cambios: int = 100
+## El atacante pierde el daño hecho / retroceso (0 = nada); con drenaje, recupera daño / drenaje.
+@export var retroceso: int = 0
+@export var drenaje: int = 0

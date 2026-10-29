@@ -490,6 +490,8 @@ def extraer_datos(plan: Plan, ext: Path, indice: dict) -> None:
     tipo_mov = Tabla(gml("TheoricTypeAttack"))
     costo = Tabla(gml("TheoricPPAtack"))
     modo = Tabla(gml("ModeAtack"))
+    import efectos_original
+    efectos_mov = efectos_original.efectos(gml("SecEffect1"))
     ejecucion = Tabla(gml("ExecuteAtack"))
     rutas_mov: dict[int, Path] = {}
     tipos_raros: dict[int, int] = {}
@@ -515,6 +517,18 @@ def extraer_datos(plan: Plan, ext: Path, indice: dict) -> None:
             f"costo_energia = {int(costo.valor(i, 0) or 0)}",
             f"descripcion = {gd_str(descs_mov[i - 1].strip() if i <= len(descs_mov) else '')}",
         ]
+        efecto = efectos_mov.get(i, {})
+        if efecto.get("estado"):
+            props += [f"estado = {efecto['estado']}", f"prob_estado = {efecto['prob_estado']}"]
+        for clave in ("cambios_rival", "cambios_propios"):
+            if efecto.get(clave):
+                props.append(f"{clave} = Dictionary[int, int]({{%s}})" % ", ".join(
+                    f"{k}: {v}" for k, v in sorted(efecto[clave].items())))
+        if "prob_cambios" in efecto and efecto["prob_cambios"] != 100:
+            props.append(f"prob_cambios = {efecto['prob_cambios']}")
+        for clave in ("retroceso", "drenaje"):
+            if efecto.get(clave):
+                props.append(f"{clave} = {efecto[clave]}")
         plan.escribir(ruta, tres.texto(props))
     for t, n in sorted(tipos_raros.items()):
         avisar(f"{n} movimientos con tipo {t} del juego (sin equivalente en Tipos): se guardan como NORMAL")

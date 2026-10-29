@@ -29,8 +29,11 @@ mapa por mapa, y al final los modos extra.
 
 ## Después
 - El entrenador del jugador dentro de la arena (`Trainer1`, se mueve y lo pueden golpear).
-- Estados (quemado, dormido...), habilidades, objetos equipados, clima, mega/Z/dinamax, efectos
-  especiales de cada movimiento (`Ataque1GolpeaPokemon2`).
+- Efectos de movimientos: hechos los de `SecEffect1` que solo dependen del movimiento (445: estados con
+  su probabilidad, etapas de stats propias y del rival, retroceso) y los estados en tiempo real
+  (`EffectStatuses`: parálisis, quemado, sueño, veneno, congelación, maldición, infección). Faltan:
+  efectos de confusión y enamorado, drenaje (`AbsorbeAttack`), ataques múltiples, evasión, iconos de
+  estado en el HUD, y todo lo que depende de habilidades, objetos equipados, clima y mega/Z/dinamax.
 - Evoluciones por objeto, intercambio, amistad y condiciones especiales (`CheckTeamEvolution`).
 - MO en el mapa (surf, corte, fuerza, vuelo...), bici, montura.
 - Historia completa: eventos de los 517 NPCs con scripts propios, rutas de NPCs por historia.

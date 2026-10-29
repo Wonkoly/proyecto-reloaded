@@ -616,6 +616,9 @@ def extraer_datos(plan: Plan, ext: Path, indice: dict) -> None:
     import evoluciones_objeto  # piedras y demás objetos que hacen evolucionar (UseObject)
     familia = lambda a, b: funciones.llamar("MYSON", float(a)) == funciones.llamar("MYSON", float(b))
     por_objeto = evoluciones_objeto.evoluciones(gml("UseObject"), gml("EvolutionConfirmation"), familia)
+    reglas = evoluciones_objeto.reglas_nivel(gml("CheckEvolution"), gml("EvolutionConfirmation"), familia)
+    plan.escribir(DATA / "pokemon" / "evoluciones_nivel.json",
+                  json.dumps({str(k): v for k, v in sorted(reglas.items())}, indent=0))
     plan.escribir(DATA / "pokemon" / "evoluciones_objeto.json", json.dumps(
         {str(o): {str(k): v for k, v in sorted(d.items())} for o, d in sorted(por_objeto.items())}, indent=0))
     print(f"  {total} especies")

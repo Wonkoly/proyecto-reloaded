@@ -30,6 +30,7 @@ var _inicio: Array[Vector2] = []
 ## Los Pokémon del jugador que subieron de nivel (global.subido): al final se revisa si evolucionan.
 var _subidos: Array[PokemonInstance] = []
 var _ball: BallLanzada
+var _indice_ultima_ball: int = 0
 ## Segundos de combate (fight_time, para las balls Turno y Veloz).
 var _segundos: float = 0.0
 var _cambios: int = 0
@@ -211,6 +212,7 @@ func _lanzar_ball() -> void:
 	var rival: PokemonInstance = _pokemon[1].pokemon
 	_ball = BallLanzada.new()
 	_ball.indice = FormulasBatalla.indice_ball(id)
+	_indice_ultima_ball = _ball.indice
 	_ball.objetivo = _pokemon[1]
 	_ball.probabilidad = FormulasBatalla.probabilidad_captura(rival, _ball.indice, _pokemon[0].pokemon, _segundos,
 		GameState.pokedex.get(rival.especie.numero_pokedex, 0) == 2)
@@ -231,6 +233,7 @@ func _capturar(p: PokemonInstance) -> void:
 	_congelar()
 	await _experiencia(p)
 	await CuadroOriginal.mensaje(self, Textos.batalla(217))
+	p.ball = _indice_ultima_ball  # global.info[i,0]: la ball con que se capturó
 	GameState.marcar_pokedex(p.especie, 2)
 	await _guardar_capturado(p)
 	await Evolucion.revisar_equipo(self, _subidos)

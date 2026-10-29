@@ -24,6 +24,10 @@ const DIGITO_STAT: Dictionary[String, int] = {
 ## Habilidades de campo aprendidas (global.info[i,11], bit = HABILIDAD_CAMPO): se quedan aunque
 ## olvide el movimiento.
 @export var habilidades_campo: int = 0
+## Objeto equipado (global.objpoke1); 0 = ninguno.
+@export var objeto: int = 0
+## La Poké Ball en la que se capturó (global.info[i,0]: índice de ball, 0 = Poké Ball, 19 = Amigo Ball).
+@export var ball: int = 0
 ## Estado alterado (global.STD1): dura después del combate hasta que se cura.
 @export var estado: MoveData.Estado = MoveData.Estado.NINGUNO
 ## Valores individuales: 6 dígitos de 0 a 9 (aleatorios al nacer).
@@ -60,6 +64,8 @@ func a_dict() -> Dictionary:
 		"energia": energia_actual,
 		"estado": estado,
 		"habilidades_campo": habilidades_campo,
+		"objeto": objeto,
+		"ball": ball,
 		"iv": iv,
 		"ntv": ntv,
 		"movimientos": movimientos.filter(func(m: MoveData) -> bool: return m != null).map(
@@ -88,6 +94,8 @@ static func desde_dict(d: Dictionary) -> PokemonInstance:
 	p.energia_actual = clampi(int(d.get("energia", 0)), 0, p.calcular_energia_maxima())
 	p.estado = clampi(int(d.get("estado", 0)), 0, MoveData.Estado.INFECCION) as MoveData.Estado
 	p.habilidades_campo = int(d.get("habilidades_campo", 0))
+	p.objeto = int(d.get("objeto", 0))
+	p.ball = int(d.get("ball", 0))
 	p.actualizar_habilidades_campo()
 	return p
 
@@ -208,11 +216,35 @@ func tiene_habilidad_campo(n: int) -> bool:
 	return habilidades_campo & (1 << n) != 0
 
 
-## CheckEvolution (solo por nivel): si con este nivel evoluciona y en qué especie.
+static var _reglas_evolucion: Dictionary = {}
+
+
+## CheckEvolution: la primera regla de la especie que se cumple (nivel y, según la regla, objeto equipado,
+## Ball en que se capturó y día o noche). null si no evoluciona. Con objeto 90 (Piedra Eterna) nunca.
+func regla_evolucion() -> Dictionary:
+	if hp_actual <= 0 or objeto == 90:
+		return {}
+	if _reglas_evolucion.is_empty():
+		var f: FileAccess = FileAccess.open("res://data/extraido/pokemon/evoluciones_nivel.json", FileAccess.READ)
+		_reglas_evolucion = JSON.parse_string(f.get_as_text()) if f else {"-": []}
+	for r: Dictionary in _reglas_evolucion.get(str(especie.id_original), []):
+		if nivel < int(r.get("nivel", 0)):
+			continue
+		if r.has("objeto") and objeto != int(r.objeto):
+			continue
+		if r.has("objeto_no") and objeto == int(r.objeto_no):
+			continue
+		if r.has("ball") and ball != int(r.ball):
+			continue
+		if r.has("dia") and bool(r.dia) != Reloj.es_de_dia():
+			continue
+		return r
+	return {}
+
+
 func evolucion_pendiente() -> PokemonData:
-	if hp_actual <= 0 or especie.nivel_evolucion <= 0 or nivel < especie.nivel_evolucion:
-		return null
-	return Datos.especie(especie.evoluciona_a)
+	var r: Dictionary = regla_evolucion()
+	return Datos.especie(int(r.destino)) if not r.is_empty() else null
 
 
 ## EvolutionSetPokemon / EvolutionSetStats: cambia la especie; el HP actual sube lo que sube el máximo.

@@ -28,7 +28,9 @@ static func revisar_equipo(desde: Node, subidos: Array[PokemonInstance]) -> void
 	for p: PokemonInstance in subidos:
 		var nueva: PokemonData = p.evolucion_pendiente()
 		if nueva:
-			await evolucionar(desde, p, nueva)
+			var objeto_necesario: bool = p.regla_evolucion().has("objeto")
+			if await evolucionar(desde, p, nueva) and objeto_necesario:
+				p.objeto = 0  # LostItemEvolution: se usa el objeto equipado
 
 
 static func evolucionar(desde: Node, p: PokemonInstance, nueva: PokemonData, cancelable: bool = true) -> bool:

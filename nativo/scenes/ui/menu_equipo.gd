@@ -14,8 +14,12 @@ static func abrir(desde: Node) -> void:
 		sel = await MenuLista.elegir(desde, Textos.linea("txt_menu", 70), GameState.equipo.map(fila), {"inicial": sel})
 		if sel < 0:
 			return
-		var accion: int = await MenuLista.elegir(desde, Progreso.nombre(GameState.equipo[sel]),
-			[{"texto": "Datos"}, {"texto": "Mover"}])
+		var p_sel: PokemonInstance = GameState.equipo[sel]
+		var accion: int = await MenuLista.elegir(desde, Progreso.nombre(p_sel),
+			[{"texto": "Datos"}, {"texto": "Mover"}, {"texto": "Objeto",
+				"derecha": Inventario.nombre(p_sel.objeto) if p_sel.objeto != 0 else "-"}])
+		if accion == 2:
+			await _objeto(desde, p_sel)
 		if accion == 0:
 			await ficha(desde, GameState.equipo[sel])
 		elif accion == 1:
@@ -49,3 +53,21 @@ static func ficha(desde: Node, p: PokemonInstance) -> void:
 		filas.append({"texto": m.nombre, "derecha": "%s %s E%d" % [Tipos.Tipo.keys()[m.tipo].capitalize(),
 			str(m.poder) if m.poder > 0 else "-", m.costo_energia], "desc": m.descripcion})
 	await MenuLista.elegir(desde, Progreso.nombre(p), filas, {"ancho": 300})
+
+
+## El objeto equipado: si tiene uno, se le quita (MenuPokemonQuitarObjeto, vuelve a la mochila); si no,
+## se elige uno de los bolsillos de objetos y bayas (GiveObject).
+static func _objeto(desde: Node, p: PokemonInstance) -> void:
+	if p.objeto != 0:  # MenuPokemonQuitarObjeto
+		if await CuadroOriginal.preguntar(desde, Textos.par(Textos.linea("txt_menu", 772), Inventario.nombre(p.objeto))):
+			Inventario.dar(p.objeto)
+			await CuadroOriginal.mensaje(desde, Textos.par(Textos.linea("txt_menu", 774), Inventario.nombre(p.objeto)))
+			p.objeto = 0
+		return
+	var ids: Array[int] = Inventario.de_bolsillo("objeto") + Inventario.de_bolsillo("baya")
+	var i: int = await MenuLista.elegir(desde, "Equipar", ids.map(func(id: int) -> Dictionary:
+		return {"texto": Inventario.nombre(id), "derecha": "x%d" % Inventario.cantidad(id), "desc": Inventario.descripcion(id)}))
+	if i >= 0:
+		Inventario.quitar(ids[i])
+		p.objeto = ids[i]
+		await CuadroOriginal.mensaje(desde, Textos.par(Textos.linea("txt_menu", 563), Progreso.nombre(p), Inventario.nombre(ids[i])))

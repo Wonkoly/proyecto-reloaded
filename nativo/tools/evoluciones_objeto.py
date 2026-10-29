@@ -47,3 +47,47 @@ def evoluciones(use_object: str, confirmacion: str, misma_familia) -> dict[int, 
                 if destino:
                     resultado.setdefault(objeto, {})[pk] = destino
     return resultado
+
+
+def reglas_nivel(check: str, confirmacion: str, misma_familia) -> dict[int, list[dict]]:
+    """CheckEvolution en orden: {especie: [{nivel, objeto, objeto_no, ball, dia, destino}]}. La primera
+    regla que se cumple manda. Se saltan las que piden sexo o condiciones del equipo (condicion,
+    instance_exists): no se pueden comprobar con datos."""
+    destinos: dict[int, dict[int, int]] = {}
+    for cond, cuerpo in _sentencias_if(confirmacion):
+        m = re.fullmatch(r"pk=(\d+)", cond.strip())
+        if m:
+            d = {int(a): int(b) for a, b in re.findall(r"if\(evolMode=\((\d+)\)\)\{?pk=(\d+);", cuerpo)}
+            simple = re.fullmatch(r"pk=(\d+);\s*(?:LostItemEvolution\(ac\);\s*)?exit;", cuerpo.strip())
+            if simple:
+                d[0] = int(simple.group(1))
+            destinos.setdefault(int(m.group(1)), d)
+    cuerpo_check = check[check.find("if(PS<=0"):]
+    reglas: dict[int, list[dict]] = {}
+    for m in re.finditer(r"if\((pk=\d+[^(){}]*?)\)\s*(?:\{global\.EvolMode=(\d+);return true;\}|return true;)", cuerpo_check):
+        cond, modo = m.group(1), int(m.group(2)) if m.group(2) else 1
+        if re.search(r"condicion|sex|instance_exists|\(", cond):
+            continue
+        r: dict = {"nivel": 0}
+        for clave, valor in re.findall(r"(pk|nv>|obj!|obj|ball|global\.day)=+(\w+)", cond):
+            if clave == "pk":
+                pk = int(valor)
+            elif clave == "nv>":
+                r["nivel"] = int(valor)
+            elif clave == "obj":
+                r["objeto"] = int(valor)
+            elif clave == "obj!":
+                r["objeto_no"] = int(valor)
+            elif clave == "ball":
+                r["ball"] = int(valor)
+            elif clave == "global.day":
+                r["dia"] = valor == "true"
+        d = destinos.get(pk, {})
+        if modo >= 22:
+            destino = modo  # EvolMode con la especie directa (Slowbro 80, Scizor 212...)
+        else:
+            destino = d.get(modo, d.get(0)) or (pk + 1 if misma_familia(pk, pk + 1) else None)
+        if destino:
+            r["destino"] = destino
+            reglas.setdefault(pk, []).append(r)
+    return reglas

@@ -78,6 +78,9 @@ func cumple(condicion: String) -> bool:
 
 
 func _activar(n: Node, activo: bool) -> void:
+	# Lo que un evento quitó (orden "ocultar", instance_destroy) no vuelve hasta recargar el mapa.
+	if n.get_meta("oculto_por_evento", false) or (n.get_parent() and n.get_parent().get_meta("oculto_por_evento", false)):
+		activo = false
 	if n is CollisionShape2D:
 		(n as CollisionShape2D).set_deferred("disabled", not activo)
 		return

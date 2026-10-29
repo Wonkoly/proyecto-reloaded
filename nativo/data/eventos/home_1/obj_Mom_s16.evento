@@ -1,0 +1,26 @@
+# La madre (MomHabla, retrato 1287). Sin Pokémon: su frase; con Pokémon y sin móvil: el SmartPhone
+# (objeto 176) y el mapa de la región (186); después, ofrece descansar.
+hablante 1287
+si fy_002 == 0:
+	decir 2473
+	fin
+si movil == 0:
+	decir 2499
+	decir 2501
+	decir 2502
+	decir 2503
+	narrar 3036
+	dar_objeto 176 1
+	decir 2504 F8
+	decir 2505
+	si mapa_suelo == 0:
+		decir 2506
+		narrar 3041
+		dar_objeto 186 1
+		bandera mapa_suelo = 1
+	bandera movil = 1
+	fin
+si pregunta 2507:
+	curar
+sino:
+	decir 2499

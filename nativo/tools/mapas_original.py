@@ -968,6 +968,17 @@ def escena_mapa(room: dict, juego: Juego, tilesets: dict, sprite_tres, snake, re
                    activacion=2, volver=True, volver_posicion=fija)
             if sprite:
                 decorado(f"{nombre}_sprite", sprite, x, y)
+        elif obj == "obj_ini" and sprite:
+            # Las Poké Balls de los iniciales (obj_ini, StarterSelector): un NPC quieto para hablarle
+            # (KeyActionsStarterSelector: debajo y mirando arriba); su evento elige el inicial.
+            e.nodo(nombre, None, "Objetos", [
+                f"position = Vector2({f(x)}, {f(y)})", f"collision_layer = {CAPA_PAREDES}", "collision_mask = 0",
+                'objeto_original = "obj_ini"', "mira = 2", "mira_fija = 2", "frame_fijo = 0", "distancia = 10",
+                f"sprite_abajo = {e.ref('Resource', sprite_tres(sprite))}"],
+                instancia=e.ref("PackedScene", "res://scenes/overworld/npc.tscn"))
+            if meta and (c := caja(meta, 0, 0, 1, 1)):
+                e.nodo("CollisionShape2D", "CollisionShape2D", f"Objetos/{nombre}", [
+                    f"position = Vector2({f(c[0])}, {f(c[1])})", f"shape = {e.rect(c[2], c[3])}"])
         elif juego.es(obj, "obj_people"):
             if obj == "obj_Watcher":
                 # DefineWatcher: sprINDEX 411, "Vigilante", alcance 80, TextDialog(5179), mira al azar, MOVE.

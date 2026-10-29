@@ -111,8 +111,8 @@ func _ready() -> void:
 		_cajas_iniciales()
 
 
-## Deja todo como al empezar una partida (el estado de prueba de siempre: ya con su primer Pokémon
-## y el móvil, porque la presentación del profesor aún no existe) en la casa del protagonista.
+## Deja todo como al empezar una partida del original: en la casa del protagonista, sin Pokémon ni
+## móvil (el inicial lo da el Profesor Oak en su laboratorio y el móvil la madre).
 func nueva_partida(nombre: String = "") -> void:
 	dificultad = Dificultad.NORMAL
 	nombre_jugador = nombre
@@ -124,14 +124,13 @@ func nueva_partida(nombre: String = "") -> void:
 	tiempo_juego = 0.0
 	en_partida = true
 	equipo.clear()
-	_equipo_inicial()
 	mapa_actual = INICIO_MAPA
 	posicion_jugador = INICIO_POSICION
 	mira = 2
 	mapa_salida = INICIO_SALIDA_MAPA
 	posicion_salida = INICIO_SALIDA_POSICION
 	salvaje = null
-	historia = {"fy_002": 1, "movil": 1}
+	historia = {}
 	indice_lugar = 0
 	dinero = 0
 	objetos.clear()

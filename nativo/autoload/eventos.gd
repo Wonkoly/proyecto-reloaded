@@ -32,6 +32,8 @@ var _npc_nombre: String = ""
 var _hablante: float = -2.0
 var _hablante_nombre: String = ""
 var _detener: bool = false
+## El cuadro con un Pokémon de "mostrar_pokemon" (obj_PKCuadro).
+var _cuadro_pokemon: CanvasLayer
 
 
 ## El evento de un nodo del mapa, o null si no tiene.
@@ -142,10 +144,13 @@ func _orden(o: Dictionary, ruta: String) -> void:
 				await CajaDialogo.decir(npc, _texto(a), npc.sprindex, npc.nombre)
 			else:
 				await CajaDialogo.decir(self, _texto(a))
-		"hablante":  # hablante 1290 | hablante "Nombre" | hablante npc
+		"hablante":  # hablante 1290 | hablante "Nombre" | hablante npc | hablante rival
 			if a.is_empty() or a[0] == "npc":
 				_hablante = -2.0
 				_hablante_nombre = ""
+			elif a[0] == "rival":  # Dialogo(..., global.rivalname, IndexRivalGrande())
+				_hablante = 1000.0 + GameState.rival_personaje
+				_hablante_nombre = GameState.nombre_rival
 			elif a[0].is_valid_float():
 				_hablante = float(a[0])
 				_hablante_nombre = a[1] if a.size() > 1 else ""
@@ -167,9 +172,10 @@ func _orden(o: Dictionary, ruta: String) -> void:
 			_detener = true
 		"narrar":
 			await CajaDialogo.decir(self, _texto(a))
-		"exclamacion":
-			if npc:
-				await npc.exclamacion()
+		"exclamacion":  # exclamacion [nodo]
+			var quien: Npc = _nodo(a) as Npc
+			if quien:
+				await quien.exclamacion()
 		"mirar_jugador":
 			if npc and jugador:
 				npc.mirar_a(jugador.global_position)
@@ -192,6 +198,7 @@ func _orden(o: Dictionary, ruta: String) -> void:
 			var e: PokemonData = Datos.especie(int(a[0])) if a.size() > 0 else null
 			if e and GameState.equipo.size() < 6:
 				GameState.equipo.append(PokemonInstance.crear(e, int(a[1]) if a.size() > 1 else 5))
+				GameState.marcar_pokedex(e, 2)
 		"esperar":
 			await get_tree().create_timer(float(a[0]) if a.size() > 0 else 0.5).timeout
 		"empujar":
@@ -256,6 +263,32 @@ func _orden(o: Dictionary, ruta: String) -> void:
 				SceneManager.ir_a_mapa(destino, pos, 2)
 				await SceneManager.mapa_cargado
 			_detener = true
+		"ocultar":  # ocultar [nodo]: desaparece hasta volver al mapa (instance_destroy)
+			var n: Node2D = _nodo(a) as Node2D
+			if n:
+				n.set_meta("oculto_por_evento", true)
+				n.visible = false
+				n.process_mode = Node.PROCESS_MODE_DISABLED
+				if n is CollisionObject2D:
+					(n as CollisionObject2D).collision_layer = 0
+		"mover":  # mover nodo dirección px [velocidad px/s]: camina (90 px/s = 3 px/step)
+			var n: Node2D = _nodo(a.slice(0, 1)) as Node2D
+			if n and a.size() > 2 and DIRECCIONES.has(a[1]):
+				var dir: Vector2 = DIRECCIONES[a[1]]
+				var vel: float = float(a[3]) if a.size() > 3 else 90.0
+				if n is Npc:
+					(n as Npc).mira = {Vector2.DOWN: 2, Vector2.UP: 8, Vector2.LEFT: 4, Vector2.RIGHT: 6}[dir]
+				var t: Tween = create_tween().set_pause_mode(Tween.TWEEN_PAUSE_PROCESS)
+				t.tween_property(n, "position", n.position + dir * float(a[2]), float(a[2]) / vel)
+				t.tween_callback(n.queue_redraw)
+				await t.finished
+		"mostrar_pokemon":  # mostrar_pokemon id: el cuadro con el Pokémon (obj_PKCuadro)
+			_mostrar_pokemon(int(a[0]) if a.size() > 0 else 0)
+		"ocultar_pokemon":
+			if is_instance_valid(_cuadro_pokemon):
+				_cuadro_pokemon.queue_free()
+		"asignar_ball":  # asignar_ball id: global.ball_asign (la tecla B)
+			GameState.ball_asignada = int(a[0]) if a.size() > 0 else -1
 		_:
 			_aviso(ruta, o.linea, "orden desconocida: " + o.orden)
 
@@ -340,6 +373,38 @@ func _bandera(a: PackedStringArray, ruta: String, linea: int) -> void:
 	elif a[1] == "-=":
 		v = GameState.bandera(nombre) - v
 	GameState.cambiar_historia(nombre, v)
+
+
+## El nodo de "Objetos" con ese nombre (a[0]), o el NPC del evento si no se da o es "npc".
+func _nodo(a: PackedStringArray) -> Node:
+	if a.is_empty() or a[0] == "npc":
+		return _npc()
+	var mapa: Node = get_tree().current_scene
+	return mapa.get_node_or_null("Objetos/" + a[0]) if mapa else null
+
+
+func _mostrar_pokemon(id: int) -> void:
+	if is_instance_valid(_cuadro_pokemon):
+		_cuadro_pokemon.queue_free()
+	var especie: PokemonData = Datos.especie(id)
+	if especie == null or especie.sprite == null:
+		return
+	_cuadro_pokemon = CanvasLayer.new()
+	_cuadro_pokemon.layer = 40
+	var tam: Vector2 = get_viewport().get_visible_rect().size
+	var marco := ColorRect.new()
+	marco.color = Color(0.1, 0.1, 0.15, 0.9)
+	marco.size = Vector2(90, 90)
+	marco.position = Vector2(tam.x / 2 - 45, tam.y / 2 - 65)
+	_cuadro_pokemon.add_child(marco)
+	var imagen := TextureRect.new()
+	imagen.texture = especie.sprite
+	imagen.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+	imagen.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	imagen.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+	imagen.size = marco.size
+	marco.add_child(imagen)
+	get_tree().root.add_child(_cuadro_pokemon)
 
 
 func _npc() -> Npc:

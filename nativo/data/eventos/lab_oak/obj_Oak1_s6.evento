@@ -1,0 +1,24 @@
+# El Profesor Oak antes de tener el primer Pokémon (OakStarterHabla, retrato 404).
+# Si el rival ya se fue, solo recuerda que elijas.
+hablante 404
+si lab_rival_fuera == 1:
+	decir 2568
+	fin
+decir 2561 F1
+decir 2562
+narrar 2563
+bandera pokedex = 1
+decir 2564
+decir 2565
+decir 2566
+decir 2567
+# El rival mira al jugador, "!" y se va (RivalLabHuye: abajo, derecha y abajo a 3 px/step).
+exclamacion obj_Lab_Rival_s7
+hablante rival
+decir 2569
+decir 2570
+mover obj_Lab_Rival_s7 abajo 51
+mover obj_Lab_Rival_s7 derecha 24
+mover obj_Lab_Rival_s7 abajo 150
+ocultar obj_Lab_Rival_s7
+bandera lab_rival_fuera = 1

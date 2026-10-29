@@ -772,6 +772,10 @@ def extraer_mapas(plan: Plan, juego: Path, ext: Path, tilesets: dict, filtro: li
     # Nombre y retrato de quien habla en cada diálogo (sprINDEX de los NPCs): dialogos_original.py.
     dialogo = {}
     original.sprindex_usados.update(float(1000 + i) for i in range(10))  # los protagonistas (y el rival)
+    original.sprindex_usados.update((1287.0, 1288.0))  # la madre (DefineMom: Character)
+    for archivo in sorted((NATIVO / "data" / "eventos").rglob("*.evento")):  # "hablante N" de los eventos propios
+        for n in re.findall(r"^\s*hablante (\d+)", archivo.read_text(encoding="utf-8"), re.M):
+            original.sprindex_usados.add(float(n))
     for sprindex in sorted(original.sprindex_usados):
         r = original.personajes.retrato(sprindex)
         if r and "sprite" in r:

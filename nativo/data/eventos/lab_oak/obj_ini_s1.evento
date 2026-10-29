@@ -1,0 +1,24 @@
+# Poké Ball del inicial 2 (obj_ini INI=2, StarterSelectorElige). Con el código de iniciales del
+# original el trío cambia (InitializeStarterSelector); aquí, el de siempre.
+si fy_002 == 1 o lab_rival_fuera == 0:
+	narrar 6833
+	fin
+mostrar_pokemon 447
+narrar 6834 Riolu
+si pregunta 6835:
+	ocultar_pokemon
+	dar_pokemon 447 5
+	bandera pkchoose = 2
+	bandera pkstarter = 447
+	bandera fy_002 = 1
+	narrar 6837 Riolu
+	exclamacion obj_Oak1_s6
+	hablante 404
+	decir 6838 Riolu
+	decir 6839
+	narrar 6840
+	dar_objeto 1 15
+	asignar_ball 1
+	decir 6841 B F12
+sino:
+	ocultar_pokemon

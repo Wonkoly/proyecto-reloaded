@@ -80,6 +80,8 @@ SPRITES_UI = [
     # (Spr_Objeto 0 ya está en efectos), las flechas de cambio de región, el cursor y la marca de lugar visitado.
     "spr_MAPA", "spr_MAPA_V2", "spr_MAPA_V3", "spr_cambiarmapaL", "spr_cambiarmapaR", "spr_map_selector",
     "obj_aquisivuelo",
+    # La oscuridad de las cuevas (DrawDestello): sin Destello y con Destello.
+    "spr_darkness1", "spr_darkness2",
 ]
 # Fondos de la intro y el título (IntroROOM, InicioROOM) → sprites/ui/fondos/.
 FONDOS_UI = ["BackIntro", "BackIntroLetras", "GradienteNight", "BackFerProductions"]
@@ -87,7 +89,7 @@ FONDOS_UI = ["BackIntro", "BackIntroLetras", "GradienteNight", "BackFerProductio
 SONIDOS_UI = ["snd_click", "snd_curar", "snd_get"]
 CARPETAS = {
     "datos": [DATA / "pokemon", DATA / "moves", DATA / "textos", DATA / "objetos.json", DATA / "vuelo.json",
-              DATA / "buceo.json"],
+              DATA / "buceo.json", DATA / "campo.json"],
     "sprites": [ASSETS / "sprites" / "pokemon"],
     "fondos": [ASSETS / "sprites" / "battlebacks"],
     "ui": [ASSETS / "sprites" / "ui", ASSETS / "audio" / "sfx" / "ui", ASSETS / "audio" / "intro"],
@@ -632,6 +634,9 @@ def extraer_datos(plan: Plan, ext: Path, indice: dict) -> None:
     import buceo_original  # a dónde lleva Buceo (GoDiving)
     plan.escribir(DATA / "buceo.json", json.dumps(buceo_original.buceo(
         gml("GoDiving"), json.loads((EXT / "index.json").read_text())["rooms"]), ensure_ascii=False, indent=0))
+    import campo_original  # cuevas oscuras y dónde se apaga Destello (AdjustmentsRoom)
+    plan.escribir(DATA / "campo.json", json.dumps(campo_original.campo(
+        gml("AdjustmentsRoom"), json.loads((EXT / "index.json").read_text())["rooms"]), ensure_ascii=False, indent=0))
     import vuelo_original  # mapa de la región y Vuelo (obj_pantallavuelo)
     plan.escribir(DATA / "vuelo.json", json.dumps(vuelo_original.vuelo(
         EXT / "scripts", json.loads((EXT / "index.json").read_text())["rooms"]), ensure_ascii=False, indent=0))

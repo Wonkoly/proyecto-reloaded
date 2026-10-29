@@ -20,6 +20,7 @@ const STEPS_POR_SEGUNDO: float = 30.0
 ## Paredes (capa 1), agua (capa 7: sin Surf no se pisa) y lava (capa 8: Ola Lava, pendiente).
 const CAPAS_CHOQUE: int = 1 | 64 | 128
 const CAPA_AGUA: int = 64
+const CAPA_LAVA: int = 128
 const VECTOR_MIRA: Dictionary[int, Vector2] = {2: Vector2.DOWN, 8: Vector2.UP, 4: Vector2.LEFT, 6: Vector2.RIGHT,
 	1: Vector2(-1, 1), 3: Vector2(1, 1), 7: Vector2(-1, -1), 9: Vector2(1, -1)}
 
@@ -44,6 +45,10 @@ var _empuje_restante: float = 0.0
 var _dir_salto: Vector2 = Vector2.ZERO
 ## (14).CASCADA: Cascada activada en este mapa (DefineProta la apaga al entrar a otro).
 var _cascada: bool = false
+## (14).TREPARROCA: trepando hacia abajo (2) o hacia arriba (8); 0 = no. Mientras, la pared trepable
+## no choca (object_set_parent(obj_rocatrepable, -1)).
+var _trepando: int = 0
+var _pasos_trepa: float = 0.0
 ## Los decorados del mapa por prefijo de nombre (los que se tocan con place_meeting).
 var _decorados: Dictionary[String, Array] = {}
 
@@ -88,16 +93,27 @@ func _unhandled_input(evento: InputEvent) -> void:
 		get_viewport().set_input_as_handled()
 		Vuelo.intentar(self)
 		return
+	# 5 (key_ex_mo5_destello): en una cueva oscura, Destello.
+	if tecla_mo == KEY_5 and quieto() and _mapa() and _mapa().has_node("Oscuridad"):
+		get_viewport().set_input_as_handled()
+		(_mapa().get_node("Oscuridad") as Oscuridad).usar_destello(self)
+		return
 	# 7 (key_ex_mo7_buceo): sumergirse en agua buceable o salir a la superficie.
 	if tecla_mo == KEY_7 and quieto():
 		get_viewport().set_input_as_handled()
 		intentar_buceo()
 		return
 	# ProtaStartsCascada: Z surfeando junto a una cascada (medalla 8) pregunta si se sube.
-	if evento.is_action_pressed("interactuar") and surfeando() and not _cascada and quieto() \
+	if evento.is_action_pressed("interactuar") and surfeando() and not GameState.surf_lava and not _cascada and quieto() \
 			and GameState.tiene_medalla(8) and _toca(CASCADAS, Vector2.ZERO, 5.0):
 		get_viewport().set_input_as_handled()
 		intentar_cascada()
+		return
+	# ProtaTreparrocas: Z mirando arriba o abajo junto a una pared trepable (medalla 7).
+	if evento.is_action_pressed("interactuar") and quieto() and not surfeando() and mira in [2, 8] \
+			and GameState.tiene_medalla(7) and _roca_trepable() != null:
+		get_viewport().set_input_as_handled()
+		intentar_treparrocas()
 		return
 	# 3 (key_ex_mo3_surf): de cara al agua, a surfear.
 	if tecla_mo == KEY_3 and quieto():
@@ -174,8 +190,11 @@ func _physics_process(delta: float) -> void:
 	if Eventos.en_curso or _algun_entrenador_viene() or _entrando_agua:
 		detener()
 		return
-	collision_mask = 0 if GameState.dev_noclip else (CAPAS_CHOQUE & ~CAPA_AGUA if surfeando() else CAPAS_CHOQUE)
+	collision_mask = 0 if GameState.dev_noclip or _trepando else (CAPAS_CHOQUE & ~_capa_surf() if surfeando() else CAPAS_CHOQUE)
 	_actualizar_montura()
+	if _trepando:
+		_paso_trepar(delta)
+		return
 	if _empuje_restante > 0.0:
 		_empuje_restante -= delta
 		var frames_empuje: int = _sprite().frames.size() if _sprite() else 1
@@ -218,7 +237,7 @@ func _physics_process(delta: float) -> void:
 	_saltar(velocidad, delta)
 	_corriente_cascada(velocidad, delta)
 	# ProtaMovimiento: al dejar el agua termina el surf solo (bajo el agua se sigue sobre el Pokémon).
-	if surfeando() and not GameState.buceando and not sobre_agua(global_position):
+	if surfeando() and not GameState.buceando and not sobre_agua(global_position, _capa_surf()):
 		terminar_surf()
 	queue_redraw()
 	_revisar_salidas()
@@ -374,12 +393,12 @@ func surfeando() -> bool:
 	return GameState.surfer != 0
 
 
-func sobre_agua(pos: Vector2) -> bool:
+func sobre_agua(pos: Vector2, capa: int = CAPA_AGUA) -> bool:
 	if not is_inside_tree():
 		return false
 	var consulta := PhysicsPointQueryParameters2D.new()
 	consulta.position = pos
-	consulta.collision_mask = CAPA_AGUA
+	consulta.collision_mask = capa
 	return not get_world_2d().direct_space_state.intersect_point(consulta, 1).is_empty()
 
 
@@ -388,17 +407,21 @@ func sobre_agua(pos: Vector2) -> bool:
 func intentar_surf() -> void:
 	var v: Vector2 = VECTOR_MIRA.get(mira, Vector2.DOWN)
 	# ProtaSurf: agua a menos de 7 px del borde del jugador (distance_to_object), en la dirección en que mira.
+	# Si lo que hay es lava (obj_lava), ProtaOlaLava: medalla 8 y la habilidad Ola Lava (si no, 2394).
 	var distancia: float = -1.0
+	var lava: bool = false
 	for d: float in [8.0, 12.0, 16.0, 20.0]:
-		if sobre_agua(global_position + v * d):
+		if sobre_agua(global_position + v * d) or sobre_agua(global_position + v * d, CAPA_LAVA):
 			distancia = d
+			lava = not sobre_agua(global_position + v * d)
 			break
-	if surfeando() or distancia < 0.0 or not GameState.tiene_medalla(6):
+	if surfeando() or distancia < 0.0 or not GameState.tiene_medalla(8 if lava else 6):
 		return
-	var p: PokemonInstance = GameState.con_habilidad_campo(2)
+	var p: PokemonInstance = GameState.con_habilidad_campo(16 if lava else 2)
 	if p == null:
-		await CuadroOriginal.mensaje(self, Textos.linea("txt_dialog", 2393))
+		await CuadroOriginal.mensaje(self, Textos.linea("txt_dialog", 2394 if lava else 2393))
 		return
+	GameState.surf_lava = lava
 	GameState.surfer = p.especie.id_original
 	_entrando_agua = true
 	_actualizar_montura()
@@ -432,6 +455,58 @@ func _decorados_con(prefijos: Array[String]) -> Array:
 					lista.append(n)
 		_decorados[clave] = lista
 	return _decorados[clave]
+
+
+## Las paredes trepables (obj_rocatrepable y obj_rocatrepablesimple).
+const ROCAS_TREPABLES: Array[String] = ["obj_rocatrepable"]
+
+
+## KeyActionsRocaTrepable: la pared trepable que el jugador tiene delante (alineado en x, mirando hacia
+## ella y a menos de 10 px), o null.
+func _roca_trepable() -> Decorado:
+	var forma: CollisionShape2D = $CollisionShape2D
+	var tam: Vector2 = (forma.shape as RectangleShape2D).size if forma.shape is RectangleShape2D else Vector2(12, 12)
+	var mia := Rect2(global_position + forma.position - tam / 2.0, tam).grow(10.0)
+	for n: Decorado in _decorados_con(ROCAS_TREPABLES):
+		var c: Rect2 = n.caja()
+		var alineado: bool = absf(global_position.x - c.get_center().x) <= (10.0 if n.name.begins_with("obj_rocatrepablesimple") else 8.0)
+		var hacia: bool = (mira == 8 and global_position.y > n.global_position.y) or (mira == 2 and global_position.y < n.global_position.y)
+		if alineado and hacia and mia.intersects(c):
+			return n
+	return null
+
+
+## ProtaTreparrocas: pregunta (2399) y, con un Pokémon con Treparrocas (si no, 2400), cruza la pared.
+func intentar_treparrocas() -> void:
+	var roca: Decorado = _roca_trepable()
+	if roca == null or not await CuadroOriginal.preguntar(self, Textos.linea("txt_dialog", 2399)):
+		return
+	if GameState.con_habilidad_campo(13) == null:
+		await CuadroOriginal.mensaje(self, Textos.linea("txt_dialog", 2400))
+		return
+	_trepando = mira
+	global_position += Vector2(0, 8 if mira == 2 else -8)
+	global_position.x = roca.global_position.x
+	_pasos_trepa = 0.0
+
+
+## Un step trepando: 4 px mientras siga sobre la pared (hacia arriba se mira 4 px más abajo).
+func _paso_trepar(delta: float) -> void:
+	_pasos_trepa += delta * 30.0
+	while _pasos_trepa >= 1.0 and _trepando:
+		_pasos_trepa -= 1.0
+		if _toca(ROCAS_TREPABLES, Vector2(0, 0 if _trepando == 2 else 4)):
+			global_position.y += 4.0 if _trepando == 2 else -4.0
+			_frame = fmod(_frame + 0.3, maxf(_sprite().frames.size() if _sprite() else 1, 1))
+		else:
+			_trepando = 0
+			_frame = 1.0
+	queue_redraw()
+
+
+## Lo que se cruza surfeando: el agua o, con Ola Lava, la lava.
+func _capa_surf() -> int:
+	return CAPA_LAVA if GameState.surf_lava else CAPA_AGUA
 
 
 ## Las cascadas que se suben con Cascada (TERRENO "surf+cascada" en tools/mapas_original.py).
@@ -524,6 +599,7 @@ func _bucear(direccion: String, buzo: PokemonInstance, superficie: Vector2) -> v
 ## Baja del Pokémon (ProtaMovimiento: global.surfer = false al no tocar agua).
 func terminar_surf() -> void:
 	GameState.surfer = 0
+	GameState.surf_lava = false
 	_actualizar_montura()
 
 

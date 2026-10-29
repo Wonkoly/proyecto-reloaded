@@ -1,5 +1,6 @@
 extends SceneTree
-## MO en el mapa: Cascada (la corriente no deja subir; con Cascada sí) y Buceo (bajar y subir).
+## MO en el mapa: Destello, Cascada (la corriente no deja subir; con Cascada sí), Buceo (bajar y subir),
+## Ola Lava y Treparrocas.
 ##   ../tools/Godot_v4.7.2-stable_linux.x86_64 --headless --path . -s res://tests/prueba_mo.gd
 ## Sin --headless guarda capturas en user://mo_*.png.
 
@@ -23,10 +24,15 @@ func _initialize() -> void:
 		return p
 	crear.call(130, [2, 9])  # Gyarados: Surf y Cascada
 	crear.call(131, [2, 6])  # Lapras: Surf y Buceo
+	crear.call(25, [4])  # Pikachu: Destello
+	crear.call(6, [16, 13])  # Charizard: Ola Lava y Treparrocas
 	for n: int in range(1, 9):
 		gs.historia["MEDALLA_STAR_%d" % n] = 1
+	await _destello()
 	await _cascada()
 	await _buceo()
+	await _ola_lava()
+	await _treparrocas()
 	print("RESULTADO: ", "todo bien" if _fallas == 0 else "%d fallas" % _fallas)
 	quit(_fallas)
 
@@ -60,6 +66,24 @@ func _subir(segundos: float) -> float:
 	await create_timer(segundos).timeout
 	Input.action_release("mover_arriba")
 	return y0 - j.global_position.y
+
+
+func _destello() -> void:
+	gs.historia.erase("MEDALLA_STAR_3")
+	await _ir("Tunel_Yucca")
+	var o: Node = current_scene.get_node_or_null("Oscuridad")
+	_ok(o != null and o.radio == 1.0, "el Túnel Yucca está oscuro")
+	await _captura("mo_oscuro")
+	await _tecla(KEY_5)
+	await create_timer(0.3).timeout
+	_ok(gs.bandera("usadestello") == 0, "sin la medalla 3 la tecla 5 no hace nada")
+	gs.historia["MEDALLA_STAR_3"] = 1
+	await _tecla(KEY_5)
+	await create_timer(1.6).timeout
+	_ok(gs.bandera("usadestello") == 1 and o.radio >= 40.0, "con la medalla 3 y Destello se ilumina (%.0f)" % o.radio)
+	await _captura("mo_destello")
+	await _ir("CiudadSirio")
+	_ok(gs.bandera("usadestello") == 0, "al salir a Ciudad Sirio la luz se apaga")
 
 
 func _cascada() -> void:
@@ -124,6 +148,57 @@ func _captura(nombre: String) -> void:
 	await process_frame
 	if DisplayServer.get_name() != "headless":
 		root.get_viewport().get_texture().get_image().save_png("user://%s.png" % nombre)
+
+
+## Cueva Ardiente 2: junto a la lava, la tecla 3 sube al Pokémon con Ola Lava y se cruza la lava.
+func _ola_lava() -> void:
+	gs.surfer = 0
+	await _ir("CuevaArdiente_2")
+	var j: Node = _jugador()
+	var lava: Rect2 = Rect2()
+	for c: Node in current_scene.get_node("Lava").get_children():
+		var r: Rect2 = (c as CollisionShape2D).shape.get_rect()
+		r.position += (c as CollisionShape2D).global_position
+		if r.size.x >= 32 and r.size.y >= 32:
+			lava = r
+			break
+	_ok(lava.size != Vector2.ZERO, "hay lava en Cueva Ardiente 2 (%s)" % lava)
+	# Desde cada lado, mirando hacia la lava, hasta que uno funcione (los otros pueden ser pared).
+	for lado: Array in [[Vector2(lava.position.x - 10, lava.get_center().y), 6], [Vector2(lava.end.x + 10, lava.get_center().y), 4],
+			[Vector2(lava.get_center().x, lava.position.y - 12), 2], [Vector2(lava.get_center().x, lava.end.y + 10), 8]]:
+		j.global_position = lado[0]
+		j.mira = lado[1]
+		await physics_frame
+		if j.sobre_agua(j.global_position, j.CAPA_LAVA):
+			continue
+		await j.intentar_surf()
+		await create_timer(0.4).timeout
+		if j.surfeando():
+			break
+	_ok(j.surfeando() and gs.surf_lava and gs.surfer == 6, "Ola Lava: sobre Charizard en la lava")
+	await _captura("mo_lava")
+	j.terminar_surf()
+
+
+## Isla Halley: debajo de la pared trepable, Z mirando arriba la cruza.
+func _treparrocas() -> void:
+	await _ir("IslaHalley")
+	var j: Node = _jugador()
+	var rocas: Rect2 = Rect2()
+	for n: Node in current_scene.get_node("Objetos").get_children():
+		if n.name.begins_with("obj_rocatrepable") and n.global_position.x < 200:
+			rocas = n.caja() if rocas.size == Vector2.ZERO else rocas.merge(n.caja())
+	_ok(rocas.size != Vector2.ZERO, "hay una pared trepable en Isla Halley (%s)" % rocas)
+	j.global_position = Vector2(rocas.position.x + 8, rocas.end.y + 8)
+	j.mira = 8
+	await physics_frame
+	_ok(j._roca_trepable() != null, "de frente a la pared trepable")
+	j.intentar_treparrocas()
+	await create_timer(0.3).timeout
+	await _tecla(KEY_Z)
+	await create_timer(2.0).timeout
+	_ok(j.global_position.y < rocas.position.y and j._trepando == 0, "la trepa hasta arriba (y %.0f, la pared empieza en %.0f)" % [j.global_position.y, rocas.position.y])
+	await _captura("mo_trepa")
 
 
 func _tecla(k: Key) -> void:

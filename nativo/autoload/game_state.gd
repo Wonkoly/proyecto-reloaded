@@ -67,6 +67,8 @@ var surfer: int = 0
 var vuelo: Dictionary[int, int] = {0: 1}
 ## Bajo el agua con Buceo (en esas rooms global.surfer sigue puesto aunque no haya agua).
 var buceando: bool = false
+## (142).LAVA: se surfea sobre lava con Ola Lava (no sobre agua).
+var surf_lava: bool = false
 ## Nombre del protagonista (global.protaname); al empezar, el del perfil.
 var nombre_jugador: String = ""
 ## Nombre del rival (global.rivalname; lo elige la presentación del profesor, que aún no existe).
@@ -146,6 +148,7 @@ func nueva_partida(nombre: String = "") -> void:
 	surfer = 0
 	vuelo = {0: 1}
 	buceando = false
+	surf_lava = false
 	_cajas_iniciales()
 	pokedex.clear()
 	for p: PokemonInstance in equipo:
@@ -200,6 +203,7 @@ func a_dict() -> Dictionary:
 		"surfer": surfer,
 		"vuelo": vuelo.keys().map(func(k: int) -> Array: return [k, vuelo[k]]),
 		"buceando": buceando,
+		"surf_lava": surf_lava,
 	}
 
 
@@ -262,6 +266,7 @@ func desde_dict(d: Dictionary, slot_: int) -> void:
 	tiempo_juego = float(d.get("tiempo_juego", 0.0))
 	surfer = int(d.get("surfer", 0))
 	buceando = bool(d.get("buceando", false))
+	surf_lava = bool(d.get("surf_lava", false))
 	for par: Variant in d.get("vuelo", []):
 		if par is Array and par.size() == 2:
 			vuelo[int(par[0])] = int(par[1])

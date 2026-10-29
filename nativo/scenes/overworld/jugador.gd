@@ -17,8 +17,11 @@ const BORDE_VISTA: float = 120.0
 const CAPA_ZONAS: int = 32
 ## Steps del original por segundo (room_speed).
 const STEPS_POR_SEGUNDO: float = 30.0
-## Paredes (capa 1) y agua (capa 7: hasta que haya Surf, el agua no se pisa).
-const CAPAS_CHOQUE: int = 1 | 64
+## Paredes (capa 1), agua (capa 7: sin Surf no se pisa) y lava (capa 8: Ola Lava, pendiente).
+const CAPAS_CHOQUE: int = 1 | 64 | 128
+const CAPA_AGUA: int = 64
+const VECTOR_MIRA: Dictionary[int, Vector2] = {2: Vector2.DOWN, 8: Vector2.UP, 4: Vector2.LEFT, 6: Vector2.RIGHT,
+	1: Vector2(-1, 1), 3: Vector2(1, 1), 7: Vector2(-1, -1), 9: Vector2(1, -1)}
 
 @export var sprite_abajo: SpriteOriginal
 @export var sprite_arriba: SpriteOriginal
@@ -28,6 +31,8 @@ const CAPAS_CHOQUE: int = 1 | 64
 var mira: int = 2
 var _frame: float = 1.0
 var _moviendose: bool = false
+## Saltando al agua al empezar a surfear: no se mueve ni deja el surf mientras dura.
+var _entrando_agua: bool = false
 ## Salidas que ya tocaba en el frame anterior (las de "al entrar" se activan al llegar, no al aparecer).
 var _salidas_dentro: Array[Salida] = []
 var _primer_frame: bool = true
@@ -74,6 +79,11 @@ func _unhandled_input(evento: InputEvent) -> void:
 		return
 	# Obstáculos de MO (KeyActionsCorte...): con Z o con la tecla de su MO (1 Corte, 4 Fuerza, 6 Golpe Roca).
 	var tecla_mo: Key = (evento as InputEventKey).physical_keycode if evento is InputEventKey and evento.pressed else KEY_NONE
+	# 3 (key_ex_mo3_surf): de cara al agua, a surfear.
+	if tecla_mo == KEY_3 and quieto():
+		get_viewport().set_input_as_handled()
+		intentar_surf()
+		return
 	if evento.is_action_pressed("interactuar") or tecla_mo in [KEY_1, KEY_4, KEY_6]:
 		var mapa_obs: Mapa = _mapa()
 		if mapa_obs and quieto():
@@ -141,10 +151,11 @@ func detener() -> void:
 func _physics_process(delta: float) -> void:
 	if SceneManager.en_transicion:
 		return
-	if Eventos.en_curso or _algun_entrenador_viene():
+	if Eventos.en_curso or _algun_entrenador_viene() or _entrando_agua:
 		detener()
 		return
-	collision_mask = 0 if GameState.dev_noclip else CAPAS_CHOQUE
+	collision_mask = 0 if GameState.dev_noclip else (CAPAS_CHOQUE & ~CAPA_AGUA if surfeando() else CAPAS_CHOQUE)
+	_actualizar_montura()
 	if _empuje_restante > 0.0:
 		_empuje_restante -= delta
 		var frames_empuje: int = _sprite().frames.size() if _sprite() else 1
@@ -185,6 +196,9 @@ func _physics_process(delta: float) -> void:
 			if obstaculo and obstaculo.empujar(dir):
 				break
 	_saltar(velocidad, delta)
+	# ProtaMovimiento: al dejar el agua termina el surf solo.
+	if surfeando() and not sobre_agua(global_position):
+		terminar_surf()
 	queue_redraw()
 	_revisar_salidas()
 	_revisar_encuentro(delta, global_position != antes)
@@ -219,6 +233,8 @@ func en_hierba() -> bool:
 ## (place_meeting); hierba (en su posición y 8 px más abajo); barro; y si no, las zonas de cuevas
 ## de ActivacionSalvajes (salvajes sin hierba, con la tabla de hierba). -1 si ninguno.
 func metodo_actual() -> int:
+	if surfeando():
+		return SubtablaEncuentros.Metodo.SURF  # global.hierba = 2
 	var aqui: Array[int] = _metodos_en(Vector2.ZERO)
 	if SubtablaEncuentros.Metodo.HIERBA_INVISIBLE in aqui:
 		return SubtablaEncuentros.Metodo.HIERBA_INVISIBLE
@@ -333,11 +349,84 @@ func _sprite() -> SpriteOriginal:
 	return sprite_derecha
 
 
+func surfeando() -> bool:
+	return GameState.surfer != 0
+
+
+func sobre_agua(pos: Vector2) -> bool:
+	if not is_inside_tree():
+		return false
+	var consulta := PhysicsPointQueryParameters2D.new()
+	consulta.position = pos
+	consulta.collision_mask = CAPA_AGUA
+	return not get_world_2d().direct_space_state.intersect_point(consulta, 1).is_empty()
+
+
+## KeyActionsProta + ProtaSurf: con agua justo enfrente, la medalla 6 y un Pokémon con la habilidad
+## Surf (si no hay: TextDialog 2393), salta al agua sobre ese Pokémon.
+func intentar_surf() -> void:
+	var v: Vector2 = VECTOR_MIRA.get(mira, Vector2.DOWN)
+	# ProtaSurf: agua a menos de 7 px del borde del jugador (distance_to_object), en la dirección en que mira.
+	var distancia: float = -1.0
+	for d: float in [8.0, 12.0, 16.0, 20.0]:
+		if sobre_agua(global_position + v * d):
+			distancia = d
+			break
+	if surfeando() or distancia < 0.0 or not GameState.tiene_medalla(6):
+		return
+	var p: PokemonInstance = GameState.con_habilidad_campo(2)
+	if p == null:
+		await CuadroOriginal.mensaje(self, Textos.linea("txt_dialog", 2393))
+		return
+	GameState.surfer = p.especie.id_original
+	_entrando_agua = true
+	_actualizar_montura()
+	var t: Tween = create_tween()
+	t.tween_property(self, "global_position", global_position + v * (distancia + 6.0), 0.2)
+	await t.finished
+	_entrando_agua = false
+
+
+## Baja del Pokémon (ProtaMovimiento: global.surfer = false al no tocar agua).
+func terminar_surf() -> void:
+	GameState.surfer = 0
+	_actualizar_montura()
+
+
+## obj_pkmn_surf: el Pokémon que lleva al jugador por el agua, con sus sprites de movimiento.
+func _actualizar_montura() -> void:
+	var montura: AnimatedSprite2D = get_node_or_null("Montura")
+	if not surfeando():
+		if montura:
+			montura.queue_free()
+		return
+	if montura == null:
+		montura = AnimatedSprite2D.new()
+		montura.name = "Montura"
+		montura.show_behind_parent = true
+		montura.position = Vector2(0, 6)
+		var especie: PokemonData = Datos.especie(GameState.surfer)
+		montura.sprite_frames = especie.cargar_sprite_frames() if especie else null
+		add_child(montura)
+	if montura.sprite_frames == null:
+		return
+	var propia: String = "mover_%d" % mira
+	var espejo: Dictionary[int, int] = {1: 3, 4: 6, 7: 9}
+	var anim: String = propia
+	montura.flip_h = false
+	if not montura.sprite_frames.has_animation(propia) and mira in espejo:
+		anim = "mover_%d" % espejo[mira]
+		montura.flip_h = true
+	if montura.sprite_frames.has_animation(anim) and montura.animation != anim:
+		montura.play(anim)
+
+
 func _draw() -> void:
 	var s: SpriteOriginal = _sprite()
 	if s:
 		# Izquierda (1, 4, 7): el sprite de la derecha volteado (ProtaSetSprite).
-		s.dibujar(self, int(_frame), Vector2.ZERO, Vector2(-1 if mira in [1, 4, 7] else 1, 1))
+		# Surfeando va montado sobre el Pokémon (obj_pkmn_surf se dibuja debajo).
+		s.dibujar(self, int(_frame), Vector2(0, -6 if surfeando() else 0), Vector2(-1 if mira in [1, 4, 7] else 1, 1))
 
 
 func _mapa() -> Mapa:

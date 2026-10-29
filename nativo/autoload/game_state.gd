@@ -58,6 +58,8 @@ var nombres_cajas: Array[String] = []
 var pokedex: Dictionary[int, int] = {}
 ## (18).usafuerza: Fuerza activada en el mapa actual (se apaga al cambiar de mapa).
 var fuerza_activa: bool = false
+## global.surfer: id_original del Pokémon con el que se surfea (0 = a pie).
+var surfer: int = 0
 ## Nombre del protagonista (global.protaname); al empezar, el del perfil.
 var nombre_jugador: String = ""
 ## Nombre del rival (global.rivalname; lo elige la presentación del profesor, que aún no existe).
@@ -134,6 +136,7 @@ func nueva_partida(nombre: String = "") -> void:
 	dinero = 0
 	objetos.clear()
 	ball_asignada = -1
+	surfer = 0
 	_cajas_iniciales()
 	pokedex.clear()
 	for p: PokemonInstance in equipo:
@@ -184,6 +187,7 @@ func a_dict() -> Dictionary:
 		"velocidad_texto": velocidad_texto,
 		"transicion_especial": transicion_especial,
 		"tiempo_juego": tiempo_juego,
+		"surfer": surfer,
 	}
 
 
@@ -243,6 +247,7 @@ func desde_dict(d: Dictionary, slot_: int) -> void:
 	velocidad_texto = int(d.get("velocidad_texto", 1))
 	transicion_especial = bool(d.get("transicion_especial", false))
 	tiempo_juego = float(d.get("tiempo_juego", 0.0))
+	surfer = int(d.get("surfer", 0))
 	historia_cambiada.emit()
 
 

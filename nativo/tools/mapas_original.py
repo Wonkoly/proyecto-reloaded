@@ -47,6 +47,8 @@ LUGAR = ("campo", ("id", "global"), "index_place")
 ZONAS_ENCUENTRO = {"ZonaHierba": 0, "ZonaBarro": 2, "ZonaHierbaInvisible": 7}
 # Capa 7: el agua (aparte de las paredes para que Surf pueda dejar de chocar con ella).
 CAPA_AGUA = 64
+# La lava (obj_lava: Ola Lava, medalla 8) va en otra capa para que Surf no la cruce.
+CAPA_LAVA = 128
 # Qué hace falta para pasar por cada tipo de agua (la primera clase que coincide) y por los
 # obstáculos que se quitan con un movimiento (siguen siendo paredes en el mapa).
 AGUA = [("obj_lava", "lava"), ("obj_lava_undertiles", "lava"), ("obj_agua1", "surf")]
@@ -818,6 +820,7 @@ def escena_mapa(room: dict, juego: Juego, tilesets: dict, sprite_tres, snake, re
     tileset_del_mapa(e, juego, tilesets, usados)
     e.nodo("Paredes", "StaticBody2D", ".", [f"collision_layer = {CAPA_PAREDES}", "collision_mask = 0"])
     e.nodo("Agua", "StaticBody2D", ".", [f"collision_layer = {CAPA_AGUA}", "collision_mask = 0"])
+    e.nodo("Lava", "StaticBody2D", ".", [f"collision_layer = {CAPA_LAVA}", "collision_mask = 0"])
     # Zonas de encuentros, cada una con su método (SubtablaEncuentros.Metodo; ProtaCheckHierba).
     for nodo_zona, metodo in ZONAS_ENCUENTRO.items():
         e.nodo(nodo_zona, "Area2D", ".", [
@@ -1115,7 +1118,7 @@ def escena_mapa(room: dict, juego: Juego, tilesets: dict, sprite_tres, snake, re
                 requisito = next((r for base, r in AGUA if juego.es(obj, base)), "surf")
                 if e.condicion:
                     n_pared += 1
-                    e.nodo(f"agua_{n_pared}", "CollisionShape2D", "Agua", [
+                    e.nodo(f"agua_{n_pared}", "CollisionShape2D", "Lava" if requisito == "lava" else "Agua", [
                         f"position = Vector2({f(c[0])}, {f(c[1])})", f"shape = {e.rect(c[2], c[3])}"])
                 else:
                     agua_fija.append((*rect_de(c), requisito))
@@ -1165,9 +1168,11 @@ def escena_mapa(room: dict, juego: Juego, tilesets: dict, sprite_tres, snake, re
             e.nodo(nombre, "Marker2D", "Marcadores", [f"position = Vector2({f(x)}, {f(y)})", f"metadata/objeto = {gd_str(obj)}"])
 
     e.condicion = ""
-    for k, (x0, y0, x1, y1) in enumerate(unir_rectangulos([r[:4] for r in agua_fija]), start=1):
-        e.nodo(f"agua_fija_{k}", "CollisionShape2D", "Agua", [
-            f"position = Vector2({f((x0 + x1) / 2)}, {f((y0 + y1) / 2)})", f"shape = {e.rect(x1 - x0, y1 - y0)}"])
+    for cuerpo, req in (("Agua", "surf"), ("Lava", "lava")):
+        rects = unir_rectangulos([r[:4] for r in agua_fija if (r[4] == "lava") == (req == "lava")])
+        for k, (x0, y0, x1, y1) in enumerate(rects, start=1):
+            e.nodo(f"{cuerpo.lower()}_fija_{k}", "CollisionShape2D", cuerpo, [
+                f"position = Vector2({f((x0 + x1) / 2)}, {f((y0 + y1) / 2)})", f"shape = {e.rect(x1 - x0, y1 - y0)}"])
     salidas, raras = salidas_room(juego, ridx, ancho, alto)
     for s in salidas:
         r = s["rect"]

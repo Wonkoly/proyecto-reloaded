@@ -30,8 +30,29 @@ static func factor_etapa(s: int) -> float:
 ## El daño de un golpe entre dos Pokémon en combate, con sus etapas de stats y estados.
 static func danio_en_batalla(atacante: BattlePokemon, defensor: BattlePokemon, move: MoveData) -> int:
 	var fisico: bool = move.categoria == MoveData.Categoria.FISICO
-	return calcular_danio(atacante.pokemon, defensor.pokemon, move, GameState.pow_dif(atacante.lado), 1.0,
+	var danio: float = calcular_danio(atacante.pokemon, defensor.pokemon, move, GameState.pow_dif(atacante.lado), 1.0,
 		atacante.etapa(1 if fisico else 3), defensor.etapa(2 if fisico else 4))
+	return roundi(danio * factor_objetos(atacante.pokemon.objeto, defensor.pokemon.objeto, move,
+		Efectividad.multiplicador(move.tipo, defensor.pokemon.especie.tipos))) if danio > 0 else 0
+
+
+## Ataque1GolpeaPokemon2: lo que cambian el daño los objetos equipados (sobre DANO ya calculado).
+## Cinta Elección (358) ×1.5 físicos, Gafas Elección (362) ×1.5 especiales, Gafas Especiales (361)
+## ×1.1 especiales, Cinta Experto (359) ×1.2 si es muy eficaz, Vidasfera (377) ×1.3; Chaleco Asalto
+## (539) en quien recibe: ÷1.5 los especiales.
+static func factor_objetos(objeto_atacante: int, objeto_defensor: int, move: MoveData, eff: float) -> float:
+	var fisico: bool = move.categoria == MoveData.Categoria.FISICO
+	var especial: bool = move.categoria == MoveData.Categoria.ESPECIAL
+	var f: float = 1.0
+	if objeto_defensor == 539 and especial:
+		f /= 1.5
+	match objeto_atacante:
+		358: if fisico: f *= 1.5
+		362: if especial: f *= 1.5
+		361: if especial: f *= 1.1
+		359: if eff > 1.0: f *= 1.2
+		377: f *= 1.3
+	return f
 
 
 ## Índice de ball del original (obj_Pokeball.index) según el id del objeto: 1-13 → 0-12,

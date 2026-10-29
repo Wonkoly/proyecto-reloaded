@@ -54,6 +54,9 @@ var _etapas: Dictionary[int, int] = {}
 ## Segundos que le quedan a un estado con duración (dormido, congelado, confusión, enamorado).
 var _estado_tiempo: float = 0.0
 var _acum_estado: float = 0.0
+## Restos (303): 1 entre _restos por step de curar; empieza en 80 y sube hasta 300 (EffectHabilityStep).
+var _restos: int = 0
+var _acum_objeto: float = 0.0
 
 ## TextBattle de "X sufre ..." por estado (STD) y de "- At. de X ..." por stat.
 const TEXTO_ESTADO: Dictionary[int, int] = {1: 27, 2: 25, 3: 23, 4: 28, 5: 26, 6: 24, 7: 30, 8: 31, 9: 29}
@@ -181,6 +184,9 @@ func efectos_de_golpe(move: MoveData, atacante: BattlePokemon, danio: int) -> vo
 			_cambiar_stats(move, self, move.cambios_rival)
 		if move.modo != MoveData.Modo.ESTADO:
 			_cambiar_stats(move, atacante, move.cambios_propios)
+	# Vidasfera (377): el atacante pierde PS máximo / (10 × PowDif del otro lado).
+	if atacante.pokemon.objeto == 377 and danio > 0:
+		atacante.recibir_danio(ceili(atacante.hp_max / (10.0 * GameState.pow_dif(lado))))
 	if move.retroceso > 0 and danio > 0:
 		atacante.recibir_danio(ceili(float(danio) / move.retroceso))
 	if move.drenaje > 0 and danio > 0:
@@ -255,6 +261,16 @@ func _step_estado() -> void:
 					objetivo.curar(ceili(dre / 2.0))
 
 
+## Restos: cura 3.125 % del PS máximo con probabilidad 1/_restos por step, cada vez menos seguido.
+func _step_restos() -> void:
+	if _restos == 0:
+		_restos = 80
+	if _restos < 300 and randi_range(1, 10) == 10:
+		_restos += 1
+	if randi_range(1, _restos) == _restos and pokemon.hp_actual < hp_max:
+		curar(ceili(hp_max * 3.125 / 100.0))
+
+
 ## Velocidad con sus etapas (0.25 px/step cada una) y parálisis (÷ 1.125), entre 60 y 450 px/s.
 func _velocidad_actual() -> float:
 	var v: float = pokemon.calcular_velocidad_batalla() + 7.5 * etapa(5)
@@ -293,6 +309,11 @@ func _physics_process(delta: float) -> void:
 				pokemon.estado = MoveData.Estado.NINGUNO  # Pokemon1StateFinish
 				velocidad = _velocidad_actual()
 				_actualizar_animacion()
+	if not esta_debilitado() and pokemon.objeto == 303:
+		_acum_objeto += delta
+		while _acum_objeto >= 1.0 / 30.0:
+			_acum_objeto -= 1.0 / 30.0
+			_step_restos()
 	if puede_moverse() and _energia < energia_max:
 		_set_energia(minf(_energia + RECARGA_ENERGIA * delta, energia_max))
 	if estaba_bloqueado and _bloqueo <= 0.0 and _herido <= 0.0:

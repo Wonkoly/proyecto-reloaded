@@ -47,7 +47,7 @@ habilidades o clima, y las evoluciones por lluvia o contadores (`extraInfo`).
 
 ## Fase 3 — Viajar
 **En curso** (`feat/viajar`). Hecho: mapa de la región con los lugares visitados y Vuelo
-(`tests/prueba_vuelo.gd`).
+(`tests/prueba_vuelo.gd`), Cascada y Buceo (`tests/prueba_mo.gd`).
 - Mapa de la región (Áreas) con los lugares visitados (`MapaLugar`).
 - Vuelo (objeto 153), y después Buceo, Cascada, Destello, Ola Lava y Treparrocas, con el mismo
   patrón que Surf.

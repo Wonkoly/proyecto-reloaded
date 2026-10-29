@@ -42,6 +42,10 @@ var _salto: Salto
 var _empuje: Vector2 = Vector2.ZERO
 var _empuje_restante: float = 0.0
 var _dir_salto: Vector2 = Vector2.ZERO
+## (14).CASCADA: Cascada activada en este mapa (DefineProta la apaga al entrar a otro).
+var _cascada: bool = false
+## Los decorados del mapa por prefijo de nombre (los que se tocan con place_meeting).
+var _decorados: Dictionary[String, Array] = {}
 
 @onready var camara: Camera2D = $Camera2D
 
@@ -83,6 +87,17 @@ func _unhandled_input(evento: InputEvent) -> void:
 	if tecla_mo == KEY_2 and quieto():
 		get_viewport().set_input_as_handled()
 		Vuelo.intentar(self)
+		return
+	# 7 (key_ex_mo7_buceo): sumergirse en agua buceable o salir a la superficie.
+	if tecla_mo == KEY_7 and quieto():
+		get_viewport().set_input_as_handled()
+		intentar_buceo()
+		return
+	# ProtaStartsCascada: Z surfeando junto a una cascada (medalla 8) pregunta si se sube.
+	if evento.is_action_pressed("interactuar") and surfeando() and not _cascada and quieto() \
+			and GameState.tiene_medalla(8) and _toca(CASCADAS, Vector2.ZERO, 5.0):
+		get_viewport().set_input_as_handled()
+		intentar_cascada()
 		return
 	# 3 (key_ex_mo3_surf): de cara al agua, a surfear.
 	if tecla_mo == KEY_3 and quieto():
@@ -201,8 +216,9 @@ func _physics_process(delta: float) -> void:
 			if obstaculo and obstaculo.empujar(dir):
 				break
 	_saltar(velocidad, delta)
-	# ProtaMovimiento: al dejar el agua termina el surf solo.
-	if surfeando() and not sobre_agua(global_position):
+	_corriente_cascada(velocidad, delta)
+	# ProtaMovimiento: al dejar el agua termina el surf solo (bajo el agua se sigue sobre el Pokémon).
+	if surfeando() and not GameState.buceando and not sobre_agua(global_position):
 		terminar_surf()
 	queue_redraw()
 	_revisar_salidas()
@@ -390,6 +406,119 @@ func intentar_surf() -> void:
 	t.tween_property(self, "global_position", global_position + v * (distancia + 6.0), 0.2)
 	await t.finished
 	_entrando_agua = false
+
+
+## place_meeting(x + d.x, y + d.y, obj) con los decorados cuyo nombre empieza por algún prefijo;
+## `margen` agranda la caja (distance_to_object < margen).
+func _toca(prefijos: Array[String], d: Vector2 = Vector2.ZERO, margen: float = 0.0) -> bool:
+	var forma: CollisionShape2D = $CollisionShape2D
+	var tam: Vector2 = (forma.shape as RectangleShape2D).size if forma.shape is RectangleShape2D else Vector2(12, 12)
+	var mia := Rect2(global_position + forma.position + d - tam / 2.0, tam).grow(margen)
+	for n: Decorado in _decorados_con(prefijos):
+		if n.visible and mia.intersects(n.caja()):
+			return true
+	return false
+
+
+func _decorados_con(prefijos: Array[String]) -> Array:
+	var clave: String = ",".join(prefijos)
+	if clave not in _decorados:
+		var lista: Array = []
+		var mapa: Mapa = _mapa()
+		if mapa:
+			for n: Node in mapa.get_node("Objetos").get_children():
+				if n is Decorado and prefijos.any(func(p: String) -> bool: return n.name.begins_with(p)) \
+						and not n.name.begins_with("obj_cascadaLava"):
+					lista.append(n)
+		_decorados[clave] = lista
+	return _decorados[clave]
+
+
+## Las cascadas que se suben con Cascada (TERRENO "surf+cascada" en tools/mapas_original.py).
+const CASCADAS: Array[String] = ["obj_cascada"]
+
+
+## ProtaStartsCascada: surfeando en una cascada (salvo en su borde de abajo) la corriente empuja hacia
+## abajo a la velocidad del jugador, así que sin Cascada no se sube; con Cascada empuja 2 px/step.
+func _corriente_cascada(velocidad: float, delta: float) -> void:
+	if not surfeando() or not _toca(CASCADAS) or not _toca(CASCADAS, Vector2(0, 22)):
+		return
+	move_and_collide(Vector2(0, (60.0 if _cascada else velocidad) * delta))
+
+
+## ProtaCascada (pregunta 2405): con un Pokémon con la habilidad Cascada se sube sobre él (y aprende a
+## surfear: EstableceHabExt); si no hay, TextDialog 2395.
+func intentar_cascada() -> void:
+	if not await CuadroOriginal.preguntar(self, Textos.linea("txt_dialog", 2405)):
+		return
+	var p: PokemonInstance = GameState.con_habilidad_campo(9)
+	if p == null:
+		await CuadroOriginal.mensaje(self, Textos.linea("txt_dialog", 2395))
+		return
+	_cascada = true
+	p.habilidades_campo |= 1 << 2
+	if GameState.surfer != p.especie.id_original:
+		GameState.surfer = p.especie.id_original
+		var montura: Node = get_node_or_null("Montura")
+		if montura:
+			montura.free()
+		_actualizar_montura()
+
+
+## KeyActionsProta (tecla 7) + ProtaBuceo: con la medalla 7 y un Pokémon con Buceo (si no, 2412), sobre
+## agua buceable pregunta si se sumerge (2413); bajo el agua, junto a la superficie, si sube (2414).
+func intentar_buceo() -> void:
+	if not GameState.tiene_medalla(7):
+		return
+	var buzo: PokemonInstance = GameState.con_habilidad_campo(6)
+	if buzo == null:
+		await CuadroOriginal.mensaje(self, Textos.linea("txt_dialog", 2412))
+		return
+	var superficie: Vector2 = _superficie_cercana()
+	if surfeando() and not GameState.buceando and _toca(["obj_agua_buceable"]):
+		if await CuadroOriginal.preguntar(self, Textos.linea("txt_dialog", 2413)):
+			await _bucear("abajo", buzo, superficie)
+	elif superficie != Vector2.INF and global_position.distance_to(superficie) < DISTANCIA_SUPERFICIE:
+		if await CuadroOriginal.preguntar(self, Textos.linea("txt_dialog", 2414)):
+			await _bucear("arriba", buzo, superficie)
+
+
+## distance_to_object(obj_superficie) < 10: su caja (spr_hidro) mide 21×19 con el origen en el centro.
+const DISTANCIA_SUPERFICIE: float = 20.0
+
+
+## obj_superficie: marcadores del mapa.
+func _superficie_cercana() -> Vector2:
+	var mejor: Vector2 = Vector2.INF
+	var mapa: Mapa = _mapa()
+	if mapa == null:
+		return mejor
+	for n: Node in mapa.get_node("Marcadores").get_children():
+		if n.get_meta("objeto", "") == "obj_superficie" and global_position.distance_to(n.global_position) < global_position.distance_to(mejor):
+			mejor = (n as Node2D).global_position
+	return mejor
+
+
+## GoDiving: al otro mapa; abajo sobre el Pokémon con Buceo, arriba sobre uno con Surf (o el buzo, que
+## aprende a surfear).
+func _bucear(direccion: String, buzo: PokemonInstance, superficie: Vector2) -> void:
+	var d: Dictionary = Buceo.destino(direccion, GameState.mapa_actual, GameState.indice_lugar, global_position,
+		superficie if superficie != Vector2.INF else global_position)
+	if d.is_empty():
+		return
+	var montura: PokemonInstance = buzo
+	if direccion == "arriba":
+		montura = GameState.con_habilidad_campo(2)
+		if montura == null:
+			montura = buzo
+			buzo.habilidades_campo |= 1 << 2
+	GameState.surfer = montura.especie.id_original
+	GameState.buceando = direccion == "abajo"
+	GameState.indice_lugar = d.indice
+	if d.has("salida_mapa"):
+		GameState.mapa_salida = d.salida_mapa
+		GameState.posicion_salida = d.salida_posicion
+	await SceneManager.ir_a_mapa(d.mapa, d.posicion, 2)
 
 
 ## Baja del Pokémon (ProtaMovimiento: global.surfer = false al no tocar agua).

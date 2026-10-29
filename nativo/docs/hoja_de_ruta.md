@@ -38,8 +38,9 @@ mapa por mapa, y al final los modos extra.
   con medallas `MEDALLA_STAR_n` y habilidades de campo (`AttackHabExt`), y Vuelo (tecla 2, medalla 4):
   la pantalla del mapa con los lugares visitados (`obj_pantallavuelo`, `data/extraido/vuelo.json`), el
   Pokémon que despega y aterriza, y las horas que pasan. El mapa también se abre con M o desde Usar Item.
-  Faltan Buceo, Cascada, Destello, Ola Lava, Treparrocas, el Pokémon que sale a usar la MO, bici y
-  montura; en Vuelo, elegir entre las llegadas de los lugares que tienen varias (Isla Sol, el Frente) y
+  Cascada (Z junto a la cascada surfeando, medalla 8: sin ella la corriente no deja subir) y Buceo
+  (tecla 7, medalla 7: `GoDiving` en `data/extraido/buceo.json`). Faltan Destello, Ola Lava,
+  Treparrocas, el Pokémon que sale a usar la MO, el sprite de buzo bajo el agua, bici y montura; en Vuelo, elegir entre las llegadas de los lugares que tienen varias (Isla Sol, el Frente) y
   el grito del Pokémon (los gritos no se extraen por defecto).
 - Historia completa: eventos de los 517 NPCs con scripts propios, rutas de NPCs por historia.
 - Modos: Torre/Fábrica/Palacio/Torneo, guardería y huevos, minijuegos, multijugador local.

@@ -65,6 +65,8 @@ var surfer: int = 0
 ## (18).canFly: lugares visitados a los que se puede volar (data/extraido/vuelo.json); Pueblo Alba (0)
 ## está desde el principio (DefineVariables). El valor es 1, o más en los lugares con varias llegadas.
 var vuelo: Dictionary[int, int] = {0: 1}
+## Bajo el agua con Buceo (en esas rooms global.surfer sigue puesto aunque no haya agua).
+var buceando: bool = false
 ## Nombre del protagonista (global.protaname); al empezar, el del perfil.
 var nombre_jugador: String = ""
 ## Nombre del rival (global.rivalname; lo elige la presentación del profesor, que aún no existe).
@@ -143,6 +145,7 @@ func nueva_partida(nombre: String = "") -> void:
 	objeto_asignado = -1
 	surfer = 0
 	vuelo = {0: 1}
+	buceando = false
 	_cajas_iniciales()
 	pokedex.clear()
 	for p: PokemonInstance in equipo:
@@ -196,6 +199,7 @@ func a_dict() -> Dictionary:
 		"tiempo_juego": tiempo_juego,
 		"surfer": surfer,
 		"vuelo": vuelo.keys().map(func(k: int) -> Array: return [k, vuelo[k]]),
+		"buceando": buceando,
 	}
 
 
@@ -257,6 +261,7 @@ func desde_dict(d: Dictionary, slot_: int) -> void:
 	transicion_especial = bool(d.get("transicion_especial", false))
 	tiempo_juego = float(d.get("tiempo_juego", 0.0))
 	surfer = int(d.get("surfer", 0))
+	buceando = bool(d.get("buceando", false))
 	for par: Variant in d.get("vuelo", []):
 		if par is Array and par.size() == 2:
 			vuelo[int(par[0])] = int(par[1])

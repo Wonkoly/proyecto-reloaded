@@ -26,6 +26,14 @@ func _process(delta: float) -> void:
 	queue_redraw()
 
 
+## La caja de la instancia en el mapa (su máscara: el primer frame con el origen y la escala), para
+## los place_meeting del original.
+func caja() -> Rect2:
+	if sprite == null or sprite.frames.is_empty():
+		return Rect2(global_position, Vector2.ZERO)
+	return Rect2(global_position - sprite.origen * escala, sprite.frames[0].get_size() * escala).abs()
+
+
 func _draw() -> void:
 	if sprite:
 		sprite.dibujar(self, int(_frame), Vector2.ZERO, escala, Color(1, 1, 1, image_alpha))

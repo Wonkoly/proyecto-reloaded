@@ -86,7 +86,8 @@ FONDOS_UI = ["BackIntro", "BackIntroLetras", "GradienteNight", "BackFerProductio
 # Sonidos de los menús → audio/sfx/ui/.
 SONIDOS_UI = ["snd_click", "snd_curar", "snd_get"]
 CARPETAS = {
-    "datos": [DATA / "pokemon", DATA / "moves", DATA / "textos", DATA / "objetos.json", DATA / "vuelo.json"],
+    "datos": [DATA / "pokemon", DATA / "moves", DATA / "textos", DATA / "objetos.json", DATA / "vuelo.json",
+              DATA / "buceo.json"],
     "sprites": [ASSETS / "sprites" / "pokemon"],
     "fondos": [ASSETS / "sprites" / "battlebacks"],
     "ui": [ASSETS / "sprites" / "ui", ASSETS / "audio" / "sfx" / "ui", ASSETS / "audio" / "intro"],
@@ -628,6 +629,9 @@ def extraer_datos(plan: Plan, ext: Path, indice: dict) -> None:
                   json.dumps({str(k): v for k, v in sorted(reglas.items())}, indent=0))
     plan.escribir(DATA / "pokemon" / "evoluciones_objeto.json", json.dumps(
         {str(o): {str(k): v for k, v in sorted(d.items())} for o, d in sorted(por_objeto.items())}, indent=0))
+    import buceo_original  # a dónde lleva Buceo (GoDiving)
+    plan.escribir(DATA / "buceo.json", json.dumps(buceo_original.buceo(
+        gml("GoDiving"), json.loads((EXT / "index.json").read_text())["rooms"]), ensure_ascii=False, indent=0))
     import vuelo_original  # mapa de la región y Vuelo (obj_pantallavuelo)
     plan.escribir(DATA / "vuelo.json", json.dumps(vuelo_original.vuelo(
         EXT / "scripts", json.loads((EXT / "index.json").read_text())["rooms"]), ensure_ascii=False, indent=0))

@@ -17,6 +17,40 @@ const CURA: Dictionary[int, Variant] = {15: 20, 681: 20, 23: 30, 580: 40, 16: 50
 const REVIVE: Dictionary[int, String] = {21: "1/2", 22: "max", 550: "max", 130: "1"}
 
 static var _datos: Dictionary = {}
+static var _evoluciones: Dictionary = {}
+
+## Caramelo Raro (UseObject, OB = 38): sube un nivel.
+const CARAMELO_RARO: int = 38
+
+
+## UseObject (piedras...): la especie en la que evoluciona `p` con el objeto `id`, o null.
+static func evolucion_con(id: int, p: PokemonInstance) -> PokemonData:
+	var destino: Variant = (_tabla_evoluciones().get(str(id), {}) as Dictionary).get(str(p.especie.id_original))
+	return Datos.especie(int(destino)) if destino != null else null
+
+
+static var _mts: Dictionary = {}
+
+
+## UseObject: el movimiento que enseña una MT (194-290, 618-637, MTAtack) o un DT (5000 + N), o null.
+static func movimiento_que_ensena(id: int) -> MoveData:
+	if id > 5000 and id <= 5000 + 866:
+		return Datos.movimiento(id - 5000)
+	if _mts.is_empty():
+		var f: FileAccess = FileAccess.open("res://data/extraido/pokemon/mt_movimientos.json", FileAccess.READ)
+		_mts = JSON.parse_string(f.get_as_text()) if f else {"-": 0}
+	return Datos.movimiento(int(_mts[str(id)])) if _mts.has(str(id)) else null
+
+
+static func hace_evolucionar(id: int) -> bool:
+	return _tabla_evoluciones().has(str(id))
+
+
+static func _tabla_evoluciones() -> Dictionary:
+	if _evoluciones.is_empty():
+		var f: FileAccess = FileAccess.open("res://data/extraido/pokemon/evoluciones_objeto.json", FileAccess.READ)
+		_evoluciones = JSON.parse_string(f.get_as_text()) if f else {"-": {}}
+	return _evoluciones
 
 
 static func datos(id: int) -> Dictionary:

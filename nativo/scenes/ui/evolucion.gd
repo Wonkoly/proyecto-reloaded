@@ -18,6 +18,8 @@ var _tiempo: float = 0.0
 var _cancelada: bool = false
 var _preguntando: bool = false
 var _texto: Label
+## EvolutionKeyActions: con objeto (evolMode 2-21) no se puede cancelar.
+var _cancelable: bool = true
 
 
 ## CompEvolucion: evoluciona, uno tras otro, a los Pokémon del equipo que subieron de nivel y cumplen
@@ -29,10 +31,11 @@ static func revisar_equipo(desde: Node, subidos: Array[PokemonInstance]) -> void
 			await evolucionar(desde, p, nueva)
 
 
-static func evolucionar(desde: Node, p: PokemonInstance, nueva: PokemonData) -> bool:
+static func evolucionar(desde: Node, p: PokemonInstance, nueva: PokemonData, cancelable: bool = true) -> bool:
 	var e := Evolucion.new()
 	e._p = p
 	e._nueva = nueva
+	e._cancelable = cancelable
 	var arbol: SceneTree = desde.get_tree()
 	arbol.root.add_child(e)
 	var pausa_previa: bool = arbol.paused
@@ -99,7 +102,7 @@ func _process(delta: float) -> void:
 
 ## EvolutionKeyActions: X pregunta si se cancela.
 func _unhandled_input(evento: InputEvent) -> void:
-	if _cancelada or _preguntando or _tiempo >= DURACION:
+	if _cancelada or _preguntando or _tiempo >= DURACION or not _cancelable:
 		return
 	if evento is InputEventKey and evento.pressed and not evento.echo and (evento as InputEventKey).physical_keycode == KEY_X:
 		get_viewport().set_input_as_handled()

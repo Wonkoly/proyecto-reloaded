@@ -609,6 +609,15 @@ def extraer_datos(plan: Plan, ext: Path, indice: dict) -> None:
             total += 1
     plan.escribir(DATA / "pokemon" / "pokedex.json",
                   json.dumps({str(k): v for k, v in sorted(pokedex.items())}, ensure_ascii=False, indent=0))
+    # MT: objeto → movimiento (MTAtack; UseObject: objetos 194-290 y 618-637).
+    mts_json = {str(ob): int(mt_mov.valor(ob)) for ob in list(range(194, 291)) + list(range(618, 638))
+                if mt_mov.valor(ob)}
+    plan.escribir(DATA / "pokemon" / "mt_movimientos.json", json.dumps(mts_json, indent=0))
+    import evoluciones_objeto  # piedras y demás objetos que hacen evolucionar (UseObject)
+    familia = lambda a, b: funciones.llamar("MYSON", float(a)) == funciones.llamar("MYSON", float(b))
+    por_objeto = evoluciones_objeto.evoluciones(gml("UseObject"), gml("EvolutionConfirmation"), familia)
+    plan.escribir(DATA / "pokemon" / "evoluciones_objeto.json", json.dumps(
+        {str(o): {str(k): v for k, v in sorted(d.items())} for o, d in sorted(por_objeto.items())}, indent=0))
     print(f"  {total} especies")
     tablas = {"TheoricBaseAttack": poder, "TheoricTypeAttack": tipo_mov, "TheoricPPAtack": costo, "ModeAtack": modo,
               "TypeAPokemon": tipo_a, "TypeBPokemon": tipo_b, "ExpBase": exp_base, "GetOrdenDex": orden_dex,

@@ -11,6 +11,9 @@ const VELOCIDAD_LENTO: float = 60.0     # 2 px/step
 const FPS_ANDAR: float = 6.0
 const FPS_CORRER: float = 7.5
 const FPS_LENTO: float = 4.5
+## Montado con Vel. Extrema (global.caballo): 11 px/step; con la tecla de correr (X), 4.
+const VELOCIDAD_MONTURA: float = 330.0
+const VELOCIDAD_MONTURA_LENTA: float = 120.0
 ## En bici (ProtaMovimiento con global.ciclista): 6 px/step, 7 corriendo y 3 lento.
 const VELOCIDAD_BICI: float = 180.0
 const VELOCIDAD_BICI_CORRER: float = 210.0
@@ -145,16 +148,12 @@ func _unhandled_input(evento: InputEvent) -> void:
 		get_viewport().set_input_as_handled()
 		intentar_surf()
 		return
-	if evento.is_action_pressed("interactuar") or tecla_mo in [KEY_1, KEY_4, KEY_6]:
-		var mapa_obs: Mapa = _mapa()
-		if mapa_obs and quieto():
-			for n: Node in mapa_obs.get_node("Objetos").get_children():
-				var obs: Obstaculo = n as Obstaculo
-				if obs and obs.visible and (tecla_mo not in [KEY_1, KEY_4, KEY_6] or tecla_mo == obs.tecla()) \
-						and obs.frente_a(global_position, mira):
-					get_viewport().set_input_as_handled()
-					obs.usar(self)
-					return
+	if (evento.is_action_pressed("interactuar") or tecla_mo in [KEY_1, KEY_4, KEY_6]) and quieto():
+		var obs: Obstaculo = obstaculo_delante(tecla_mo if tecla_mo in [KEY_1, KEY_4, KEY_6] else KEY_NONE)
+		if obs:
+			get_viewport().set_input_as_handled()
+			obs.usar(self)
+			return
 	if not evento.is_action_pressed("interactuar"):
 		return
 	for npc: Npc in get_tree().get_nodes_in_group("npcs"):
@@ -240,7 +239,10 @@ func _physics_process(delta: float) -> void:
 	var dir: Vector2 = Vector2(signf(x) if absf(x) > 0.3 else 0.0, signf(y) if absf(y) > 0.3 else 0.0)
 	var velocidad: float = VELOCIDAD_BICI if GameState.ciclista else VELOCIDAD_ANDAR
 	var fps: float = FPS_ANDAR
-	if Input.is_action_pressed("correr"):
+	if montado():
+		velocidad = VELOCIDAD_MONTURA_LENTA if Input.is_action_pressed("correr") else VELOCIDAD_MONTURA
+		fps = 0.0  # ProtaMovimiento: montado, image_speed 0
+	elif Input.is_action_pressed("correr"):
 		velocidad = VELOCIDAD_BICI_CORRER if GameState.ciclista else VELOCIDAD_CORRER
 		fps = FPS_CORRER
 	elif Input.is_action_pressed("andar_lento"):
@@ -439,6 +441,9 @@ func alternar_bici() -> void:
 		await CajaDialogo.decir(self, Textos.linea("txt_dialog", 2434))
 		return
 	GameState.ciclista = not GameState.ciclista
+	if GameState.ciclista:
+		GameState.caballo = 0
+		_actualizar_montura()
 	queue_redraw()
 
 
@@ -492,6 +497,47 @@ func surfeando() -> bool:
 	return GameState.surfer != 0
 
 
+func montado() -> bool:
+	return GameState.caballo != 0 and not surfeando()
+
+
+## El obstáculo de MO que el jugador tiene delante (con `tecla`, solo el de esa MO: 1 Corte, 4 Fuerza,
+## 6 Golpe Roca), o null.
+func obstaculo_delante(tecla: Key = KEY_NONE) -> Obstaculo:
+	var mapa: Mapa = _mapa()
+	if mapa == null:
+		return null
+	for n: Node in mapa.get_node("Objetos").get_children():
+		var obs: Obstaculo = n as Obstaculo
+		if obs and obs.visible and (tecla == KEY_NONE or tecla == obs.tecla()) and obs.frente_a(global_position, mira):
+			return obs
+	return null
+
+
+## ProtaVelocidadExtrema (medalla 5): monta un Pokémon con Vel. Extrema (si no hay, 2397) o se baja
+## (en la Ciclovía no: 2398).
+func alternar_montura() -> void:
+	if not GameState.tiene_medalla(5) or surfeando():
+		return
+	if GameState.caballo == 0:
+		var p: PokemonInstance = GameState.con_habilidad_campo(8)
+		if p == null:
+			await CuadroOriginal.mensaje(self, Textos.linea("txt_dialog", 2397))
+			return
+		GameState.ciclista = false
+		GameState.caballo = p.especie.id_original
+		mira = 2
+	else:
+		var mapa: Mapa = _mapa()
+		if mapa and mapa.nombre_original in SIN_BAJAR_DE_BICI:
+			await CajaDialogo.decir(self, Textos.linea("txt_dialog", 2398))
+			return
+		GameState.caballo = 0
+		mira = 2
+	_actualizar_montura()
+	queue_redraw()
+
+
 func sobre_agua(pos: Vector2, capa: int = CAPA_AGUA) -> bool:
 	if not is_inside_tree():
 		return false
@@ -522,6 +568,7 @@ func intentar_surf() -> void:
 		return
 	GameState.surf_lava = lava
 	GameState.ciclista = false
+	GameState.caballo = 0
 	GameState.surfer = p.especie.id_original
 	_entrando_agua = true
 	_actualizar_montura()
@@ -632,12 +679,8 @@ func intentar_cascada() -> void:
 		return
 	_cascada = true
 	p.habilidades_campo |= 1 << 2
-	if GameState.surfer != p.especie.id_original:
-		GameState.surfer = p.especie.id_original
-		var montura: Node = get_node_or_null("Montura")
-		if montura:
-			montura.free()
-		_actualizar_montura()
+	GameState.surfer = p.especie.id_original
+	_actualizar_montura()
 
 
 ## KeyActionsProta (tecla 7) + ProtaBuceo: con la medalla 7 y un Pokémon con Buceo (si no, 2412), sobre
@@ -704,18 +747,22 @@ func terminar_surf() -> void:
 
 
 ## obj_pkmn_surf: el Pokémon que lleva al jugador por el agua, con sus sprites de movimiento.
+## obj_pkmn_surf (y obj 177, el Pokémon montado con Vel. Extrema): el Pokémon que lleva al jugador.
 func _actualizar_montura() -> void:
 	var montura: AnimatedSprite2D = get_node_or_null("Montura")
-	if not surfeando():
-		if montura:
-			montura.queue_free()
+	var id: int = GameState.surfer if surfeando() else GameState.caballo
+	if montura and montura.get_meta("especie", 0) != id:
+		montura.free()
+		montura = null
+	if id == 0:
 		return
 	if montura == null:
 		montura = AnimatedSprite2D.new()
 		montura.name = "Montura"
+		montura.set_meta("especie", id)
 		montura.show_behind_parent = true
 		montura.position = Vector2(0, 6)
-		var especie: PokemonData = Datos.especie(GameState.surfer)
+		var especie: PokemonData = Datos.especie(id)
 		montura.sprite_frames = especie.cargar_sprite_frames() if especie else null
 		add_child(montura)
 	if montura.sprite_frames == null:
@@ -736,7 +783,7 @@ func _draw() -> void:
 	if s:
 		# Izquierda (1, 4, 7): el sprite de la derecha volteado (ProtaSetSprite).
 		# Surfeando va montado sobre el Pokémon (obj_pkmn_surf se dibuja debajo).
-		s.dibujar(self, int(_frame), Vector2(0, -6 if surfeando() else 0), Vector2(-1 if mira in [1, 4, 7] else 1, 1))
+		s.dibujar(self, int(_frame), Vector2(0, -6 if surfeando() or montado() else 0), Vector2(-1 if mira in [1, 4, 7] else 1, 1))
 
 
 func _mapa() -> Mapa:

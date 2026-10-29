@@ -48,7 +48,9 @@ habilidades o clima, y las evoluciones por lluvia o contadores (`extraInfo`).
 ## Fase 3 — Viajar
 **En curso** (`feat/viajar`). Hecho: mapa de la región con los lugares visitados y Vuelo
 (`tests/prueba_vuelo.gd`), y el resto de las MO: Cascada, Buceo, Destello, Ola Lava y Treparrocas
-(`tests/prueba_mo.gd`), bici y pesca. Falta: la montura.
+(`tests/prueba_mo.gd`), Torbellino, bici, pesca, Vel. Extrema (la montura) y el menú Habilidades.
+Queda para después: el Pokémon que sale a usar la MO, el sprite de buzo, elegir llegada en los lugares
+de vuelo con varias, y Teletransporte, Excavar, Gran Ojo, Dulce Aroma y Daño Secreto.
 - Mapa de la región (Áreas) con los lugares visitados (`MapaLugar`).
 - Vuelo (objeto 153), y después Buceo, Cascada, Destello, Ola Lava y Treparrocas, con el mismo
   patrón que Surf.

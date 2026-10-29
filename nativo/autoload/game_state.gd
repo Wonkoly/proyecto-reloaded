@@ -71,6 +71,8 @@ var buceando: bool = false
 var surf_lava: bool = false
 ## global.ciclista: en bici (tecla V con la Bicicleta, objeto 184).
 var ciclista: bool = false
+## global.caballo: id_original del Pokémon montado con Vel. Extrema (0 = a pie).
+var caballo: int = 0
 ## Nombre del protagonista (global.protaname); al empezar, el del perfil.
 var nombre_jugador: String = ""
 ## Nombre del rival (global.rivalname; lo elige la presentación del profesor, que aún no existe).
@@ -152,6 +154,7 @@ func nueva_partida(nombre: String = "") -> void:
 	buceando = false
 	surf_lava = false
 	ciclista = false
+	caballo = 0
 	_cajas_iniciales()
 	pokedex.clear()
 	for p: PokemonInstance in equipo:
@@ -208,6 +211,7 @@ func a_dict() -> Dictionary:
 		"buceando": buceando,
 		"surf_lava": surf_lava,
 		"ciclista": ciclista,
+		"caballo": caballo,
 	}
 
 
@@ -272,6 +276,7 @@ func desde_dict(d: Dictionary, slot_: int) -> void:
 	buceando = bool(d.get("buceando", false))
 	surf_lava = bool(d.get("surf_lava", false))
 	ciclista = bool(d.get("ciclista", false))
+	caballo = int(d.get("caballo", 0))
 	for par: Variant in d.get("vuelo", []):
 		if par is Array and par.size() == 2:
 			vuelo[int(par[0])] = int(par[1])

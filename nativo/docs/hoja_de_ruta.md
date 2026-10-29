@@ -43,8 +43,11 @@ mapa por mapa, y al final los modos extra.
   oscuras de `data/extraido/campo.json`, medalla 3), Ola Lava (tecla 3 junto a la lava, medalla 8) y
   Treparrocas (Z frente a la pared trepable, medalla 7). Bici (V, 6 px/step, se baja al entrar a un
   edificio que no sea cueva) y pesca (C con una caña de cara al agua: a los 90 steps pica la mitad de
-  las veces y sale un salvaje de la subtabla de esa caña). Faltan la montura (habilidad de campo 8),
-  el Pokémon que sale a usar la MO y el sprite de buzo bajo el agua; en Vuelo, elegir entre las llegadas de los lugares que tienen varias (Isla Sol, el Frente) y
+  las veces y sale un salvaje de la subtabla de esa caña), Vel. Extrema (la montura: 11 px/step, 4
+  con X) y Torbellino (Z surfeando frente al remolino, medalla 6). El menú Habilidades (opción 6 del
+  menú principal) lanza cada una. Faltan el Pokémon que sale a usar la MO, el sprite de buzo bajo el
+  agua y las habilidades que no son de paso (Teletransporte, Excavar, Gran Ojo, Dulce Aroma, Daño
+  Secreto); en Vuelo, elegir entre las llegadas de los lugares que tienen varias (Isla Sol, el Frente) y
   el grito del Pokémon (los gritos no se extraen por defecto).
 - Historia completa: eventos de los 517 NPCs con scripts propios, rutas de NPCs por historia.
 - Modos: Torre/Fábrica/Palacio/Torneo, guardería y huevos, minijuegos, multijugador local.

@@ -55,7 +55,7 @@ AGUA = [("obj_lava", "lava"), ("obj_lava_undertiles", "lava"), ("obj_agua1", "su
 OBSTACULOS = [("obj_arbusto", "corte"), ("obj_roca_redonda", "fuerza"), ("obj_roca", "golpe_roca"),
               ("obj_torbellino", "torbellino"), ("obj_rocatrepable", "trepa")]
 # Los que son un nodo Obstaculo que se puede quitar en el juego (InteractionArbusto/RocaFragmentada/RocaRedonda).
-MO_OBSTACULOS = {"corte", "golpe_roca", "fuerza"}
+MO_OBSTACULOS = {"corte", "golpe_roca", "fuerza", "torbellino"}
 # Zonas sin colisión que piden algo para cruzarlas (ProtaStartsCascada: Surf + Cascada para subir).
 TERRENO = {o: "surf+cascada" for o in ("obj_cascada", "obj_cascadaPlata", "obj_cascadaVerde", "obj_cascadaLeon",
                                          "obj_cascadaSpec", "obj_cascadaLunar", "obj_cascadaLunarXL",

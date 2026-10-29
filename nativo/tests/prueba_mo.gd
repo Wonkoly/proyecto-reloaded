@@ -22,10 +22,11 @@ func _initialize() -> void:
 			p.habilidades_campo |= 1 << b
 		gs.equipo.append(p)
 		return p
-	crear.call(130, [2, 9])  # Gyarados: Surf y Cascada
+	crear.call(130, [2, 9, 11])  # Gyarados: Surf, Cascada y Torbellino
 	crear.call(131, [2, 6])  # Lapras: Surf y Buceo
 	crear.call(25, [4])  # Pikachu: Destello
 	crear.call(6, [16, 13])  # Charizard: Ola Lava y Treparrocas
+	crear.call(78, [8])  # Rapidash: Vel. Extrema
 	for n: int in range(1, 9):
 		gs.historia["MEDALLA_STAR_%d" % n] = 1
 	await _destello()
@@ -34,6 +35,8 @@ func _initialize() -> void:
 	await _ola_lava()
 	await _treparrocas()
 	await _bici()
+	await _montura()
+	await _torbellino()
 	await _pesca()
 	print("RESULTADO: ", "todo bien" if _fallas == 0 else "%d fallas" % _fallas)
 	quit(_fallas)
@@ -227,6 +230,69 @@ func _bici() -> void:
 	await _ir("Lab_Oak")
 	_ok(not gs.ciclista, "al entrar al laboratorio se baja de la bici")
 	gs.mapa_salida = ""
+
+
+## Habilidades → Vel. Extrema: monta a Rapidash (11 px/step; con X, 4) y se baja igual.
+func _montura() -> void:
+	gs.mapa_salida = ""
+	gs.ciclista = false
+	await _ir("PuebloAlba", Vector2(417, 240))
+	var j: Node = _jugador()
+	await _elegir_habilidad("Vel. Extrema")
+	_ok(gs.caballo == 78 and j.get_node_or_null("Montura") != null, "Habilidades → Vel. Extrema monta a Rapidash")
+	var x0: float = j.global_position.x
+	Input.action_press("mover_izquierda")
+	await create_timer(0.3).timeout
+	Input.action_release("mover_izquierda")
+	var v: float = (x0 - j.global_position.x) / 0.3
+	_ok(v > 280.0, "montado va a ~330 px/s (%.0f)" % v)
+	await _captura("mo_montura")
+	x0 = j.global_position.x
+	Input.action_press("correr")
+	Input.action_press("mover_derecha")
+	await create_timer(0.5).timeout
+	Input.action_release("mover_derecha")
+	Input.action_release("correr")
+	v = (j.global_position.x - x0) / 0.5
+	_ok(v > 100.0 and v < 140.0, "con X frena a ~120 px/s (%.0f)" % v)
+	await _elegir_habilidad("Vel. Extrema")
+	_ok(gs.caballo == 0 and j.get_node_or_null("Montura") == null, "y se baja")
+
+
+## Abre el menú Habilidades y elige la opción con ese nombre.
+func _elegir_habilidad(nombre: String) -> void:
+	var lista: Array = load("res://scenes/ui/menu_principal.gd").HABILIDADES.filter(
+		func(h: Array) -> bool: return gs.tiene_medalla(h[1]))
+	var textos = load("res://scripts/textos.gd")
+	var i: int = lista.map(func(h: Array) -> String: return textos.linea("txt_menu", h[2])).find(nombre)
+	load("res://scenes/ui/menu_principal.gd").habilidades(current_scene)
+	await create_timer(0.3).timeout
+	for k: int in i:
+		await _tecla(KEY_DOWN)
+	await _tecla(KEY_Z)
+	await create_timer(0.5).timeout
+
+
+## Isla Viento: surfeando frente a un torbellino, Z (medalla 6) lo quita para siempre.
+func _torbellino() -> void:
+	gs.caballo = 0
+	await _ir("IslaViento")
+	var t: Node = current_scene.get_node_or_null("Objetos/obj_torbellino_s2")
+	_ok(t != null and t.mo == "torbellino", "el torbellino de Isla Viento es un obstáculo")
+	if t == null:
+		return
+	var j: Node = _jugador()
+	var r: Rect2 = t.rect()
+	gs.surfer = 131
+	j.global_position = Vector2(r.get_center().x, r.end.y + 6)
+	j.mira = 8
+	await physics_frame
+	await _tecla(KEY_Z)
+	await create_timer(0.3).timeout
+	await _tecla(KEY_Z)
+	await create_timer(3.2).timeout
+	_ok(not is_instance_valid(t) and gs.bandera("estorbo_torbellino_2") == 1 and gs.surfer == 130,
+		"Z lo quita (bandera estorbo_torbellino_2) y sigue sobre Gyarados")
 
 
 ## C con una caña de cara al agua: se echa y, cuando pica, empieza un combate.

@@ -57,7 +57,8 @@ DIRECCION_POR_FRAME = ["8", "9", "6", "3", "2", "1", "4", "7"]
 
 CATEGORIAS = ["datos", "sprites", "fondos", "ui", "fuentes", "efectos", "tilesets", "musica", "gritos", "entrenadores", "mapas",
               "conexiones", "encuentros"]
-POR_DEFECTO = ["datos", "sprites", "fondos", "ui", "fuentes", "efectos", "entrenadores", "mapas", "conexiones", "encuentros"]
+POR_DEFECTO = ["datos", "sprites", "fondos", "ui", "fuentes", "efectos", "musica", "entrenadores", "mapas", "conexiones",
+               "encuentros"]
 
 # Sprites internos que usa el HUD de batalla (DrawEventBattle1, DrawBattleAttacks, DrawPanelInformativo).
 SPRITES_UI = [
@@ -88,7 +89,7 @@ CARPETAS = {
     "fuentes": [ASSETS / "fonts"],
     "efectos": [ASSETS / "sprites" / "particulas", ASSETS / "sprites" / "efectos", DATA / "visuales"],
     "tilesets": [ASSETS / "sprites" / "tilesets"],
-    "musica": [ASSETS / "audio" / "music"],
+    "musica": [ASSETS / "audio" / "music", DATA / "musica"],
     "gritos": [ASSETS / "audio" / "sfx" / "gritos"],
     "entrenadores": [ASSETS / "sprites" / "trainers"],
     "mapas": [ASSETS / "mapas", ASSETS / "sprites" / "overworld", DATA / "personajes.json", DATA / "dialogo_personajes.json",
@@ -1038,8 +1039,19 @@ def main() -> None:
         elif cat == "encuentros":
             extraer_encuentros(plan, EXT)
         elif cat == "musica":
+            # Solo la carpeta "re" (global.foldermusic por defecto; "pk" es la alternativa de las opciones).
             musica = args.juego / "data" / "audio"
-            extraer_simple(plan, musica / "musica", ASSETS / "audio" / "music", ["*/*.ogg"])
+            extraer_simple(plan, musica / "musica" / "re", ASSETS / "audio" / "music", ["*.ogg"])
+            import musica_original
+            salas = json.loads((EXT / "index.json").read_text())["rooms"]
+            pista = lambda p: p if p.startswith("@") else snake(p)
+            tabla = {
+                "mapas": {sala: pista(p) for sala, p in sorted(musica_original.musica_mapas(
+                    (EXT / "scripts" / "Sound_World.gml").read_text(encoding="utf-8"), salas).items())},
+                "batallas": {k: pista(p) for k, p in musica_original.musica_batallas(
+                    (EXT / "scripts" / "Sound_Battle.gml").read_text(encoding="utf-8")).items()},
+            }
+            plan.escribir(DATA / "musica" / "musica.json", json.dumps(tabla, ensure_ascii=False, indent=1))
         elif cat == "gritos":
             extraer_gritos(plan, args.juego / "data" / "audio" / "grito", ASSETS / "audio" / "sfx" / "gritos")
         elif cat == "entrenadores":

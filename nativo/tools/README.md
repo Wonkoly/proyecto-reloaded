@@ -191,3 +191,10 @@ pasos, saltos (un sentido) y conexiones (cada salida, con su condición de la hi
     python3 tools/validar_conexiones.py --json r.json        # todo el detalle
 
 El reporte está en `docs/reporte_conexiones.md`. En el juego: comandos `validar` e `ir` de la consola dev.
+
+## Música
+`--solo musica` (ya incluida por defecto) copia las 182 pistas OGG de `gamedata/data/audio/musica/re`
+(la carpeta "re", la de por defecto del original; ~540 MB) a `assets/extraido/audio/music/` y escribe
+`data/extraido/musica/musica.json`: la pista de cada mapa según `Sound_World` (las condiciones que
+dependen solo de la sala; `@afuera` = la del mapa de afuera) y las de batalla de `Sound_Battle`
+(ver `tools/musica_original.py`).

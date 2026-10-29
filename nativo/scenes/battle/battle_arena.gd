@@ -48,6 +48,8 @@ func _ready() -> void:
 		return
 	if desde_overworld:
 		GameState.marcar_pokedex(p_rival.especie, 1)  # Pokemon2SeePokedex
+	# Sound_Battle: salvaje, entrenador o líder.
+	AudioManager.musica_batalla("salvaje" if entrenador == null else ("lider" if entrenador.lider else "entrenador"))
 	var jugador: BattlePokemon = _crear_pokemon("Jugador", p_jugador, 1, $PosicionJugador.position)
 	var rival: BattlePokemon = _crear_pokemon("Rival", p_rival, 2, $PosicionRival.position)
 	jugador.add_child(PlayerController.new())

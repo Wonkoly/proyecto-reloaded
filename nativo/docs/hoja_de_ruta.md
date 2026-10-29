@@ -25,7 +25,7 @@ mapa por mapa, y al final los modos extra.
 | 6 | Menú principal (Enter): equipo, mochila, Pokédex, entrenador, guardar, salir | `KeyActionsExplorer` | hecho (faltan Opciones, Áreas, Móvil, Habilidades) |
 | 7 | PC de los Centros: cajas (dejar, sacar, liberar) | `PCKeyActions` | hecho con listas (faltan la sala de cajas y el PC de ítems) |
 | 8 | Pokédex (F12): vistos/capturados, categoría y descripción | `Dex_*`, `pkdexC` | hecho con listas (falta su pantalla) |
-| 9 | Música de mapas y batallas | `ImportMusica` | pendiente |
+| 9 | Música de mapas y batallas | `Sound_World`, `Sound_Battle` | hecho (594 mapas; faltan variantes por historia, legendarios y villanos) |
 
 ## Después
 - El entrenador del jugador dentro de la arena (`Trainer1`, se mueve y lo pueden golpear).

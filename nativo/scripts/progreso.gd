@@ -52,6 +52,7 @@ static func aprender(desde: Node, p: PokemonInstance, move: MoveData) -> bool:
 		var viejo: MoveData = p.movimientos[i]
 		if await CuadroOriginal.preguntar(desde, Textos.par(Textos.linea("txt_menu", 213), move.nombre, viejo.nombre)):
 			p.movimientos[i] = move
+			p.actualizar_habilidades_campo()
 			await CuadroOriginal.mensaje(desde, Textos.par(Textos.linea("txt_menu", 216), viejo.nombre, move.nombre))
 			return true
 	return false

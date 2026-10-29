@@ -56,6 +56,8 @@ var cajas: Array[Array] = []
 var nombres_cajas: Array[String] = []
 ## Pokédex: número de Pokédex → 1 visto, 2 capturado (pkdexV / pkdexC).
 var pokedex: Dictionary[int, int] = {}
+## (18).usafuerza: Fuerza activada en el mapa actual (se apaga al cambiar de mapa).
+var fuerza_activa: bool = false
 ## Nombre del protagonista (global.protaname); al empezar, el del perfil.
 var nombre_jugador: String = ""
 ## Nombre del rival (global.rivalname; lo elige la presentación del profesor, que aún no existe).
@@ -310,6 +312,19 @@ func pow_dif(lado: int) -> int:
 	if dev_pow_dif > 0:
 		return dev_pow_dif
 	return POW_DIF[dificultad].x if lado == 1 else POW_DIF[dificultad].y
+
+
+## MEDALLA_STAR[n] (1-8), como bandera de la historia "medalla_n".
+func tiene_medalla(n: int) -> bool:
+	return bandera("medalla_%d" % n) != 0
+
+
+## El primer Pokémon del equipo con esa habilidad de campo (ConsultaHabExt), o null.
+func con_habilidad_campo(n: int) -> PokemonInstance:
+	for p: PokemonInstance in equipo:
+		if p.tiene_habilidad_campo(n):
+			return p
+	return null
 
 
 func bandera(nombre: String) -> int:

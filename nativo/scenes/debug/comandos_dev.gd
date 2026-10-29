@@ -16,6 +16,7 @@ static func registrar_todos(c: Node) -> void:
 	c.registrar("dar", "Agrega un Pokémon al equipo", "dar <especie> <nivel>", _dar,
 		func(i: int, t: String) -> PackedStringArray: return _filtrar(_especies(), t) if i == 0 else PackedStringArray())
 	c.registrar("curar", "Cura HP y energía del equipo", "curar", _curar)
+	c.registrar("medalla", "Da medallas (1-8, o todas) para usar las MO", "medalla <n|todas>", _medalla)
 	c.registrar("nivel", "Cambia el nivel del primer Pokémon del equipo", "nivel <n>", _nivel)
 	c.registrar("encuentro", "Batalla ya contra un salvaje", "encuentro <especie> <nivel>", _encuentro.bind(c),
 		func(i: int, t: String) -> PackedStringArray: return _filtrar(_especies(), t) if i == 0 else PackedStringArray())
@@ -227,6 +228,15 @@ static func _escena(_args: PackedStringArray, c: Node, ruta: String) -> String:
 	AudioManager.detener_musica()
 	c.get_tree().change_scene_to_file.call_deferred(ruta)
 	return "Abriendo " + ruta.get_file().get_basename()
+
+
+static func _medalla(args: PackedStringArray) -> String:
+	if args.is_empty():
+		return "Uso: medalla <n|todas>"
+	var lista: Array = range(1, 9) if args[0] == "todas" else [args[0].to_int()]
+	for n: int in lista:
+		GameState.cambiar_historia("medalla_%d" % n, 1)
+	return "Medallas: %s" % ", ".join(range(1, 9).filter(func(n: int) -> bool: return GameState.tiene_medalla(n)).map(str))
 
 
 static func _curar(_args: PackedStringArray) -> String:

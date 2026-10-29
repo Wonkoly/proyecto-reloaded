@@ -167,6 +167,7 @@ func _cargar_mapa() -> void:
 	jugador.position = GameState.posicion_jugador
 	jugador.mira = GameState.mira
 	GameState.mapa_actual = mapa.nombre_original
+	GameState.fuerza_activa = false
 	AudioManager.musica_mapa(mapa.nombre_original)
 	mapa.objetos().add_child(jugador)
 	get_tree().change_scene_to_node(mapa)

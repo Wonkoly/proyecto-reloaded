@@ -52,6 +52,8 @@ CAPA_AGUA = 64
 AGUA = [("obj_lava", "lava"), ("obj_lava_undertiles", "lava"), ("obj_agua1", "surf")]
 OBSTACULOS = [("obj_arbusto", "corte"), ("obj_roca_redonda", "fuerza"), ("obj_roca", "golpe_roca"),
               ("obj_torbellino", "torbellino"), ("obj_rocatrepable", "trepa")]
+# Los que son un nodo Obstaculo que se puede quitar en el juego (InteractionArbusto/RocaFragmentada/RocaRedonda).
+MO_OBSTACULOS = {"corte", "golpe_roca", "fuerza"}
 # Zonas sin colisión que piden algo para cruzarlas (ProtaStartsCascada: Surf + Cascada para subir).
 TERRENO = {o: "surf+cascada" for o in ("obj_cascada", "obj_cascadaPlata", "obj_cascadaVerde", "obj_cascadaLeon",
                                          "obj_cascadaSpec", "obj_cascadaLunar", "obj_cascadaLunarXL",
@@ -1138,9 +1140,23 @@ def escena_mapa(room: dict, juego: Juego, tilesets: dict, sprite_tres, snake, re
                 e.nodo(f"hierba_{n_hierba}", "CollisionShape2D", zona, [
                     f"position = Vector2({f(c[0])}, {f(c[1])})", f"shape = {e.rect(c[2], c[3])}"])
         elif juego.es(obj, "obj_pared"):
-            pared(meta, x, y, sx, sy, next((r for base, r in OBSTACULOS if juego.es(obj, base)), None), obj)
-            if datos.get("visible") and sprite:
-                decorado(nombre, sprite, x, y, sx, sy)
+            requisito = next((r for base, r in OBSTACULOS if juego.es(obj, base)), None)
+            c = caja(meta, x, y, sx, sy) if meta else None
+            if requisito in MO_OBSTACULOS and c and sprite:
+                # Arbusto, roca o roca redonda: un Obstaculo que se quita con Corte / Golpe Roca / Fuerza.
+                geo["obstaculos"].append(rect_de(c) + [requisito, e.condicion, obj])
+                n_pared += 1
+                e.nodo(nombre, "StaticBody2D", "Objetos", [
+                    f"position = Vector2({f(x)}, {f(y)})", f"collision_layer = {CAPA_PAREDES}", "collision_mask = 0",
+                    f"script = {e.ref('Script', 'res://scenes/overworld/obstaculo.gd')}",
+                    f"sprite = {e.ref('Resource', sprite_tres(sprite))}", f"mo = {gd_str(requisito)}",
+                    f"objeto_original = {gd_str(obj)}"] + ([f"escala = Vector2({f(sx)}, {f(sy)})"] if (sx, sy) != (1.0, 1.0) else []))
+                e.nodo("forma", "CollisionShape2D", f"Objetos/{nombre}", [
+                    f"position = Vector2({f(c[0] - x)}, {f(c[1] - y)})", f"shape = {e.rect(c[2], c[3])}"])
+            else:
+                pared(meta, x, y, sx, sy, requisito, obj)
+                if datos.get("visible") and sprite:
+                    decorado(nombre, sprite, x, y, sx, sy)
         elif datos.get("visible") and sprite:
             velocidad = 0.125 if juego.es(obj, "obj_flower") else 0.0  # DefineFlower: image_speed 0.125
             decorado(nombre, sprite, x, y, sx, sy, velocidad)

@@ -5,6 +5,12 @@ extends Resource
 ## hp, ataque, defensa, ataque_esp, defensa_esp, velocidad. Más alto es mejor: iv = ntv = 999999 es
 ## "perfecto" (los líderes y la liga: IV2 = 999999 y GenerarPerfectoSelue).
 
+## AttackHabExt: movimiento → habilidad de campo (0 Corte, 1 Vuelo, 2 Surf, 3 Fuerza, 4 Destello,
+## 5 Golpe Roca, 6 Buceo, 7 Teletransporte, 8 Vel. Extrema, 9 Cascada, 10 Gran Ojo, 11 Torbellino,
+## 12 Excavar, 13 Treparrocas, 14 Daño Secreto, 15 Dulce Aroma, 16 Ola-lava).
+const HABILIDAD_CAMPO: Dictionary[int, int] = {37: 0, 40: 1, 9: 2, 84: 3, 150: 4, 285: 5, 322: 6, 103: 7,
+	282: 8, 129: 9, 379: 10, 15: 11, 97: 12, 434: 13, 321: 14, 168: 15, 468: 16}
+
 const DIGITO_STAT: Dictionary[String, int] = {
 	"hp": 0, "ataque": 1, "defensa": 2, "ataque_esp": 3, "defensa_esp": 4, "velocidad": 5,
 }
@@ -15,6 +21,9 @@ const DIGITO_STAT: Dictionary[String, int] = {
 @export var experiencia: int = 0
 @export var hp_actual: int = 0
 @export var energia_actual: int = 0
+## Habilidades de campo aprendidas (global.info[i,11], bit = HABILIDAD_CAMPO): se quedan aunque
+## olvide el movimiento.
+@export var habilidades_campo: int = 0
 ## Estado alterado (global.STD1): dura después del combate hasta que se cura.
 @export var estado: MoveData.Estado = MoveData.Estado.NINGUNO
 ## Valores individuales: 6 dígitos de 0 a 9 (aleatorios al nacer).
@@ -33,6 +42,7 @@ static func crear(especie_: PokemonData, nivel_: int) -> PokemonInstance:
 	p.iv = randi_range(0, 999999)
 	p.ntv = randi_range(0, 999999)
 	p.asignar_movimientos_por_nivel()
+	p.actualizar_habilidades_campo()
 	p.experiencia = p.exp_para_nivel(nivel_)
 	p.hp_actual = p.calcular_stats()["hp"]
 	p.energia_actual = p.calcular_energia_maxima()
@@ -49,6 +59,7 @@ func a_dict() -> Dictionary:
 		"hp": hp_actual,
 		"energia": energia_actual,
 		"estado": estado,
+		"habilidades_campo": habilidades_campo,
 		"iv": iv,
 		"ntv": ntv,
 		"movimientos": movimientos.filter(func(m: MoveData) -> bool: return m != null).map(
@@ -76,6 +87,8 @@ static func desde_dict(d: Dictionary) -> PokemonInstance:
 	p.hp_actual = clampi(int(d.get("hp", 0)), 0, p.calcular_stats()["hp"])
 	p.energia_actual = clampi(int(d.get("energia", 0)), 0, p.calcular_energia_maxima())
 	p.estado = clampi(int(d.get("estado", 0)), 0, MoveData.Estado.INFECCION) as MoveData.Estado
+	p.habilidades_campo = int(d.get("habilidades_campo", 0))
+	p.actualizar_habilidades_campo()
 	return p
 
 
@@ -155,7 +168,19 @@ func aprender(move: MoveData) -> int:
 	if movimientos.size() >= 4:
 		return 2
 	movimientos.append(move)
+	actualizar_habilidades_campo()
 	return 0
+
+
+## ActualizaHabExt: suma las habilidades de campo de los movimientos que sabe ahora.
+func actualizar_habilidades_campo() -> void:
+	for m: MoveData in movimientos:
+		if m and m.id_original in HABILIDAD_CAMPO:
+			habilidades_campo |= 1 << HABILIDAD_CAMPO[m.id_original]
+
+
+func tiene_habilidad_campo(n: int) -> bool:
+	return habilidades_campo & (1 << n) != 0
 
 
 ## CheckEvolution (solo por nivel): si con este nivel evoluciona y en qué especie.

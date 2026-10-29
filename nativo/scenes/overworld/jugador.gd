@@ -70,8 +70,21 @@ func _unhandled_input(evento: InputEvent) -> void:
 		get_viewport().set_input_as_handled()
 		Mochila.abrir(self)
 		return
-	if not evento.is_action_pressed("interactuar") or evento.is_echo() or SceneManager.en_transicion or _salto \
-			or Eventos.en_curso:
+	if SceneManager.en_transicion or _salto or Eventos.en_curso or evento.is_echo():
+		return
+	# Obstáculos de MO (KeyActionsCorte...): con Z o con la tecla de su MO (1 Corte, 4 Fuerza, 6 Golpe Roca).
+	var tecla_mo: Key = (evento as InputEventKey).physical_keycode if evento is InputEventKey and evento.pressed else KEY_NONE
+	if evento.is_action_pressed("interactuar") or tecla_mo in [KEY_1, KEY_4, KEY_6]:
+		var mapa_obs: Mapa = _mapa()
+		if mapa_obs and quieto():
+			for n: Node in mapa_obs.get_node("Objetos").get_children():
+				var obs: Obstaculo = n as Obstaculo
+				if obs and obs.visible and (tecla_mo not in [KEY_1, KEY_4, KEY_6] or tecla_mo == obs.tecla()) \
+						and obs.frente_a(global_position, mira):
+					get_viewport().set_input_as_handled()
+					obs.usar(self)
+					return
+	if not evento.is_action_pressed("interactuar"):
 		return
 	for npc: Npc in get_tree().get_nodes_in_group("npcs"):
 		if not npc.visible or npc.process_mode == Node.PROCESS_MODE_DISABLED:
@@ -165,6 +178,12 @@ func _physics_process(delta: float) -> void:
 	velocity = dir.normalized() * velocidad
 	var antes: Vector2 = global_position
 	move_and_slide()
+	# EmpujeFuerza: caminando recto contra una roca redonda con Fuerza activa, la empuja.
+	if dir.x == 0.0 or dir.y == 0.0:
+		for k: int in get_slide_collision_count():
+			var obstaculo: Obstaculo = get_slide_collision(k).get_collider() as Obstaculo
+			if obstaculo and obstaculo.empujar(dir):
+				break
 	_saltar(velocidad, delta)
 	queue_redraw()
 	_revisar_salidas()

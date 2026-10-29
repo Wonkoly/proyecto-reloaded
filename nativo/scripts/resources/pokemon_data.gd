@@ -24,6 +24,14 @@ enum Crecimiento { MEDIO, RAPIDO, LENTO, PARABOLICO, ERRATICO, FLUCTUANTE }
 @export var exp_base: int = 0
 @export var crecimiento: Crecimiento = Crecimiento.MEDIO
 
+@export_group("Captura y evolución")
+## NumRareza: de 3 (legendarios) a 255; entra en la probabilidad de captura (PokeBallCapturando).
+@export var ratio_captura: int = 45
+## Evoluciona al llegar a este nivel (CheckEvolution); 0 = no evoluciona por nivel.
+@export var nivel_evolucion: int = 0
+## id_original de la especie en la que evoluciona por nivel (EvolutionConfirmation).
+@export var evoluciona_a: int = 0
+
 @export_group("Cría")
 ## id_original de la especie que nace del huevo (MYSON).
 @export var cria: int = 0

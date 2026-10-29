@@ -31,6 +31,7 @@ static func crear(especie_: PokemonData, nivel_: int) -> PokemonInstance:
 	p.iv = randi_range(0, 999999)
 	p.ntv = randi_range(0, 999999)
 	p.asignar_movimientos_por_nivel()
+	p.experiencia = p.exp_para_nivel(nivel_)
 	p.hp_actual = p.calcular_stats()["hp"]
 	p.energia_actual = p.calcular_energia_maxima()
 	return p
@@ -61,7 +62,8 @@ static func desde_dict(d: Dictionary) -> PokemonInstance:
 	p.especie = datos_especie
 	p.apodo = str(d.get("apodo", ""))
 	p.nivel = int(d.get("nivel", 1))
-	p.experiencia = int(d.get("experiencia", 0))
+	# Partidas viejas guardaban 0: como mínimo, la experiencia del nivel que tiene.
+	p.experiencia = maxi(int(d.get("experiencia", 0)), p.exp_para_nivel(p.nivel))
 	p.iv = int(d.get("iv", 0))
 	p.ntv = int(d.get("ntv", 0))
 	for id: Variant in d.get("movimientos", []):
@@ -88,6 +90,83 @@ func asignar_movimientos_por_nivel() -> void:
 				return
 	if movimientos.is_empty() and not por_nivel.is_empty():
 		movimientos.append(por_nivel.back().move)
+
+
+## Experiencia total para estar en el nivel n (CrecimientoPokemon); el nivel 1 vale 1.
+func exp_para_nivel(n: int) -> int:
+	return PokemonInstance.exp_curva(especie.crecimiento, n)
+
+
+static func exp_curva(curva: PokemonData.Crecimiento, n: int) -> int:
+	if n <= 1:
+		return 1
+	var c: float = float(n) * n * n
+	var e: float = c
+	match curva:
+		PokemonData.Crecimiento.RAPIDO:
+			e = 0.8 * c
+		PokemonData.Crecimiento.LENTO:
+			e = 1.25 * c
+		PokemonData.Crecimiento.PARABOLICO:
+			e = 1.2 * c - 15.0 * n * n + 100.0 * n - 140.0
+		PokemonData.Crecimiento.ERRATICO:
+			var a: float = [0.0, 0.008, 0.014][n % 3]
+			if n <= 50: e = c * (100 - n) / 50.0
+			elif n <= 68: e = c * (150 - n) / 100.0
+			elif n <= 98: e = c * (1.274 - n / 150.0 - a)
+			else: e = c * (160 - n) / 100.0
+		PokemonData.Crecimiento.FLUCTUANTE:
+			if n <= 15: e = c * (24 + (n + 1) / 3.0) / 50.0
+			elif n <= 35: e = c * (14 + n) / 50.0
+			else: e = c * (32 + n / 2.0) / 50.0
+	return _round_gm(e)
+
+
+## ExpGana: suma experiencia (tope: la del nivel 100) y sube de nivel lo que corresponda. Al subir,
+## el HP actual crece lo mismo que el máximo (AjusteStatsLevelUp). Devuelve los niveles nuevos.
+func ganar_experiencia(cantidad: int) -> Array[int]:
+	var nuevos: Array[int] = []
+	experiencia = mini(experiencia + maxi(cantidad, 0), exp_para_nivel(100))
+	while nivel < 100 and exp_para_nivel(nivel + 1) <= experiencia:
+		var hp_antes: int = calcular_stats()["hp"]
+		nivel += 1
+		hp_actual += calcular_stats()["hp"] - hp_antes
+		nuevos.append(nivel)
+	return nuevos
+
+
+## Los movimientos que la especie aprende justo en ese nivel (Ataque_Nivel).
+func movimientos_de_nivel(n: int) -> Array[MoveData]:
+	var lista: Array[MoveData] = []
+	for m: MovimientoAprendible in especie.movimientos_aprendibles:
+		if m.metodo == MovimientoAprendible.Metodo.NIVEL and m.nivel == n and m.move and m.move not in lista:
+			lista.append(m.move)
+	return lista
+
+
+## AprendeAtaque sin preguntar: si hay hueco lo agrega. 0 = aprendido, 1 = ya lo sabía, 2 = sin hueco.
+func aprender(move: MoveData) -> int:
+	if move in movimientos:
+		return 1
+	if movimientos.size() >= 4:
+		return 2
+	movimientos.append(move)
+	return 0
+
+
+## CheckEvolution (solo por nivel): si con este nivel evoluciona y en qué especie.
+func evolucion_pendiente() -> PokemonData:
+	if hp_actual <= 0 or especie.nivel_evolucion <= 0 or nivel < especie.nivel_evolucion:
+		return null
+	return Datos.especie(especie.evoluciona_a)
+
+
+## EvolutionSetPokemon / EvolutionSetStats: cambia la especie; el HP actual sube lo que sube el máximo.
+func evolucionar(nueva: PokemonData) -> void:
+	var hp_antes: int = calcular_stats()["hp"]
+	especie = nueva
+	hp_actual = maxi(1, hp_actual + calcular_stats()["hp"] - hp_antes)
+	energia_actual = mini(energia_actual, calcular_energia_maxima())
 
 
 ## Stats según el nivel, con las fórmulas del original (PSPokemon, ATPokemon... ShowStatVel).

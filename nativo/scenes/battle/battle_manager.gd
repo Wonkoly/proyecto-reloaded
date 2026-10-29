@@ -19,6 +19,8 @@ var _saliendo: bool = false
 var _pokemon: Array[BattlePokemon] = []
 var _equipos: Array = [[], []]
 var _inicio: Array[Vector2] = []
+## Los Pokémon del jugador que subieron de nivel (global.subido): al final se revisa si evolucionan.
+var _subidos: Array[PokemonInstance] = []
 
 
 func iniciar(jugador: BattlePokemon, rival: BattlePokemon, equipo_jugador: Array = [], equipo_rival: Array = []) -> void:
@@ -45,6 +47,10 @@ func _on_debilitado(caido: BattlePokemon) -> void:
 	if terminada:
 		return
 	var lado: int = _pokemon.find(caido)
+	if lado == 1:
+		await _experiencia(caido.pokemon)
+		if terminada:
+			return
 	var otro: PokemonInstance = _siguiente(lado)
 	if otro:
 		await get_tree().create_timer(ESPERA_CAMBIO).timeout
@@ -74,7 +80,21 @@ func _salir() -> void:
 		return
 	_saliendo = true
 	await _dinero(_gano)
+	if _gano:
+		await Evolucion.revisar_equipo(self, _subidos)
 	_volver()
+
+
+## ExpGana: el Pokémon del jugador que está en el campo gana la experiencia del rival que cayó.
+func _experiencia(rival: PokemonInstance) -> void:
+	var bp: BattlePokemon = _pokemon[0]
+	if _equipos[0].is_empty() or bp.esta_debilitado():
+		return  # batalla de prueba o ya sin vida
+	var cantidad: int = Progreso.experiencia_de(rival, GameState.combate_entrenador != 0)
+	if await Progreso.dar_experiencia(self, bp.pokemon, cantidad):
+		if bp.pokemon not in _subidos:
+			_subidos.append(bp.pokemon)
+		bp.configurar(bp.pokemon)  # stats, HP máximo y barras del nuevo nivel
 
 
 ## NextPokemon: contra un entrenador se gana la suma de los niveles de su equipo × 16 (× 32 los

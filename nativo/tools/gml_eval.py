@@ -158,10 +158,17 @@ class Funciones:
                 return args[0] - int(args[0])
             if nombre == "floor":
                 return float(int(args[0] // 1))
-            if nombre in ("random", "irandom", "choose", "random_range") or nombre.startswith(("instance_", "Get", "Draw")):
+            if nombre == "ceil":
+                return float(-int(-args[0] // 1))
+            if nombre in ("random", "irandom", "choose", "random_range") or (
+                    nombre.startswith(("instance_", "Get", "Draw")) and nombre not in GET_PUROS):
                 raise Desconocido(nombre)
             return self._llamar(nombre, args, prof + 1)
         raise Desconocido(k)
+
+
+# Funciones Get* que solo dependen de sus argumentos (las demás leen el estado del juego).
+GET_PUROS = {"GetOrdenDex", "GetCrecimiento"}
 
 
 def _operar(op: str, a, b):

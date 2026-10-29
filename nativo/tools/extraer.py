@@ -455,6 +455,17 @@ def velocidad_animacion(frames: int) -> float:
     return {3: 0.2, 2: 0.15}.get(frames, 0.1)
 
 
+def leer_evoluciones(check: str, confirmacion: str) -> dict[int, tuple[int, int | None]]:
+    """CheckEvolution: if(pk=N && nv>=L)return true -> nivel; EvolutionConfirmation: if(pk=N){pk=M;exit;}
+    -> destino (None = el de por defecto: pk + 1 si es de la misma familia de cría)."""
+    niveles = {}
+    for pk, nv in re.findall(r"if\(pk=(\d+) && nv>=(\d+)\)return true;", check):
+        niveles.setdefault(int(pk), int(nv))
+    destinos = {int(a): int(b) for a, b in re.findall(r"if\(pk=(\d+)\)\{pk=(\d+);(?: LostItemEvolution\(ac\);)?exit;\}", confirmacion)}
+    especiales = {int(a) for a in re.findall(r"if\(pk=(\d+)\)\{", confirmacion)} - set(destinos)
+    return {pk: (nv, destinos.get(pk)) for pk, nv in niveles.items() if pk not in especiales}
+
+
 def extraer_datos(plan: Plan, ext: Path, indice: dict) -> None:
     scripts = ext / "scripts"
     gml = lambda nombre: (scripts / f"{nombre}.gml").read_text(encoding="utf-8")
@@ -516,6 +527,7 @@ def extraer_datos(plan: Plan, ext: Path, indice: dict) -> None:
     funciones = gml_eval.Funciones(scripts)  # para las funciones de cría (MYSON, GrupoHuevo, OneSex)
     mts, mt_mov = leer_switch(gml("Ataque_MT"), "MK"), Tabla(gml("MTAtack"))
     tutores, dts = leer_switch(gml("Ataque_Tutor"), "MV"), leer_dt(gml("Ataque_DT"))
+    evoluciones = leer_evoluciones(gml("CheckEvolution"), gml("EvolutionConfirmation"))
     total = 0
     for a, b in RANGOS_ESPECIES:
         for pk in range(a, b + 1):
@@ -542,6 +554,14 @@ def extraer_datos(plan: Plan, ext: Path, indice: dict) -> None:
                                             ("grupo_huevo_2", "GrupoHuevo2", 0), ("sexo_unico", "OneSex", -1)):
                 v = funciones.llamar(funcion, float(pk))
                 props.append(f"{campo} = {int(v) if isinstance(v, float) else defecto}")
+            rareza = funciones.llamar("NumRareza", float(pk))
+            props.append(f"ratio_captura = {int(rareza) if isinstance(rareza, float) else 45}")
+            if pk in evoluciones:
+                nv_evo, destino = evoluciones[pk]
+                if destino is None and funciones.llamar("MYSON", float(pk)) == funciones.llamar("MYSON", float(pk + 1)):
+                    destino = pk + 1
+                if destino:
+                    props += [f"nivel_evolucion = {nv_evo}", f"evoluciona_a = {destino}"]
             frente = ASSETS / "sprites" / "pokemon" / f"{pk:04d}" / "2.png"
             if frente.exists():  # la categoría sprites ya se sincronizó antes que datos
                 w, h = png_size(frente)

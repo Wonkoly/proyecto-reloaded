@@ -19,6 +19,11 @@ const REVIVE: Dictionary[int, String] = {21: "1/2", 22: "max", 550: "max", 130: 
 static var _datos: Dictionary = {}
 static var _evoluciones: Dictionary = {}
 
+## UseObject: vitaminas y Mochis → dígito de IV que suben (0 PS, 1 Ataque, 2 Defensa, 3 At. Esp.,
+## 4 Def. Esp., 5 Velocidad) y el texto de TextMenu que dicen.
+const VITAMINAS: Dictionary[int, int] = {32: 0, 698: 0, 36: 1, 699: 1, 34: 2, 700: 2, 33: 3, 701: 3,
+	37: 4, 702: 4, 35: 5, 703: 5}
+const TEXTO_VITAMINA: Array[int] = [534, 538, 536, 535, 539, 537]
 ## Caramelo Raro (UseObject, OB = 38): sube un nivel.
 const CARAMELO_RARO: int = 38
 

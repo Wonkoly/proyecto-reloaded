@@ -27,7 +27,8 @@ static func _usar(desde: Node, id: int) -> void:
 		GameState.ball_asignada = id
 		await CuadroOriginal.mensaje(desde, "%s %s" % [Textos.linea("txt_menu", 144), Inventario.nombre(id)])
 		return
-	if id == Inventario.CARAMELO_RARO or Inventario.hace_evolucionar(id) or Inventario.movimiento_que_ensena(id):
+	if id == Inventario.CARAMELO_RARO or id in Inventario.VITAMINAS or Inventario.hace_evolucionar(id) \
+			or Inventario.movimiento_que_ensena(id):
 		var j: int = await MenuLista.elegir(desde, Inventario.nombre(id), GameState.equipo.map(MenuEquipo.fila))
 		if j >= 0:
 			await _usar_en_pokemon(desde, id, GameState.equipo[j])
@@ -62,6 +63,7 @@ static func _usar_en_pokemon(desde: Node, id: int, p: PokemonInstance) -> void:
 			await CuadroOriginal.mensaje(desde, Textos.linea("txt_menu", 510))
 			return
 		Inventario.quitar(id)
+		p.bajar_iv()  # BajaInstructionValue
 		p.nivel += 1
 		p.experiencia = p.exp_para_nivel(p.nivel)
 		p.hp_actual = mini(p.hp_actual, p.calcular_stats()["hp"])
@@ -70,6 +72,14 @@ static func _usar_en_pokemon(desde: Node, id: int, p: PokemonInstance) -> void:
 			await Progreso.aprender(desde, p, m)
 		var subido: Array[PokemonInstance] = [p]
 		await Evolucion.revisar_equipo(desde, subido)
+		return
+	if id in Inventario.VITAMINAS:
+		var d: int = Inventario.VITAMINAS[id]
+		if p.subir_iv(d) < 0:
+			await CuadroOriginal.mensaje(desde, Textos.linea("txt_menu", 510))
+			return
+		Inventario.quitar(id)
+		await CuadroOriginal.mensaje(desde, Textos.par(Textos.linea("txt_menu", Inventario.TEXTO_VITAMINA[d]), Progreso.nombre(p)))
 		return
 	var move: MoveData = Inventario.movimiento_que_ensena(id)
 	if move:

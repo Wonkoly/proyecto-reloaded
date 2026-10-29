@@ -145,11 +145,36 @@ func ganar_experiencia(cantidad: int) -> Array[int]:
 	var nuevos: Array[int] = []
 	experiencia = mini(experiencia + maxi(cantidad, 0), exp_para_nivel(100))
 	while nivel < 100 and exp_para_nivel(nivel + 1) <= experiencia:
+		subir_iv()  # ExpGana: SubeInstructionValue(-1) en cada nivel
 		var hp_antes: int = calcular_stats()["hp"]
 		nivel += 1
 		hp_actual += calcular_stats()["hp"] - hp_antes
 		nuevos.append(nivel)
 	return nuevos
+
+
+## SubeInstructionValue: +1 al dígito de IV de un stat (0 PS ... 5 Velocidad; -1 = uno al azar que no
+## esté en 9). Devuelve el dígito que subió o -1 si no se pudo.
+func subir_iv(digito: int = -1) -> int:
+	var libres: Array[int] = []
+	for d: int in 6:
+		if _digito(iv, d) < 9 and (digito < 0 or d == digito):
+			libres.append(d)
+	if libres.is_empty():
+		return -1
+	var d: int = libres.pick_random()
+	iv += int(pow(10, d))
+	return d
+
+
+## BajaInstructionValue (Caramelo Raro): -1 a un dígito de IV al azar que no esté en 0.
+func bajar_iv() -> void:
+	var con_valor: Array[int] = []
+	for d: int in 6:
+		if _digito(iv, d) > 0:
+			con_valor.append(d)
+	if not con_valor.is_empty():
+		iv -= int(pow(10, con_valor.pick_random()))
 
 
 ## Los movimientos que la especie aprende justo en ese nivel (Ataque_Nivel).

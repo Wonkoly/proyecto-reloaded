@@ -4,7 +4,7 @@ extends CanvasLayer
 ## los cuadros del original. El juego queda congelado mientras está abierta.
 ##   var i: int = await MenuLista.elegir(self, "¿Qué deseas?", [{"texto": "Comprar"}, ...])
 ## Filas: {"texto", "derecha" (p. ej. el precio), "desc" (abajo), "activo" (false = gris)}.
-## Opciones: "pie" (texto arriba a la derecha, p. ej. el dinero), "pestanas" (títulos de bolsillos:
+## Opciones: "pie" (texto arriba a la derecha, p. ej. el dinero), "ancho" (de la lista, en px), "pestanas" (títulos de bolsillos:
 ## ←/→ cambian y elegir() devuelve IZQUIERDA/DERECHA), "inicial".
 ## ↑/↓ mueven, Z o Enter eligen (devuelve el índice), X o Esc cancelan (devuelve -1).
 
@@ -96,7 +96,7 @@ func _dibujar() -> void:
 		TextoGM.dibujar(_lienzo, _fuente, r.position + Vector2(r.size.x / 2, alto_texto + 14), linea, COLOR_ELEGIDO, true)
 		return
 	# Con dinero a la izquierda, la lista es un poco más angosta para que no se tapen.
-	var ancho: float = minf(166.0 if _opciones.has("pie") else 190.0, t.x - 16)
+	var ancho: float = minf(float(_opciones.get("ancho", 166.0 if _opciones.has("pie") else 190.0)), t.x - 16)
 	var x: float = t.x - ancho - 6
 	var y: float = 6.0
 	# Pestañas (bolsillos) y título.

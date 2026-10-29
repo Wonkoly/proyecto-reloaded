@@ -35,6 +35,18 @@ static func entrenador(id: int) -> EntrenadorData:
 	return null
 
 
+static var _pokedex: Dictionary = {}
+
+
+## [id_original, nombre] de la especie con ese número de Pokédex (data/extraido/pokemon/pokedex.json),
+## o [] si no existe.
+static func por_pokedex(numero: int) -> Array:
+	if _pokedex.is_empty():
+		var f: FileAccess = FileAccess.open(CARPETA_POKEMON.path_join("pokedex.json"), FileAccess.READ)
+		_pokedex = JSON.parse_string(f.get_as_text()) if f else {}
+	return _pokedex.get(str(numero), [])
+
+
 ## Los archivos de datos se llaman NNNN_nombre.tres (NNNN = id_original).
 static func _buscar(carpeta: String, id_original: int) -> String:
 	var prefijo: String = "%04d_" % id_original

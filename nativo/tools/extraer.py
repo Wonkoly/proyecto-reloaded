@@ -535,6 +535,7 @@ def extraer_datos(plan: Plan, ext: Path, indice: dict) -> None:
     mts, mt_mov = leer_switch(gml("Ataque_MT"), "MK"), Tabla(gml("MTAtack"))
     tutores, dts = leer_switch(gml("Ataque_Tutor"), "MV"), leer_dt(gml("Ataque_DT"))
     evoluciones = leer_evoluciones(gml("CheckEvolution"), gml("EvolutionConfirmation"))
+    pokedex: dict[int, list] = {}  # número de Pokédex -> [id_original, nombre] (la primera especie)
     total = 0
     for a, b in RANGOS_ESPECIES:
         for pk in range(a, b + 1):
@@ -543,6 +544,7 @@ def extraer_datos(plan: Plan, ext: Path, indice: dict) -> None:
             if not nombre or stats["hp"].valor(pk) is None:
                 continue
             dex = int(orden_dex.valor(pk, pk) or pk)
+            pokedex.setdefault(dex, [pk, nombre])
             tres = Tres("Resource", "PokemonData")
             tipos = [TIPO_JUEGO_A_ENUM[int(t)] for t in (tipo_a.valor(pk, 0), tipo_b.valor(pk, 0))
                      if t and int(t) in TIPO_JUEGO_A_ENUM]
@@ -590,6 +592,8 @@ def extraer_datos(plan: Plan, ext: Path, indice: dict) -> None:
             props.append(f"movimientos_aprendibles = Array[{script_apr}]([{', '.join(refs)}])")
             plan.escribir(DATA / "pokemon" / f"{pk:04d}_{snake(nombre)}.tres", tres.texto(props))
             total += 1
+    plan.escribir(DATA / "pokemon" / "pokedex.json",
+                  json.dumps({str(k): v for k, v in sorted(pokedex.items())}, ensure_ascii=False, indent=0))
     print(f"  {total} especies")
     tablas = {"TheoricBaseAttack": poder, "TheoricTypeAttack": tipo_mov, "TheoricPPAtack": costo, "ModeAtack": modo,
               "TypeAPokemon": tipo_a, "TypeBPokemon": tipo_b, "ExpBase": exp_base, "GetOrdenDex": orden_dex,

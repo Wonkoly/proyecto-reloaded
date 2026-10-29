@@ -21,10 +21,10 @@ mapa por mapa, y al final los modos extra.
 | 2 | Evolución por nivel | `CheckEvolution`, `EvolutionConfirmation`, objeto `EVOLUTION` | hecho (364 especies; faltan las especiales) |
 | 3 | Captura con Poké Ball (tecla B, proyectil) | `LanzaCosa`, `PokeBallCapturando`, `CapturaPokemon` | hecho (al equipo o al PC; faltan apodo y balls que dependen de estados/pesca) |
 | 4 | Huir (tecla E) y mochila en batalla (O) | `KeyActionsBattle` | hecho |
-| 5 | Menú de equipo y cambio de Pokémon en batalla | `key_bt_show_pkmn`, `NextPokemon` | pendiente |
-| 6 | Menú de pausa del overworld (equipo, mochila, guardar, opciones) | `KeyActionsProta` | pendiente |
-| 7 | PC / caja | `MenuCaja*` | pendiente |
-| 8 | Pokédex (vistos/capturados, ficha) | `Dex_*`, `pkdexC` | pendiente |
+| 5 | Menú de equipo (Espacio) y cambio de Pokémon en batalla (1-6) | `key_menu_pokemon`, `key_bt_pkmn1..6` | hecho con listas (falta la pantalla de ficha del original) |
+| 6 | Menú principal (Enter): equipo, mochila, Pokédex, entrenador, guardar, salir | `KeyActionsExplorer` | hecho (faltan Opciones, Áreas, Móvil, Habilidades) |
+| 7 | PC de los Centros: cajas (dejar, sacar, liberar) | `PCKeyActions` | hecho con listas (faltan la sala de cajas y el PC de ítems) |
+| 8 | Pokédex (F12): vistos/capturados, categoría y descripción | `Dex_*`, `pkdexC` | hecho con listas (falta su pantalla) |
 | 9 | Música de mapas y batallas | `ImportMusica` | pendiente |
 
 ## Después

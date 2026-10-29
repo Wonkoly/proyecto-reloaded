@@ -81,6 +81,17 @@ func _unhandled_input(evento: InputEvent) -> void:
 			get_viewport().set_input_as_handled()
 			npc.hablar(giro)
 			return
+	# PCKeyActions: de cara al PC (mirando arriba, centrado y justo debajo) se enciende.
+	var mapa: Mapa = _mapa()
+	if mapa and mira == 8:
+		for n: Node in mapa.get_node("Objetos").get_children():
+			if n.name.begins_with("obj_PC_") and n is Node2D:
+				var pc: Vector2 = (n as Node2D).position
+				if absf(global_position.x - (pc.x + 8.0)) < 10.0 and global_position.y > pc.y + 24.0 \
+						and global_position.y < pc.y + 44.0:
+					get_viewport().set_input_as_handled()
+					CajaPC.usar(self)
+					return
 
 
 ## Quieto, sin cruzar un salto y dentro del mapa (lo que pide el original para guardar).

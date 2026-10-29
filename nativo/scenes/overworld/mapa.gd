@@ -26,22 +26,37 @@ func _ready() -> void:
 	GameState.historia_cambiada.connect(aplicar_historia)
 
 
-## F5 (key_global_guardar, KeyActionsExplorer): con el jugador quieto pregunta y guarda.
+## Teclas de KeyActionsExplorer con el jugador quieto: F5 guarda (key_global_guardar), Enter abre el
+## menú principal, Espacio el equipo y F12 la Pokédex.
 func _unhandled_input(evento: InputEvent) -> void:
 	var tecla := evento as InputEventKey
-	if tecla == null or not tecla.pressed or tecla.echo or tecla.physical_keycode != KEY_F5:
+	if tecla == null or not tecla.pressed or tecla.echo:
+		return
+	if tecla.physical_keycode not in [KEY_F5, KEY_ENTER, KEY_KP_ENTER, KEY_SPACE, KEY_F12]:
+		return
+	var jugador: Jugador = get_node_or_null("Objetos/Jugador") as Jugador
+	if _guardando or SceneManager.en_transicion or Eventos.en_curso or jugador == null or not jugador.quieto():
 		return
 	get_viewport().set_input_as_handled()
-	var jugador: Jugador = get_node_or_null("Objetos/Jugador") as Jugador
-	if _guardando or SceneManager.en_transicion or jugador == null or not jugador.quieto():
-		return
 	_guardando = true
+	match tecla.physical_keycode:
+		KEY_F5: await guardar_partida()
+		KEY_ENTER, KEY_KP_ENTER: await MenuPrincipal.abrir(self, self)
+		KEY_SPACE: await MenuEquipo.abrir(self)
+		KEY_F12: await Pokedex.abrir(self)
+	_guardando = false
+
+
+## Pregunta y guarda la partida con la posición actual del jugador.
+func guardar_partida() -> void:
+	var jugador: Jugador = get_node_or_null("Objetos/Jugador") as Jugador
+	if jugador == null:
+		return
 	if await CuadroOriginal.preguntar(self, Textos.linea("txt_menu", 39)):
 		GameState.posicion_jugador = jugador.global_position
 		GameState.mira = jugador.mira
 		var error: String = SaveManager.guardar()
 		await CuadroOriginal.mensaje(self, Textos.linea("txt_menu", 44) if error == "" else error)
-	_guardando = false
 
 
 ## Activa o desactiva lo que depende de la historia (grupo "historia", con metadata/condicion: una

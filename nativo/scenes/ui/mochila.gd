@@ -2,8 +2,8 @@ class_name Mochila
 ## La mochila (tecla O, key_menu_mochila): los objetos por bolsillo (←/→) con su descripción; los de
 ## curar se usan sobre un Pokémon del equipo (UseDirectObject).
 
-static func abrir(desde: Node) -> void:
-	var pestana: int = 0
+static func abrir(desde: Node, pestana: int = 0) -> void:
+	pestana = maxi(pestana, 0)
 	var sel: int = 0
 	var titulos: Array = Inventario.BOLSILLOS.map(func(x: String) -> String: return Inventario.NOMBRES_BOLSILLO[x])
 	while true:
@@ -22,6 +22,11 @@ static func abrir(desde: Node) -> void:
 
 
 static func _usar(desde: Node, id: int) -> void:
+	if Inventario.bolsillo(id) == "ball":
+		# Asigna la ball a la tecla B (global.ball_asign; TextMenu 144 "Ball asignada:").
+		GameState.ball_asignada = id
+		await CuadroOriginal.mensaje(desde, "%s %s" % [Textos.linea("txt_menu", 144), Inventario.nombre(id)])
+		return
 	if not Inventario.es_de_curar(id):
 		await CuadroOriginal.mensaje(desde, Textos.linea("txt_menu", 291))
 		return

@@ -49,6 +49,13 @@ var indice_lugar: int = 0
 var dinero: int = 0
 ## La mochila: id del objeto → cantidad (ver scripts/inventario.gd).
 var objetos: Dictionary[int, int] = {}
+## La Poké Ball que se lanza con la tecla B en batalla (global.ball_asign); -1 = ninguna.
+var ball_asignada: int = -1
+## PC: cajas de 30 huecos (global.boxpkmn); hay 8 al empezar (global.NumCajas) y hasta 149.
+var cajas: Array[Array] = []
+var nombres_cajas: Array[String] = []
+## Pokédex: número de Pokédex → 1 visto, 2 capturado (pkdexV / pkdexC).
+var pokedex: Dictionary[int, int] = {}
 ## Nombre del protagonista (global.protaname); al empezar, el del perfil.
 var nombre_jugador: String = ""
 ## Nombre del rival (global.rivalname; lo elige la presentación del profesor, que aún no existe).
@@ -96,6 +103,8 @@ const INICIO_SALIDA_POSICION: Vector2 = Vector2(417, 199)
 func _ready() -> void:
 	if equipo.is_empty():
 		_equipo_inicial()
+	if cajas.is_empty():
+		_cajas_iniciales()
 
 
 ## Deja todo como al empezar una partida (el estado de prueba de siempre: ya con su primer Pokémon
@@ -122,6 +131,11 @@ func nueva_partida(nombre: String = "") -> void:
 	indice_lugar = 0
 	dinero = 0
 	objetos.clear()
+	ball_asignada = -1
+	_cajas_iniciales()
+	pokedex.clear()
+	for p: PokemonInstance in equipo:
+		marcar_pokedex(p.especie, 2)
 	prota_id = randi_range(0, 99999)
 	apodo_jugador = ""
 	personaje = 0
@@ -154,6 +168,11 @@ func a_dict() -> Dictionary:
 		"indice_lugar": indice_lugar,
 		"dinero": dinero,
 		"objetos": objetos.keys().map(func(k: int) -> Array: return [k, objetos[k]]),
+		"ball_asignada": ball_asignada,
+		"cajas": cajas.map(func(caja: Array) -> Array: return caja.map(
+			func(p: Variant) -> Variant: return (p as PokemonInstance).a_dict() if p else null)),
+		"nombres_cajas": nombres_cajas,
+		"pokedex": pokedex.keys().map(func(k: int) -> Array: return [k, pokedex[k]]),
 		"prota_id": prota_id,
 		"apodo_jugador": apodo_jugador,
 		"personaje": personaje,
@@ -196,6 +215,23 @@ func desde_dict(d: Dictionary, slot_: int) -> void:
 	for par: Variant in d.get("objetos", []):
 		if par is Array and par.size() == 2 and int(par[1]) > 0:
 			objetos[int(par[0])] = int(par[1])
+	ball_asignada = int(d.get("ball_asignada", -1))
+	if d.get("cajas") is Array:
+		cajas.clear()
+		for caja: Variant in d.cajas:
+			var huecos: Array = []
+			huecos.resize(POKEMON_POR_CAJA)
+			if caja is Array:
+				for i: int in mini(caja.size(), POKEMON_POR_CAJA):
+					huecos[i] = PokemonInstance.desde_dict(caja[i]) if caja[i] is Dictionary else null
+			cajas.append(huecos)
+		nombres_cajas.clear()
+		for i: int in cajas.size():
+			var nombres: Array = d.get("nombres_cajas", [])
+			nombres_cajas.append(str(nombres[i]) if i < nombres.size() else _nombre_caja(i))
+	for par: Variant in d.get("pokedex", []):
+		if par is Array and par.size() == 2:
+			pokedex[int(par[0])] = int(par[1])
 	prota_id = int(d.get("prota_id", prota_id))
 	apodo_jugador = str(d.get("apodo_jugador", ""))
 	personaje = int(d.get("personaje", 0))
@@ -216,6 +252,41 @@ func _equipo_inicial() -> void:
 	var charmander: PokemonData = Datos.especie(4)
 	if charmander:
 		equipo.append(PokemonInstance.crear(charmander, 5))
+
+
+const POKEMON_POR_CAJA: int = 30
+const CAJAS_INICIALES: int = 8
+
+
+func _cajas_iniciales() -> void:
+	cajas.clear()
+	nombres_cajas.clear()
+	for i: int in CAJAS_INICIALES:
+		var huecos: Array = []
+		huecos.resize(POKEMON_POR_CAJA)
+		cajas.append(huecos)
+		nombres_cajas.append(_nombre_caja(i))
+
+
+## TextMenu(199): "Caja N".
+static func _nombre_caja(i: int) -> String:
+	return Textos.par(Textos.linea("txt_menu", 199), str(i + 1))
+
+
+## CapturaPokemon: el primer hueco libre del PC. Devuelve [caja, posición] o [] si está lleno.
+func guardar_en_pc(p: PokemonInstance) -> Array[int]:
+	for c: int in cajas.size():
+		for i: int in POKEMON_POR_CAJA:
+			if cajas[c][i] == null:
+				cajas[c][i] = p
+				return [c, i]
+	return []
+
+
+## Dex_SEE / Dex_CATCH: marca la especie como vista (1) o capturada (2); nunca baja.
+func marcar_pokedex(especie: PokemonData, estado: int) -> void:
+	if especie:
+		pokedex[especie.numero_pokedex] = maxi(pokedex.get(especie.numero_pokedex, 0), estado)
 
 
 ## CentroPokemon(1): HP y energía al máximo (y sin estados, cuando los haya).

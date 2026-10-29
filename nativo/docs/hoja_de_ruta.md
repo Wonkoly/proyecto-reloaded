@@ -17,10 +17,10 @@ mapa por mapa, y al final los modos extra.
 ## Ciclo básico (en curso)
 | # | Sistema | Original | Estado |
 |---|---|---|---|
-| 1 | Experiencia, subir de nivel, aprender movimientos | `ExpGana`, `AjusteStatsLevelUp`, `AprendeAtaque` | en curso |
-| 2 | Evolución por nivel | `CheckEvolution`, `EvolutionConfirmation`, objeto `EVOLUTION` | en curso |
-| 3 | Captura con Poké Ball (tecla B, proyectil) | `LanzaCosa`, `PokeBallCapturando`, `CapturaPokemon` | pendiente |
-| 4 | Huir (tecla de escapar) | `KeyActionsBattle` | pendiente (hoy Escape) |
+| 1 | Experiencia, subir de nivel, aprender movimientos | `ExpGana`, `AjusteStatsLevelUp`, `AprendeAtaque` | hecho (falta Repartir Exp. y objetos de exp.) |
+| 2 | Evolución por nivel | `CheckEvolution`, `EvolutionConfirmation`, objeto `EVOLUTION` | hecho (364 especies; faltan las especiales) |
+| 3 | Captura con Poké Ball (tecla B, proyectil) | `LanzaCosa`, `PokeBallCapturando`, `CapturaPokemon` | hecho (al equipo o al PC; faltan apodo y balls que dependen de estados/pesca) |
+| 4 | Huir (tecla E) y mochila en batalla (O) | `KeyActionsBattle` | hecho |
 | 5 | Menú de equipo y cambio de Pokémon en batalla | `key_bt_show_pkmn`, `NextPokemon` | pendiente |
 | 6 | Menú de pausa del overworld (equipo, mochila, guardar, opciones) | `KeyActionsProta` | pendiente |
 | 7 | PC / caja | `MenuCaja*` | pendiente |
@@ -28,6 +28,7 @@ mapa por mapa, y al final los modos extra.
 | 9 | Música de mapas y batallas | `ImportMusica` | pendiente |
 
 ## Después
+- El entrenador del jugador dentro de la arena (`Trainer1`, se mueve y lo pueden golpear).
 - Estados (quemado, dormido...), habilidades, objetos equipados, clima, mega/Z/dinamax, efectos
   especiales de cada movimiento (`Ataque1GolpeaPokemon2`).
 - Evoluciones por objeto, intercambio, amistad y condiciones especiales (`CheckTeamEvolution`).

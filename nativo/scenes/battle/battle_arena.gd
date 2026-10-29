@@ -46,6 +46,8 @@ func _ready() -> void:
 			push_warning("El entrenador %d no tiene equipo" % GameState.combate_entrenador)
 			SceneManager.volver_de_combate(true)
 		return
+	if desde_overworld:
+		GameState.marcar_pokedex(p_rival.especie, 1)  # Pokemon2SeePokedex
 	var jugador: BattlePokemon = _crear_pokemon("Jugador", p_jugador, 1, $PosicionJugador.position)
 	var rival: BattlePokemon = _crear_pokemon("Rival", p_rival, 2, $PosicionRival.position)
 	jugador.add_child(PlayerController.new())
@@ -99,9 +101,5 @@ func _mostrar_danio(_move: MoveData, danio: int, _eficacia: float, bp: BattlePok
 
 func _unhandled_input(event: InputEvent) -> void:
 	if event.is_action_pressed("ui_cancel"):
-		if GameState.combate_entrenador != 0:
-			return  # de un combate contra un entrenador no se huye
-		if GameState.salvaje != null:
-			SceneManager.volver_de_batalla()  # huir
-		else:
-			get_tree().change_scene_to_file(MENU_PRUEBAS)
+		get_viewport().set_input_as_handled()
+		($BattleManager as BattleManager).huir()

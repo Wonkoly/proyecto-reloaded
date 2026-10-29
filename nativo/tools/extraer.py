@@ -68,6 +68,13 @@ SPRITES_UI = [
     # Intro y título (obj_blackIntro, InicioROOM) y los cuadros de pregunta (ShowDialogQuestion).
     "spr_credits_intro", "spr_title", "spr_title2", "spr_title3", "spr_lineafreak",
     "spr_bckConfirm", "spr_bckConfirmImportant", "spr_bckMessage", "spr_dialogo", "spr_dialogo_face", "spr_EXC", "spr_nanoball", "spr_pantalla",
+    # La Poké Ball lanzada en batalla (obj_Pokeball): en vuelo spr_ball; quieta, la de cada tipo
+    # (PokeBallSprite: índice de ball = sprite 3318 + índice; spr_ball_2 es el vuelo de las demás).
+    "spr_ball_2", "spr_poke_ball", "spr_super_ball", "spr_ultra_ball", "spr_master_ball", "spr_safari_ball",
+    "spr_honor_ball", "spr_malla_ball", "spr_buceo_ball", "spr_turno_ball", "spr_lujo_ball", "spr_nido_ball",
+    "spr_acopio_ball", "spr_star_ball", "spr_parque_ball", "spr_rapid_ball", "spr_nivel_ball", "spr_cebo_ball",
+    "spr_peso_ball", "spr_amor_ball", "spr_amigo_ball", "spr_luna_ball", "spr_sana_ball", "spr_ocaso_ball",
+    "spr_veloz_ball", "spr_gloria_ball", "spr_black_ball", "spr_ente_ball",
 ]
 # Fondos de la intro y el título (IntroROOM, InicioROOM) → sprites/ui/fondos/.
 FONDOS_UI = ["BackIntro", "BackIntroLetras", "GradienteNight", "BackFerProductions"]

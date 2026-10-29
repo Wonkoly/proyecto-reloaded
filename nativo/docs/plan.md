@@ -31,6 +31,9 @@ El objetivo es que una partida nueva llegue a la medalla 1 sin trucos.
   mano llega igual.
 
 ## Fase 2 — Objetos que faltan
+**Estado: en curso** (`feat/objetos`). Hechos: Caramelo Raro, objetos evolutivos (piedras) y MT/DT desde
+la mochila. Faltan: evoluciones por intercambio, amistad y condiciones (`CheckTeamEvolution`), objetos
+que suben stats y los objetos equipados en batalla.
 - Caramelo Raro y objetos que suben stats, usados desde la mochila (`UseDirectObject`).
 - Piedras evolutivas y el resto de evoluciones especiales (`EvolutionConfirmation`,
   `CheckTeamEvolution`: objeto, intercambio, amistad, condiciones).

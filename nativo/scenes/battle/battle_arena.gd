@@ -50,6 +50,7 @@ func _ready() -> void:
 		GameState.marcar_pokedex(p_rival.especie, 1)  # Pokemon2SeePokedex
 	# Sound_Battle: salvaje, entrenador o líder.
 	AudioManager.musica_batalla("salvaje" if entrenador == null else ("lider" if entrenador.lider else "entrenador"))
+	_colocar_entrenadores(entrenador, desde_overworld)
 	var jugador: BattlePokemon = _crear_pokemon("Jugador", p_jugador, 1, $PosicionJugador.position)
 	var rival: BattlePokemon = _crear_pokemon("Rival", p_rival, 2, $PosicionRival.position)
 	jugador.add_child(PlayerController.new())
@@ -71,6 +72,26 @@ func _ready() -> void:
 	for bp: BattlePokemon in [jugador, rival]:
 		bp.golpeado.connect(_mostrar_danio.bind(bp))
 		bp.mensaje.connect(hud.mensaje)
+
+
+## InitializeBattle: el jugador en (98, 64) y, contra entrenadores, el rival en (480, 244); en dobles
+## y triples los rivales suben (120 y 220; 110, 170 y 230).
+func _colocar_entrenadores(entrenador: EntrenadorData, desde_overworld: bool) -> void:
+	if not desde_overworld:
+		return
+	pokemons.add_child(EntrenadorArena.del_jugador(Vector2(98, 64)))
+	if entrenador == null:
+		return
+	var rivales: Array[EntrenadorData] = [entrenador]
+	for n: int in GameState.combate_companeros:
+		var otro: EntrenadorData = Datos.entrenador(n)
+		if otro:
+			rivales.append(otro)
+	var alturas: Array = [[244], [120, 220], [110, 170, 230]][mini(rivales.size(), 3) - 1]
+	for i: int in alturas.size():
+		var e: EntrenadorArena = EntrenadorArena.del_rival(rivales[i], Vector2(480, alturas[i]))
+		if e:
+			pokemons.add_child(e)
 
 
 func _pokemon_de_prueba(id_especie: int, nivel: int) -> PokemonInstance:

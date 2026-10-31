@@ -28,7 +28,8 @@ mapa por mapa, y al final los modos extra.
 | 9 | Música de mapas y batallas | `Sound_World`, `Sound_Battle` | hecho (594 mapas; faltan variantes por historia, legendarios y villanos) |
 
 ## Después
-- El entrenador del jugador dentro de la arena (`Trainer1`, se mueve y lo pueden golpear).
+- Los entrenadores en la arena: hecho (`Trainer1` en (98, 64) y los rivales en (480, 244), quietos
+  con su sombra; el original no los mueve ni los golpea).
 - Efectos de movimientos: hechos los de `SecEffect1` que solo dependen del movimiento (445: estados con
   su probabilidad, etapas de stats propias y del rival, retroceso) y los estados en tiempo real
   (`EffectStatuses`: parálisis, quemado, sueño, veneno, congelación, maldición, infección). Faltan:

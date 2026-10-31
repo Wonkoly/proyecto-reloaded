@@ -99,7 +99,7 @@ CARPETAS = {
     "musica": [ASSETS / "audio" / "music", DATA / "musica"],
     "gritos": [ASSETS / "audio" / "sfx" / "gritos"],
     "entrenadores": [ASSETS / "sprites" / "trainers"],
-    "mapas": [ASSETS / "mapas", ASSETS / "sprites" / "overworld", DATA / "personajes.json", DATA / "dialogo_personajes.json",
+    "mapas": [ASSETS / "mapas", ASSETS / "sprites" / "overworld", DATA / "personajes.json", DATA / "rivales_arena.json", DATA / "dialogo_personajes.json",
               DATA / "entrenadores", DATA / "eventos", DATA / "centros.json"],
     "conexiones": [DATA / "conexiones.json", DATA / "mapas_geometria.json"],
     "encuentros": [DATA / "encuentros"],
@@ -785,6 +785,15 @@ def extraer_mapas(plan: Plan, juego: Path, ext: Path, tilesets: dict, filtro: li
         for nombres in grupo.values():
             for nombre in nombres:
                 sprite_tres(nombre)
+    # El rival en la arena (DefineTrainer2: global.TRAINER_R, con sus reemplazos; los invisibles no van).
+    reemplazos = {1959: 364, 1963: 367, 603: 1970, 636: 1973}
+    rivales = {}
+    for sprindex, sprs in sorted(tabla_npc.items()):
+        r = reemplazos.get(sprs.get("sprR", -1), sprs.get("sprR", -1))
+        if r >= 0 and r not in (1483, 1484, 1485):
+            rivales[str(sprindex)] = snake(original.sprites[r])
+            sprite_tres(original.sprites[r])
+    plan.escribir(DATA / "rivales_arena.json", json.dumps(rivales, indent=0))
     plan.escribir(DATA / "personajes.json", json.dumps({
         g: {str(k): [snake(n) for n in v] for k, v in grupo.items()} for g, grupo in tabla_personajes.items()},
         ensure_ascii=False, indent=1))

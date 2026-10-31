@@ -59,7 +59,9 @@ de vuelo con varias, y Teletransporte, Excavar, Gran Ojo, Dulce Aroma y Daño Se
 - **Listo cuando**: se vuela entre ciudades visitadas y cada MO cruza su obstáculo en su mapa.
 
 ## Fase 4 — Batalla completa
-- El entrenador del jugador en la arena (`Trainer1`): se mueve y lo pueden golpear.
+**En curso** (`feat/batalla-completa`). Hecho: los entrenadores en la arena (`Trainer1` y `Trainer2`:
+quietos, con sombra, en sus posiciones del original; `tests/prueba_arena.gd`).
+- ~~El entrenador del jugador en la arena (`Trainer1`)~~: en el original no se mueve ni lo golpean.
 - Habilidades de los Pokémon (las más comunes primero, extraídas donde se pueda).
 - Lo que falta de los efectos: confusión, enamoramiento, drenaje, ataques múltiples, evasión,
   iconos de estado en el HUD, Repartir Exp., apodos al capturar.

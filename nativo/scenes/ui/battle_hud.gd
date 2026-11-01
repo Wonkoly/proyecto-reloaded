@@ -107,6 +107,8 @@ func _on_energia(energia: int, energia_max: int, lado: Lado) -> void:
 
 ## Mensaje de Ataque1GolpeaPokemon2: "<movimiento> ha golpeado a <Pokémon>." + la eficacia.
 func _on_golpeado(move: MoveData, _danio: int, eficacia: float, lado: Lado) -> void:
+	if move == null:  # el autogolpe de la confusión ya avisó con su propio texto
+		return
 	var texto: String
 	if eficacia == 0.0:
 		texto = Textos.par(Textos.batalla(75), move.nombre, lado.nombre)

@@ -499,6 +499,7 @@ def extraer_datos(plan: Plan, ext: Path, indice: dict) -> None:
     modo = Tabla(gml("ModeAtack"))
     import efectos_original
     efectos_mov = efectos_original.efectos(gml("SecEffect1"))
+    golpes_mov = efectos_original.golpes(gml("EsMultiple"))
     ejecucion = Tabla(gml("ExecuteAtack"))
     rutas_mov: dict[int, Path] = {}
     tipos_raros: dict[int, int] = {}
@@ -536,6 +537,8 @@ def extraer_datos(plan: Plan, ext: Path, indice: dict) -> None:
         for clave in ("retroceso", "drenaje"):
             if efecto.get(clave):
                 props.append(f"{clave} = {efecto[clave]}")
+        if i in golpes_mov:
+            props.append("golpes = PackedInt32Array(%s)" % ", ".join(str(n) for n in golpes_mov[i]))
         plan.escribir(ruta, tres.texto(props))
     for t, n in sorted(tipos_raros.items()):
         avisar(f"{n} movimientos con tipo {t} del juego (sin equivalente en Tipos): se guardan como NORMAL")

@@ -47,6 +47,8 @@ var _energia: float = 0.0
 ## Segundos que faltan para poder volver a atacar / moverse / dejar la pose de herido.
 var _cooldown: float = 0.0
 var _bloqueo: float = 0.0
+## Despedido por el autogolpe de la confusión (velocidad que se frena sola).
+var _retroceso: Vector2 = Vector2.ZERO
 var _herido: float = 0.0
 ## Etapas de stats en este combate (Mod_At, Mod_Def... y prec): 1 At, 2 Def, 3 AtEsp, 4 DefEsp,
 ## 5 Vel, 6 Precisión.
@@ -139,9 +141,35 @@ func atacar(indice: int) -> bool:
 	if not puede_atacar(indice):
 		return false
 	var move: MoveData = pokemon.movimientos[indice]
+	if _falla_por_estado(move):
+		return false
 	_set_energia(_energia - move.costo_energia)
 	_cooldown = move.cooldown
 	_bloqueo = move.bloqueo_movimiento
+	if move.modo == MoveData.Modo.ESTADO and not move.cambios_propios.is_empty():
+		_cambiar_stats(move, self, move.cambios_propios)  # sobre sí mismo, sin proyectil
+	var total: int = move.golpes[randi() % move.golpes.size()] if not move.golpes.is_empty() else 1
+	_lanzar(move, total, total)
+	ataco.emit(move)
+	return true
+
+
+## EffectAtackDestroy: el siguiente golpe de un ataque múltiple (gasta la energía otra vez, "X usó Y.";
+## en el último, "N golpes."). No ataca ni se mueve un momento (canshoot 15 steps, canmove 5).
+func siguiente_golpe(move: MoveData, restantes: int, total: int) -> void:
+	if esta_debilitado() or objetivo == null or objetivo.esta_debilitado():
+		return
+	_set_energia(_energia - move.costo_energia)
+	_cooldown = maxf(_cooldown, 15.0 / 30.0)
+	_bloqueo = maxf(_bloqueo, 5.0 / 30.0)
+	var texto: String = Textos.par(Textos.batalla(195), Progreso.nombre(pokemon), move.nombre)
+	if restantes == 1:
+		texto += Textos.par(Textos.batalla(300), str(total))
+	mensaje.emit(texto)
+	_lanzar(move, restantes, total)
+
+
+func _lanzar(move: MoveData, restantes: int, total: int) -> void:
 	var proyectil: Proyectil = ESCENA_PROYECTIL.instantiate()
 	# El original apunta al rival (point_direction al objetivo); sin rival, hacia donde mira.
 	var dir: Vector2 = global_position.direction_to(objetivo.global_position) \
@@ -149,14 +177,49 @@ func atacar(indice: int) -> bool:
 	# Con la precisión cambiada se desvía ± random(prec × 10) grados (CreateAttack).
 	if etapa(6) != 0:
 		dir = dir.rotated(deg_to_rad(randf() * absi(etapa(6)) * 10.0 * (1 if randf() < 0.5 else -1)))
-	if move.modo == MoveData.Modo.ESTADO and not move.cambios_propios.is_empty():
-		_cambiar_stats(move, self, move.cambios_propios)  # sobre sí mismo, sin proyectil
 	proyectil.configurar(move, self, dir)
+	proyectil.golpes_restantes = restantes
+	proyectil.golpes_total = total
 	proyectil.global_position = global_position
 	get_parent().add_child(proyectil)
 	_actualizar_animacion()
-	ataco.emit(move)
-	return true
+
+
+## PossibleAttack: paralizado (1 de 3) o enamorado (1 de 3) no ataca, gasta la energía del ataque o 40,
+## y queda quieto 10 steps; confuso (1 de 2) se golpea a sí mismo (Pokemon1AutoHit).
+func _falla_por_estado(move: MoveData) -> bool:
+	match pokemon.estado:
+		MoveData.Estado.PARALISIS, MoveData.Estado.ENAMORADO:
+			if randi_range(1, 3) != 3:
+				return false
+			var paralisis: bool = pokemon.estado == MoveData.Estado.PARALISIS
+			_set_energia(_energia - (move.costo_energia if paralisis else 40))
+			_bloqueo = 10.0 / 30.0
+			mensaje.emit(Textos.par(Textos.batalla(169 if paralisis else 198), Progreso.nombre(pokemon)))
+			_actualizar_animacion()
+			return true
+		MoveData.Estado.CONFUSION:
+			if randi_range(1, 2) != 2:
+				return false
+			mensaje.emit(Textos.par(Textos.batalla(199), Progreso.nombre(pokemon)))
+			autogolpe()
+			return true
+	return false
+
+
+## Pokemon1AutoHit: un golpe de poder 40 con su Ataque contra su Defensa (con etapas), ×0.85 y ÷ PowDif;
+## gasta 40 de energía y sale despedido en una dirección al azar (speed 4, friction 0.2) 10 steps.
+func autogolpe() -> void:
+	var stats: Dictionary = pokemon.calcular_stats()
+	var at: float = stats["ataque"] * FormulasBatalla.factor_etapa(etapa(1))
+	var df: float = maxf(stats["defensa"] * FormulasBatalla.factor_etapa(etapa(2)), 1.0)
+	var danio: float = (((2.0 * pokemon.nivel / 5.0 + 2.0) * (at * 40.0 / df) / 50.0) + 2.0) * 0.85
+	var dano: int = roundi(ceilf(danio / GameState.pow_dif(lado)))
+	_set_energia(_energia - 40.0)
+	golpeado.emit(null, dano, 1.0)
+	recibir_danio(dano)
+	_retroceso = Vector2.RIGHT.rotated(randf() * TAU) * 120.0
+	_bloqueo = 10.0 / 30.0
 
 
 ## Lo alcanza un ataque: avisa (golpeado) y aplica el daño.
@@ -192,8 +255,10 @@ func efectos_de_golpe(move: MoveData, atacante: BattlePokemon, danio: int) -> vo
 		atacante.recibir_danio(ceili(atacante.hp_max / (10.0 * GameState.pow_dif(lado))))
 	if move.retroceso > 0 and danio > 0:
 		atacante.recibir_danio(ceili(float(danio) / move.retroceso))
-	if move.drenaje > 0 and danio > 0:
-		atacante.curar(ceili(float(danio) / move.drenaje))
+	# SecEffect1: recupera floor(daño × drenaje), al menos 1; con Raíz Grande (370) ×1.3.
+	if move.drenaje > 0.0 and danio > 0:
+		var raiz: float = 1.3 if atacante.pokemon.objeto == 370 else 1.0
+		atacante.curar(maxi(1, floori(danio * raiz * move.drenaje)))
 
 
 ## ModificaStat: etapas entre −12 y 12, con el mensaje "Ataque - At. de X bajó/subió mucho...".
@@ -309,7 +374,12 @@ func _physics_process(delta: float) -> void:
 		if _estado_tiempo > 0.0:
 			_estado_tiempo -= delta
 			if _estado_tiempo <= 0.0:
-				pokemon.estado = MoveData.Estado.NINGUNO  # Pokemon1StateFinish
+				# Pokemon1StateFinish: se despertó, ya no sufre confusión / congelación, volvió a la normalidad.
+				var fin: int = {MoveData.Estado.DORMIDO: 184, MoveData.Estado.CONFUSION: 185,
+					MoveData.Estado.CONGELADO: 186, MoveData.Estado.ENAMORADO: 187}.get(pokemon.estado, 0)
+				if fin:
+					mensaje.emit(Textos.par(Textos.batalla(fin), Progreso.nombre(pokemon)))
+				pokemon.estado = MoveData.Estado.NINGUNO
 				velocidad = _velocidad_actual()
 				_actualizar_animacion()
 	if not esta_debilitado() and pokemon.objeto == 303:
@@ -322,6 +392,9 @@ func _physics_process(delta: float) -> void:
 	if estaba_bloqueado and _bloqueo <= 0.0 and _herido <= 0.0:
 		_actualizar_animacion()
 	velocity = direccion * velocidad if puede_moverse() else Vector2.ZERO
+	if _retroceso != Vector2.ZERO:  # despedido (friction 0.2 px/step por step)
+		velocity = _retroceso
+		_retroceso = _retroceso.move_toward(Vector2.ZERO, 180.0 * delta)
 	var antes: Vector2 = position
 	move_and_slide()
 	if position != antes:

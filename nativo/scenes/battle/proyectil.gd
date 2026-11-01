@@ -25,6 +25,9 @@ var direccion: Vector2 = Vector2.RIGHT
 var visual: AtaqueVisual
 var _steps_restantes: int = 0
 var _acumulado: float = 0.0
+## Ataques múltiples (EffectAtackDestroy): golpes que quedan contando este, y cuántos eran.
+var golpes_restantes: int = 1
+var golpes_total: int = 1
 
 
 func configurar(move_: MoveData, duenio_: BattlePokemon, direccion_: Vector2) -> void:
@@ -34,6 +37,7 @@ func configurar(move_: MoveData, duenio_: BattlePokemon, direccion_: Vector2) ->
 
 
 func _ready() -> void:
+	tree_exiting.connect(_al_terminar)
 	body_entered.connect(_on_body_entered)
 	area_entered.connect(_on_area_entered)
 	visual = AtaqueVisual.new(ParticulasGM.arriba(get_tree()), ParticulasGM.debajo(get_tree()))
@@ -48,6 +52,10 @@ func _ready() -> void:
 	_steps_restantes = roundi(move.duracion_proyectil / STEP)
 	match move.modo:
 		MoveData.Modo.CONTACTO, MoveData.Modo.ESPECIAL:
+			# GolpeaAtack: el ataque toma la máscara del Pokémon (mask_index = creator.mask_index).
+			var caja: CollisionShape2D = duenio.hurtbox.get_child(0) as CollisionShape2D
+			if caja:
+				($CollisionShape2D as CollisionShape2D).shape = caja.shape
 			v.speed = duenio.velocidad * STEP + EXTRA_CONTACTO
 			_steps_restantes = DURACION_CONTACTO
 			duenio.embestir(DURACION_CONTACTO * STEP)
@@ -89,6 +97,12 @@ func _step() -> void:
 	_steps_restantes -= 1
 	if _steps_restantes <= 0:
 		queue_free()
+
+
+## EffectAtackDestroy: si al ataque le quedan golpes, el Pokémon lo vuelve a lanzar.
+func _al_terminar() -> void:
+	if golpes_restantes > 1 and is_instance_valid(duenio):
+		duenio.call_deferred("siguiente_golpe", move, golpes_restantes - 1, golpes_total)
 
 
 func _actualizar_creador() -> void:

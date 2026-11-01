@@ -41,6 +41,9 @@ enum Modo { CONTACTO, PROYECTIL, ESTADO, ESPECIAL }
 @export var cambios_rival: Dictionary[int, int] = {}
 @export var cambios_propios: Dictionary[int, int] = {}
 @export var prob_cambios: int = 100
-## El atacante pierde el daño hecho / retroceso (0 = nada); con drenaje, recupera daño / drenaje.
+## El atacante pierde el daño hecho / retroceso (0 = nada); con drenaje recupera esa fracción del
+## daño (0.5 casi siempre; mínimo 1 PS).
 @export var retroceso: int = 0
-@export var drenaje: int = 0
+@export var drenaje: float = 0.0
+## EsMultiple: cuántas veces golpea (una de estas al azar); vacío = una.
+@export var golpes: PackedInt32Array = PackedInt32Array()

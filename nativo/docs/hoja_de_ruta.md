@@ -32,9 +32,11 @@ mapa por mapa, y al final los modos extra.
   con su sombra; el original no los mueve ni los golpea).
 - Efectos de movimientos: hechos los de `SecEffect1` que solo dependen del movimiento (445: estados con
   su probabilidad, etapas de stats propias y del rival, retroceso) y los estados en tiempo real
-  (`EffectStatuses`: parálisis, quemado, sueño, veneno, congelación, maldición, infección). Faltan:
-  efectos de confusión y enamorado, drenaje (`AbsorbeAttack`), ataques múltiples, evasión, iconos de
-  estado en el HUD, y todo lo que depende de habilidades, objetos equipados, clima y mega/Z/dinamax.
+  (`EffectStatuses`: parálisis, quemado, sueño, veneno, congelación, maldición, infección), y al atacar
+  (`PossibleAttack`): parálisis y enamoramiento hacen perder el ataque 1 de cada 3, la confusión 1 de
+  cada 2 con autogolpe (`Pokemon1AutoHit`); drenaje (12 movimientos), ataques múltiples (`EsMultiple`,
+  `EffectAtackDestroy`) y mensajes de fin de estado. Faltan: los indicadores del HUD (estado, etapas y
+  evasión de Doble Equipo), y lo que depende de habilidades, clima y mega/Z/dinamax.
 - MO en el mapa: hechas Corte, Golpe Roca, Fuerza (tecla o Z frente al obstáculo) y Surf (tecla 3),
   con medallas `MEDALLA_STAR_n` y habilidades de campo (`AttackHabExt`), y Vuelo (tecla 2, medalla 4):
   la pantalla del mapa con los lugares visitados (`obj_pantallavuelo`, `data/extraido/vuelo.json`), el

@@ -97,16 +97,29 @@ func _salir() -> void:
 	_volver()
 
 
-## ExpGana: el Pokémon del jugador que está en el campo gana la experiencia del rival que cayó.
+## ExpGana: el Pokémon del jugador que está en el campo gana la experiencia del rival que cayó; con
+## Repartir Exp. activado, los demás vivos del equipo ganan la mitad (ceil). Amuleto Exp. en la
+## mochila ×1.5; equipados, Huevo Suerte ×1.5 y el objeto 138 ×1.2.
 func _experiencia(rival: PokemonInstance) -> void:
 	var bp: BattlePokemon = _pokemon[0]
-	if _equipos[0].is_empty() or bp.esta_debilitado():
-		return  # batalla de prueba o ya sin vida
-	var cantidad: int = Progreso.experiencia_de(rival, GameState.combate_entrenador != 0)
-	if await Progreso.dar_experiencia(self, bp.pokemon, cantidad):
-		if bp.pokemon not in _subidos:
-			_subidos.append(bp.pokemon)
-		bp.configurar(bp.pokemon)  # stats, HP máximo y barras del nuevo nivel
+	if _equipos[0].is_empty():
+		return  # batalla de prueba
+	var base: int = Progreso.experiencia_de(rival, GameState.combate_entrenador != 0)
+	var reparte: bool = GameState.bandera("activoRepartirEXP") == 1
+	for p: PokemonInstance in _equipos[0]:
+		var activo: bool = p == bp.pokemon
+		if p.hp_actual <= 0 or (not activo and not reparte):
+			continue
+		var cantidad: int = base if activo else ceili(base / 2.0)
+		if GameState.objetos.has(Inventario.AMULETO_EXP):
+			cantidad = roundi(cantidad * 1.5)
+		if p.objeto in Inventario.MULTIPLICADOR_EXP:
+			cantidad = roundi(cantidad * Inventario.MULTIPLICADOR_EXP[p.objeto])
+		if await Progreso.dar_experiencia(self, p, cantidad):
+			if p not in _subidos:
+				_subidos.append(p)
+			if activo:
+				bp.configurar(bp.pokemon)  # stats, HP máximo y barras del nuevo nivel
 
 
 ## NextPokemon: contra un entrenador se gana la suma de los niveles de su equipo × 16 (× 32 los
@@ -262,6 +275,7 @@ func _capturar(p: PokemonInstance) -> void:
 	await CuadroOriginal.mensaje(self, Textos.batalla(217))
 	p.ball = _indice_ultima_ball  # global.info[i,0]: la ball con que se capturó
 	GameState.marcar_pokedex(p.especie, 2)
+	await Progreso.pedir_apodo(self, p)
 	await _guardar_capturado(p)
 	await Evolucion.revisar_equipo(self, _subidos)
 	_volver()

@@ -26,6 +26,11 @@ const VITAMINAS: Dictionary[int, int] = {32: 0, 698: 0, 36: 1, 699: 1, 34: 2, 70
 const TEXTO_VITAMINA: Array[int] = [534, 538, 536, 535, 539, 537]
 ## Caramelo Raro (UseObject, OB = 38): sube un nivel.
 const CARAMELO_RARO: int = 38
+## ExpGana: Repartir Exp. (objeto clave que se activa), Amuleto Exp. (en la mochila, ×1.5), Huevo Suerte
+## (equipado, ×1.5) y el objeto 138 (equipado, ×1.2).
+const REPARTIR_EXP: int = 163
+const AMULETO_EXP: int = 675
+const MULTIPLICADOR_EXP: Dictionary[int, float] = {346: 1.5, 138: 1.2}
 
 
 ## UseObject (piedras...): la especie en la que evoluciona `p` con el objeto `id`, o null.

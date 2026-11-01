@@ -17,9 +17,9 @@ mapa por mapa, y al final los modos extra.
 ## Ciclo básico (en curso)
 | # | Sistema | Original | Estado |
 |---|---|---|---|
-| 1 | Experiencia, subir de nivel, aprender movimientos | `ExpGana`, `AjusteStatsLevelUp`, `AprendeAtaque` | hecho (falta Repartir Exp. y objetos de exp.) |
+| 1 | Experiencia, subir de nivel, aprender movimientos | `ExpGana`, `AjusteStatsLevelUp`, `AprendeAtaque` | hecho (con Repartir Exp., Amuleto Exp., Huevo Suerte) |
 | 2 | Evolución por nivel | `CheckEvolution`, `EvolutionConfirmation`, objeto `EVOLUTION` | hecho (364 especies; faltan las especiales) |
-| 3 | Captura con Poké Ball (tecla B, proyectil) | `LanzaCosa`, `PokeBallCapturando`, `CapturaPokemon` | hecho (al equipo o al PC; faltan apodo y balls que dependen de estados/pesca) |
+| 3 | Captura con Poké Ball (tecla B, proyectil) | `LanzaCosa`, `PokeBallCapturando`, `CapturaPokemon` | hecho (al equipo o al PC, con apodo; faltan balls que dependen de estados/pesca) |
 | 4 | Huir (tecla E) y mochila en batalla (O) | `KeyActionsBattle` | hecho |
 | 5 | Menú de equipo (Espacio) y cambio de Pokémon en batalla (1-6) | `key_menu_pokemon`, `key_bt_pkmn1..6` | hecho con listas (falta la pantalla de ficha del original) |
 | 6 | Menú principal (Enter): equipo, mochila, Pokédex, entrenador, guardar, salir | `KeyActionsExplorer` | hecho (faltan Opciones, Áreas, Móvil, Habilidades) |

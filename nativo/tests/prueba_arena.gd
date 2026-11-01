@@ -32,14 +32,51 @@ func _initialize() -> void:
 	e.pressed = true
 	Input.parse_input_event(e)
 	await create_timer(0.3).timeout
-	_ok(hud._jugador.estado == 1 and hud._jugador.modificadores == {1: 2, 5: -1}, "el HUD sigue el estado y las etapas: %s" % hud._jugador.modificadores)
+	_ok(hud._jugador.estado == 1 and hud._jugador.modificadores.get(1) == 2 and hud._jugador.modificadores.get(5) == -1, "el HUD sigue el estado y las etapas: %s" % hud._jugador.modificadores)
 	_ok(hud._mostrar_tiempo, "con Ctrl se ve el panel de tiempo y modificadores")
 	await _captura("arena_hud_ctrl")
 	e = e.duplicate()
 	e.pressed = false
 	Input.parse_input_event(e)
+	await _repartir_exp(gs)
 	print("RESULTADO: ", "todo bien" if _fallas == 0 else "%d fallas" % _fallas)
 	quit(_fallas)
+
+
+## Con Repartir Exp. activado, el que no combatió gana la mitad (ceil) de la experiencia.
+func _repartir_exp(gs: Node) -> void:
+	var PI = load("res://scripts/resources/pokemon_instance.gd")
+	var D = load("res://scripts/datos.gd")
+	root.get_node("DevConsole").ejecutar("tp Ruta_1")
+	await create_timer(1.5).timeout
+	gs.equipo.clear()
+	gs.equipo.append(PI.crear(D.especie(6), 60))
+	gs.equipo.append(PI.crear(D.especie(25), 10))
+	gs.historia["activoRepartirEXP"] = 1
+	gs.combate_entrenador = 0
+	var salvaje = PI.crear(D.especie(19), 30)
+	var exp0: Array = [gs.equipo[0].experiencia, gs.equipo[1].experiencia]
+	var esperado: int = floori(salvaje.nivel * salvaje.especie.exp_base / 7.0)
+	root.get_node("SceneManager").ir_a_batalla(salvaje, current_scene.get_node("Objetos/Jugador"))
+	await create_timer(2.5).timeout
+	var rival: Node = current_scene.find_child("Rival", true, false)
+	rival.recibir_danio(9999)
+	for i: int in 80:
+		await create_timer(0.1).timeout
+		var e := InputEventKey.new()
+		e.physical_keycode = KEY_Z
+		e.keycode = KEY_Z
+		e.pressed = true
+		Input.parse_input_event(e)
+		await process_frame
+		e = e.duplicate()
+		e.pressed = false
+		Input.parse_input_event(e)
+		if current_scene and current_scene.get("nombre_original") == "Ruta_1":
+			break
+	var ganado: Array = [gs.equipo[0].experiencia - exp0[0], gs.equipo[1].experiencia - exp0[1]]
+	_ok(ganado[0] == esperado and ganado[1] >= ceili(esperado / 2.0),
+		"Repartir Exp.: el que combate gana %d y el otro la mitad (%s)" % [esperado, ganado])
 
 
 func _ok(c: bool, que: String) -> void:

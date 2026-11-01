@@ -12,6 +12,7 @@ var _entrada: LineEdit
 var _botones: HBoxContainer
 var _modo: String = ""
 var _pausa_previa: bool = false
+var _inicial: String = ""
 
 
 func _ready() -> void:
@@ -47,9 +48,20 @@ func mensaje(texto: String) -> bool:
 	return await _mostrar("mensaje", texto)
 
 
-func pedir_texto(titulo: String, maximo: int) -> String:
+## GetDialogString: `inicial` es el texto que ya aparece escrito.
+func pedir_texto(titulo: String, maximo: int, inicial: String = "") -> String:
 	_entrada.max_length = maximo
+	_inicial = inicial
 	return str(await _mostrar("texto", titulo))
+
+
+## Lo mismo sin tener un DialogoModal propio: crea uno, pregunta y lo quita.
+static func texto(desde: Node, titulo: String, maximo: int, inicial: String = "") -> String:
+	var d: DialogoModal = (load("res://scenes/ui/dialogo_modal.tscn") as PackedScene).instantiate()
+	desde.get_tree().root.add_child(d)
+	var t: String = await d.pedir_texto(titulo, maximo, inicial)
+	d.queue_free()
+	return t
 
 
 ## Devuelve -1 si se cancela o se deja vacío.
@@ -67,7 +79,9 @@ func _mostrar(modo: String, texto: String) -> Variant:
 	_modo = modo
 	_texto.text = texto.replace("#", "\n").replace("@", "\n")
 	_entrada.visible = modo in ["texto", "numero"]
-	_entrada.clear()
+	_entrada.text = _inicial
+	_entrada.caret_column = _inicial.length()
+	_inicial = ""
 	for b: Node in _botones.get_children():
 		b.queue_free()
 	if modo == "pregunta":

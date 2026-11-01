@@ -29,6 +29,19 @@ static func dar_experiencia(desde: Node, p: PokemonInstance, cantidad: int) -> b
 	return not niveles.is_empty()
 
 
+## getMote (al capturar): "¿Quieres ponerle un mote a X (Macho)?" y, si sí, el mote (de 2 a 12
+## letras; si se deja el nombre de la especie, queda sin mote).
+static func pedir_apodo(desde: Node, p: PokemonInstance) -> void:
+	var nombre_especie: String = p.especie.nombre
+	var sexo: String = Textos.linea("txt_menu", 224) if p.sexo == 1 else Textos.linea("txt_menu", 226) if p.sexo == 2 else ""
+	if not await CuadroOriginal.preguntar(desde, Textos.par(Textos.linea("txt_menu", 220), nombre_especie, sexo)):
+		return
+	var mote: String = await DialogoModal.texto(desde, Textos.par(Textos.linea("txt_menu", 223), nombre_especie, sexo), 12, nombre_especie)
+	mote = mote.strip_edges()
+	if mote.length() >= 2 and mote != nombre_especie:
+		p.apodo = mote
+
+
 ## AprendeAtaque: con hueco lo aprende; con 4 ataques deja elegir cuál olvidar (o no aprenderlo).
 static func aprender(desde: Node, p: PokemonInstance, move: MoveData) -> bool:
 	match p.aprender(move):

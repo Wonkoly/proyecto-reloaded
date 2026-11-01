@@ -22,6 +22,13 @@ static func abrir(desde: Node, pestana: int = 0) -> void:
 
 
 static func _usar(desde: Node, id: int) -> void:
+	if id == Inventario.REPARTIR_EXP:
+		# CanUseObject 163: dice si está activado y pregunta si se cambia (TextMenu 353/2073, 2074/2075).
+		var activo: bool = GameState.bandera("activoRepartirEXP") == 1
+		await CuadroOriginal.mensaje(desde, Textos.linea("txt_menu", 353 if activo else 2073).replace("@", "#"))
+		if await CuadroOriginal.preguntar(desde, Textos.linea("txt_menu", 2074 if activo else 2075)):
+			GameState.historia["activoRepartirEXP"] = 0 if activo else 1
+		return
 	if Inventario.bolsillo(id) == "ball":
 		# Asigna la ball a la tecla B (global.ball_asign; TextMenu 144 "Ball asignada:").
 		GameState.ball_asignada = id

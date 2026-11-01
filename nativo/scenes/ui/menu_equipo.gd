@@ -39,6 +39,7 @@ static func ficha(desde: Node, p: PokemonInstance) -> void:
 	var filas: Array = [
 		{"texto": "N.º %03d %s" % [p.especie.numero_pokedex, p.especie.nombre]},
 		{"texto": "Tipo", "derecha": tipos},
+		{"texto": "Habilidad", "derecha": Habilidades.nombre(p.habilidad()) if p.habilidad() > 0 else "-"},
 		{"texto": "Nivel %d" % p.nivel, "derecha": "Exp. %d" % p.experiencia},
 		{"texto": "Para subir", "derecha": str(falta)},
 		{"texto": "PS", "derecha": "%d/%d" % [p.hp_actual, stats["hp"]]},

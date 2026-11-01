@@ -40,6 +40,8 @@ enum Crecimiento { MEDIO, RAPIDO, LENTO, PARABOLICO, ERRATICO, FLUCTUANTE }
 @export var grupo_huevo_2: int = 0
 ## % de hembras (PkmnSetSexValor sobre 1-100); -1 = sin sexo.
 @export var porcentaje_hembra: int = 50
+## PokemonHabilidad: la primera, la segunda y la oculta (ids de txt_abilities; 0 = ninguna).
+@export var habilidades: PackedInt32Array = PackedInt32Array()
 ## OneSex: -1 machos y hembras, 1 solo macho, 2 solo hembra, 0 sin sexo.
 @export var sexo_unico: int = -1
 

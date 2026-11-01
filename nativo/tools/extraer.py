@@ -89,7 +89,7 @@ FONDOS_UI = ["BackIntro", "BackIntroLetras", "GradienteNight", "BackFerProductio
 SONIDOS_UI = ["snd_click", "snd_curar", "snd_get"]
 CARPETAS = {
     "datos": [DATA / "pokemon", DATA / "moves", DATA / "textos", DATA / "objetos.json", DATA / "vuelo.json",
-              DATA / "buceo.json", DATA / "campo.json"],
+              DATA / "buceo.json", DATA / "campo.json", DATA / "habilidades.json"],
     "sprites": [ASSETS / "sprites" / "pokemon"],
     "fondos": [ASSETS / "sprites" / "battlebacks"],
     "ui": [ASSETS / "sprites" / "ui", ASSETS / "audio" / "sfx" / "ui", ASSETS / "audio" / "intro"],
@@ -500,6 +500,7 @@ def extraer_datos(plan: Plan, ext: Path, indice: dict) -> None:
     import efectos_original
     efectos_mov = efectos_original.efectos(gml("SecEffect1"))
     golpes_mov = efectos_original.golpes(gml("EsMultiple"))
+    funciones_mov = gml_eval.Funciones(scripts)  # ContactAtack
     ejecucion = Tabla(gml("ExecuteAtack"))
     rutas_mov: dict[int, Path] = {}
     tipos_raros: dict[int, int] = {}
@@ -539,6 +540,8 @@ def extraer_datos(plan: Plan, ext: Path, indice: dict) -> None:
                 props.append(f"{clave} = {efecto[clave]}")
         if i in golpes_mov:
             props.append("golpes = PackedInt32Array(%s)" % ", ".join(str(n) for n in golpes_mov[i]))
+        if funciones_mov.llamar("ContactAtack", float(i)):
+            props.append("contacto = true")
         plan.escribir(ruta, tres.texto(props))
     for t, n in sorted(tipos_raros.items()):
         avisar(f"{n} movimientos con tipo {t} del juego (sin equivalente en Tipos): se guardan como NORMAL")
@@ -591,6 +594,10 @@ def extraer_datos(plan: Plan, ext: Path, indice: dict) -> None:
             sexos = [funciones.llamar("PkmnSetSexValor", float(pk), float(v)) for v in range(1, 101)]
             hembras = -1 if not any(x in (1.0, 2.0) for x in sexos) else sum(1 for x in sexos if x == 2.0)
             props.append(f"porcentaje_hembra = {hembras}")
+            # PokemonHabilidad(especie, ISEP): ISEP 1-48 la primera, 49-99 la segunda, 100-102 la oculta.
+            habs = [funciones.llamar("PokemonHabilidad", float(pk), float(i)) for i in (1, 50, 100)]
+            if all(isinstance(h, float) for h in habs):
+                props.append("habilidades = PackedInt32Array(%s)" % ", ".join(str(int(h)) for h in habs))
             rareza = funciones.llamar("NumRareza", float(pk))
             props.append(f"ratio_captura = {int(rareza) if isinstance(rareza, float) else 45}")
             if pk in evoluciones:
@@ -640,6 +647,9 @@ def extraer_datos(plan: Plan, ext: Path, indice: dict) -> None:
     import campo_original  # cuevas oscuras y dónde se apaga Destello (AdjustmentsRoom)
     plan.escribir(DATA / "campo.json", json.dumps(campo_original.campo(
         gml("AdjustmentsRoom"), json.loads((EXT / "index.json").read_text())["rooms"]), ensure_ascii=False, indent=0))
+    import habilidades_original  # habilidades que cambian el daño (Ataque1GolpeaPokemon2)
+    plan.escribir(DATA / "habilidades.json", json.dumps(
+        {"danio": habilidades_original.reglas_danio(gml("Ataque1GolpeaPokemon2"))}, ensure_ascii=False, indent=0))
     import vuelo_original  # mapa de la región y Vuelo (obj_pantallavuelo)
     plan.escribir(DATA / "vuelo.json", json.dumps(vuelo_original.vuelo(
         EXT / "scripts", json.loads((EXT / "index.json").read_text())["rooms"]), ensure_ascii=False, indent=0))

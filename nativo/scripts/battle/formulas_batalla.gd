@@ -32,9 +32,14 @@ static func danio_en_batalla(atacante: BattlePokemon, defensor: BattlePokemon, m
 	var fisico: bool = move.categoria == MoveData.Categoria.FISICO
 	var danio: float = calcular_danio(atacante.pokemon, defensor.pokemon, move, GameState.pow_dif(atacante.lado), 1.0,
 		atacante.etapa(1 if fisico else 3), defensor.etapa(2 if fisico else 4))
-	return roundi(danio * factor_objetos(atacante.pokemon.objeto, defensor.pokemon.objeto, move,
-		Efectividad.multiplicador(move.tipo, defensor.pokemon.especie.tipos), atacante.pokemon.especie.id_original)) \
-		if danio > 0 else 0
+	if danio <= 0:
+		return 0
+	var eff: float = Efectividad.multiplicador(move.tipo, defensor.pokemon.especie.tipos)
+	var hab: Array = Habilidades.factor_danio(atacante, defensor, move, eff)
+	for quien: BattlePokemon in hab[1]:
+		quien.habilidad_actuo()
+	return roundi(danio * factor_objetos(atacante.pokemon.objeto, defensor.pokemon.objeto, move, eff,
+		atacante.pokemon.especie.id_original) * float(hab[0]))
 
 
 ## Número de tipo del original (TipoName: 1 Normal, 2 Fuego...) de cada Tipos.Tipo.

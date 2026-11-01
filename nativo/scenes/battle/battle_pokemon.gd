@@ -31,6 +31,8 @@ const ESPEJO: Dictionary[int, int] = {1: 3, 4: 6, 7: 9}
 @export var lado: int = 1
 ## A quién apuntan sus ataques.
 var objetivo: BattlePokemon
+## (17).HAB1 / HAB2: la habilidad del Pokémon en combate.
+var habilidad: int = 0
 
 var pokemon: PokemonInstance
 var hp_max: int = 1
@@ -222,6 +224,51 @@ func autogolpe() -> void:
 	_bloqueo = 10.0 / 30.0
 
 
+## Habilidades que no tocan al Pokémon que pega (Intimidación) y las que bloquean la bajada (Ritmo
+## Propio, Despiste, Cuerpo Puro, Corazón Audaz...: UsaIntimidacion).
+const CONTRA_INTIMIDACION: Array[int] = [29, 52, 73, 220, 12, 290]
+## Ataque2GolpeaPokemon1 / SecEffect: estado que provoca al atacante que hace contacto la habilidad del que
+## recibe (1 de cada 3 × PowDif): Elec. Estática parálisis, Punto Tóxico veneno, Cuerpo Llama quemadura,
+## Gran Encanto enamoramiento; y los tipos (del original) que lo evitan.
+const CONTACTO: Dictionary[int, Array] = {9: [MoveData.Estado.PARALISIS, [5]], 38: [MoveData.Estado.ENVENENADO, [10, 14]],
+	49: [MoveData.Estado.QUEMADO, [2]], 56: [MoveData.Estado.ENAMORADO, []]}
+## Absorben un tipo (tipo del original → 1 recupera PS, 2 se lo come sin daño): Absorbe Elec. (10),
+## Absorbe Agua y Piel Seca (11, 87), Absorbe Fuego (18), y la 284 con Tierra.
+const ABSORBE: Dictionary[int, Array] = {10: [5, 1], 11: [3, 1], 87: [3, 1], 18: [2, 2], 284: [8, 1]}
+
+
+## EffectHabilityCreate / UsaIntimidacion: lo que hacen algunas habilidades al salir al combate.
+func al_entrar() -> void:
+	match habilidad:
+		22:  # Intimidación: −1 al Ataque del rival
+			if objetivo and not objetivo.esta_debilitado():
+				habilidad_actuo()
+				if objetivo.habilidad in CONTRA_INTIMIDACION:
+					objetivo.habilidad_actuo()
+				else:
+					_cambiar_stats(null, objetivo, {1: -1})
+		26, 313:  # Levitación: no la tocan los ataques de Tierra (efecto 582)
+			habilidad_actuo()
+		14, 162:  # Ojo Compuesto: +4 a la precisión
+			habilidad_actuo()
+			_cambiar_stats(null, self, {6: 4})
+
+
+func levita() -> bool:
+	return habilidad in [26, 313]
+
+
+## 0 si el ataque le hace daño normal; 1 si lo absorbe y recupera PS; 2 si se lo come sin daño.
+func absorbe(move: MoveData) -> int:
+	var a: Array = ABSORBE.get(habilidad, [])
+	return int(a[1]) if not a.is_empty() and FormulasBatalla.TIPO_ORIGINAL[move.tipo] == int(a[0]) else 0
+
+
+## hab_fugaz: el aviso de que actuó su habilidad (TextBattle 188: " (X actuó)").
+func habilidad_actuo() -> void:
+	mensaje.emit(Progreso.nombre(pokemon) + Textos.par(Textos.batalla(188), Habilidades.nombre(habilidad)))
+
+
 ## Lo alcanza un ataque: avisa (golpeado) y aplica el daño.
 func recibir_golpe(move: MoveData, danio: int, eficacia: float) -> void:
 	if esta_debilitado():
@@ -240,6 +287,18 @@ func embestir(duracion: float) -> void:
 ## SecEffect1: lo que hace un golpe además del daño (estado, stats del rival y del atacante,
 ## retroceso y drenaje).
 func efectos_de_golpe(move: MoveData, atacante: BattlePokemon, danio: int) -> void:
+	# Las habilidades de contacto del que recibe, 1 de cada 3 × PowDif de su lado.
+	if move.contacto and habilidad in CONTACTO and atacante.pokemon.estado == MoveData.Estado.NINGUNO \
+			and randi_range(1, 3 * GameState.pow_dif(lado)) == 3 * GameState.pow_dif(lado):
+		var c: Array = CONTACTO[habilidad]
+		var tipos_at: Array = atacante.pokemon.especie.tipos.map(func(t: Tipos.Tipo) -> int: return FormulasBatalla.TIPO_ORIGINAL[t])
+		var evita: bool = (c[1] as Array).any(func(t: int) -> bool: return t in tipos_at)
+		if habilidad == 56:
+			evita = atacante.pokemon.sexo == pokemon.sexo
+		elif habilidad == 49:
+			evita = evita or atacante.habilidad in [200, 296]
+		if not evita and atacante.aplicar_estado(c[0]):
+			habilidad_actuo()
 	if move.estado != MoveData.Estado.NINGUNO and randi_range(1, 100) <= move.prob_estado:
 		aplicar_estado(move.estado, move)
 	if (not move.cambios_rival.is_empty() or not move.cambios_propios.is_empty()) and randi_range(1, 100) <= move.prob_cambios:
@@ -274,7 +333,7 @@ static func _cambiar_stats(move: MoveData, quien: BattlePokemon, cambios: Dictio
 			palabra = 64 if n > 0 else 56
 		else:
 			palabra = (58 if n > 0 else 50) + clampi(absi(n), 1, 3) - 1
-		quien.mensaje.emit(move.nombre + Textos.par(Textos.batalla(TEXTO_STAT[stat]),
+		quien.mensaje.emit((move.nombre if move else "") + Textos.par(Textos.batalla(TEXTO_STAT[stat]),
 			Progreso.nombre(quien.pokemon), Textos.batalla(palabra)))
 	quien.velocidad = quien._velocidad_actual()
 
@@ -410,6 +469,7 @@ func _set_energia(valor: float) -> void:
 
 
 func _aplicar_pokemon() -> void:
+	habilidad = pokemon.habilidad()
 	hp_max = pokemon.calcular_stats()["hp"]
 	energia_max = pokemon.calcular_energia_maxima()
 	_etapas.clear()

@@ -161,7 +161,23 @@ func _on_area_entered(area: Area2D) -> void:
 		return
 	var objetivo: BattlePokemon = area.get_parent() as BattlePokemon
 	if objetivo and objetivo.lado != duenio.lado and objetivo.puede_recibir_danio():
+		var eff: float = Efectividad.multiplicador(move.tipo, objetivo.pokemon.especie.tipos)
+		# Levitación: los de Tierra (8 en el original) no le hacen nada.
+		if objetivo.levita() and FormulasBatalla.TIPO_ORIGINAL[move.tipo] == 8 and move.categoria != MoveData.Categoria.ESTADO:
+			objetivo.habilidad_actuo()
+			objetivo.recibir_golpe(move, 0, 0.0)
+			queue_free()
+			return
 		var danio: int = FormulasBatalla.danio_en_batalla(duenio, objetivo, move)
-		objetivo.recibir_golpe(move, danio, Efectividad.multiplicador(move.tipo, objetivo.pokemon.especie.tipos))
+		var absorbe: int = objetivo.absorbe(move) if danio > 0 else 0
+		if absorbe:
+			# ABSORBER: recupera el daño (hasta 1/4 del máximo) o, con Absorbe Fuego, no le hace nada.
+			objetivo.habilidad_actuo()
+			if absorbe == 1:
+				objetivo.curar(mini(danio, roundi(objetivo.hp_max / 4.0)))
+			objetivo.mensaje.emit(Textos.par(Textos.batalla(214), Progreso.nombre(objetivo.pokemon), move.nombre))
+			queue_free()
+			return
+		objetivo.recibir_golpe(move, danio, eff)
 		objetivo.efectos_de_golpe(move, duenio, danio)
 		queue_free()

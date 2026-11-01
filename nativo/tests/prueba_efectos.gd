@@ -74,8 +74,50 @@ func _initialize() -> void:
 	await create_timer(3.0).timeout
 	var hecho: int = b.hp_max - b.pokemon.hp_actual
 	_ok(hecho > 0 and a.pokemon.hp_actual - 1 == maxi(1, hecho / 2), "Gigadrenado recupera la mitad del daño (hizo %d, recuperó %d)" % [hecho, a.pokemon.hp_actual - 1])
+	arena.free()
+	await _habilidades()
 	print("RESULTADO: ", "todo bien" if _fallas == 0 else "%d fallas" % _fallas)
 	quit(_fallas)
+
+
+## Habilidades: Elec. Estática, Intimidación, Levitación, Absorbe Agua y Espesura.
+func _habilidades() -> void:
+	var arena := Node2D.new()
+	root.add_child(arena)
+	var M := func(n: String) -> Resource: return load("res://data/extraido/moves/%s.tres" % n)
+	var pika = _pokemon(arena, 2, 25, Vector2(220, 160))
+	var golpeador = _pokemon(arena, 1, 68, Vector2(100, 160))
+	pika.pokemon.isep = 1
+	pika.configurar(pika.pokemon)
+	_ok(pika.habilidad == 9, "Pikachu con ISEP 1 tiene Elec. Estática (%d)" % pika.habilidad)
+	var placaje: Resource = M.call("0010_placaje")
+	for i: int in 200:
+		if golpeador.pokemon.estado != 0:
+			break
+		pika.efectos_de_golpe(placaje, golpeador, 5)
+	_ok(golpeador.pokemon.estado == 1, "golpear con contacto a Elec. Estática termina paralizando")
+	var gyarados = _pokemon(arena, 1, 130, Vector2(100, 220))
+	gyarados.pokemon.isep = 1
+	gyarados.configurar(gyarados.pokemon)
+	gyarados.objetivo = pika
+	gyarados.al_entrar()
+	_ok(pika.etapa(1) == -1, "Intimidación baja 1 el Ataque del rival (%d)" % pika.etapa(1))
+	var gastly = _pokemon(arena, 2, 92, Vector2(300, 160))
+	_ok(gastly.levita(), "Gastly levita")
+	var lapras = _pokemon(arena, 2, 131, Vector2(300, 220))
+	lapras.pokemon.isep = 1
+	lapras.configurar(lapras.pokemon)
+	_ok(lapras.absorbe(M.call("0008_pistola_agua")) == 1 and lapras.absorbe(placaje) == 0, "Lapras con Absorbe Agua absorbe Pistola Agua")
+	var bulba = _pokemon(arena, 1, 1, Vector2(100, 100))
+	bulba.pokemon.isep = 1
+	bulba.configurar(bulba.pokemon)
+	var hab = load("res://scripts/battle/habilidades.gd")
+	var cepa: Resource = M.call("0019_latigo_cepa")
+	var normal: float = hab.factor_danio(bulba, lapras, cepa, 2.0)[0]
+	bulba.pokemon.hp_actual = 1
+	var apurado: float = hab.factor_danio(bulba, lapras, cepa, 2.0)[0]
+	_ok(normal == 1.0 and apurado == 1.5, "Espesura: ×1.5 a Planta con un tercio de vida (%.2f → %.2f)" % [normal, apurado])
+	arena.free()
 
 
 func _pokemon(arena: Node2D, lado: int, especie: int, pos: Vector2) -> Node:

@@ -46,6 +46,8 @@ func iniciar(jugador: BattlePokemon, rival: BattlePokemon, equipo_jugador: Array
 	_inicio = [jugador.position, rival.position]
 	for bp: BattlePokemon in _pokemon:
 		bp.debilitado.connect(_on_debilitado.bind(bp))
+	for bp: BattlePokemon in _pokemon:
+		bp.al_entrar()
 
 
 ## NextPokemon: el siguiente con vida después del que cayó, dando la vuelta al equipo (el original
@@ -75,6 +77,7 @@ func _on_debilitado(caido: BattlePokemon) -> void:
 			return
 		caido.position = _inicio[lado]
 		caido.configurar(otro)
+		caido.al_entrar()
 		cambio_pokemon.emit(caido)
 		return
 	terminada = true
@@ -208,6 +211,7 @@ func cambiar_a(i: int) -> void:
 	_espera_cambio = ESPERA_ENTRE_CAMBIOS
 	mensaje_panel.emit(Textos.par(Textos.batalla(216), GameState.nombre_jugador, Progreso.nombre(bp.pokemon)))
 	bp.configurar(nuevo)
+	bp.al_entrar()
 	cambio_pokemon.emit(bp)
 
 

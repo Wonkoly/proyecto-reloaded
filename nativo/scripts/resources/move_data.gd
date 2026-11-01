@@ -47,3 +47,5 @@ enum Modo { CONTACTO, PROYECTIL, ESTADO, ESPECIAL }
 @export var drenaje: float = 0.0
 ## EsMultiple: cuántas veces golpea (una de estas al azar); vacío = una.
 @export var golpes: PackedInt32Array = PackedInt32Array()
+## ContactAtack: hace contacto (lo que activan Elec. Estática, Cuerpo Llama...).
+@export var contacto: bool = false

@@ -30,6 +30,9 @@ const DIGITO_STAT: Dictionary[String, int] = {
 @export var ball: int = 0
 ## global.pkmnsex: 0 sin sexo, 1 macho, 2 hembra.
 @export var sexo: int = 0
+## global.info[i,6] (ISEP, 1-102): decide la habilidad (PokemonHabilidad: hasta 48 la primera, hasta
+## 99 la segunda y 100-102 la oculta).
+@export var isep: int = 1
 ## Estado alterado (global.STD1): dura después del combate hasta que se cura.
 @export var estado: MoveData.Estado = MoveData.Estado.NINGUNO
 ## Valores individuales: 6 dígitos de 0 a 9 (aleatorios al nacer).
@@ -41,6 +44,14 @@ const DIGITO_STAT: Dictionary[String, int] = {
 
 ## Un Pokémon nuevo como los salvajes del original (IniciaSalvaje): iv y ntv al azar, movimientos
 ## por nivel y HP y energía llenos.
+## La habilidad (id de txt_abilities; 0 = ninguna) según su ISEP.
+func habilidad() -> int:
+	var h: PackedInt32Array = especie.habilidades if especie else PackedInt32Array()
+	if h.size() < 3:
+		return 0
+	return h[0] if isep <= 48 else (h[1] if isep <= 99 else h[2])
+
+
 static func crear(especie_: PokemonData, nivel_: int) -> PokemonInstance:
 	var p := PokemonInstance.new()
 	p.especie = especie_
@@ -52,6 +63,7 @@ static func crear(especie_: PokemonData, nivel_: int) -> PokemonInstance:
 	# PkmnSetSex: según el % de hembras de la especie (sobre un valor de 1 a 100).
 	if especie_.porcentaje_hembra >= 0:
 		p.sexo = 2 if randi_range(1, 100) <= especie_.porcentaje_hembra else 1
+	p.isep = randi_range(1, 102)
 	p.experiencia = p.exp_para_nivel(nivel_)
 	p.hp_actual = p.calcular_stats()["hp"]
 	p.energia_actual = p.calcular_energia_maxima()
@@ -72,6 +84,7 @@ func a_dict() -> Dictionary:
 		"objeto": objeto,
 		"ball": ball,
 		"sexo": sexo,
+		"isep": isep,
 		"iv": iv,
 		"ntv": ntv,
 		"movimientos": movimientos.filter(func(m: MoveData) -> bool: return m != null).map(
@@ -103,6 +116,7 @@ static func desde_dict(d: Dictionary) -> PokemonInstance:
 	p.objeto = int(d.get("objeto", 0))
 	p.ball = int(d.get("ball", 0))
 	p.sexo = int(d.get("sexo", 0))
+	p.isep = int(d.get("isep", 1))
 	p.actualizar_habilidades_campo()
 	return p
 

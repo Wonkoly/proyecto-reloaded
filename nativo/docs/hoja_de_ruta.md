@@ -37,7 +37,8 @@ mapa por mapa, y al final los modos extra.
   cada 2 con autogolpe (`Pokemon1AutoHit`); drenaje (12 movimientos), ataques múltiples (`EsMultiple`,
   `EffectAtackDestroy`) y mensajes de fin de estado. En el HUD: el icono de estado al día, Ctrl muestra
   el tiempo y las etapas de cada lado y º la lista del equipo. Faltan los clones de Doble Equipo (la
-  evasión del panel) y lo que depende de habilidades, clima y mega/Z/dinamax.
+  evasión del panel), el resto de habilidades (hechas las de daño extraídas, Intimidación, Levitación,
+  Ojo Compuesto, las de contacto y las que absorben un tipo), clima y mega/Z/dinamax.
 - MO en el mapa: hechas Corte, Golpe Roca, Fuerza (tecla o Z frente al obstáculo) y Surf (tecla 3),
   con medallas `MEDALLA_STAR_n` y habilidades de campo (`AttackHabExt`), y Vuelo (tecla 2, medalla 4):
   la pantalla del mapa con los lugares visitados (`obj_pantallavuelo`, `data/extraido/vuelo.json`), el

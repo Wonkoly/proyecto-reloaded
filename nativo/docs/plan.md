@@ -64,7 +64,12 @@ quietos, con sombra, en sus posiciones del original; `tests/prueba_arena.gd`); c
 a sí mismo), parálisis y enamoramiento al atacar, drenaje, ataques múltiples y los ataques de contacto
 con la máscara del Pokémon (`tests/prueba_efectos.gd`); en el HUD, el icono de estado al día y los
 paneles de Ctrl (tiempo y etapas) y º (equipo); Repartir Exp. (se activa desde la mochila) con
-Amuleto Exp., Huevo Suerte y el objeto 138; y el apodo al capturar.
+Amuleto Exp., Huevo Suerte y el objeto 138; y el apodo al capturar. Habilidades: las tres de cada
+especie (`PokemonHabilidad` con el ISEP de cada Pokémon), 34 reglas de daño extraídas
+(`tools/habilidades_original.py`: Espesura, Sebo, Agallas, Experto, Multiescamas...) y a mano
+Intimidación, Levitación, Ojo Compuesto, las de contacto (Elec. Estática, Punto Tóxico, Cuerpo Llama,
+Gran Encanto) y las que absorben un tipo. Faltan el resto de habilidades (unas 280), clima,
+megaevoluciones, movimientos Z y dinamax.
 - ~~El entrenador del jugador en la arena (`Trainer1`)~~: en el original no se mueve ni lo golpean.
 - Habilidades de los Pokémon (las más comunes primero, extraídas donde se pueda).
 - Lo que falta de los efectos: confusión, enamoramiento, drenaje, ataques múltiples, evasión,

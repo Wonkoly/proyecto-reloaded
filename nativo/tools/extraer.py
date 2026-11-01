@@ -82,6 +82,8 @@ SPRITES_UI = [
     "obj_aquisivuelo",
     # La oscuridad de las cuevas (DrawDestello): sin Destello y con Destello.
     "spr_darkness1", "spr_darkness2",
+    # El tono del clima (DrawEfectoLluvia, DrawEfectoSoleado).
+    "spr_white", "spr_yellow", "spr_gotaLluvia", "spr_copoNieve",
 ]
 # Fondos de la intro y el título (IntroROOM, InicioROOM) → sprites/ui/fondos/.
 FONDOS_UI = ["BackIntro", "BackIntroLetras", "GradienteNight", "BackFerProductions"]
@@ -500,6 +502,7 @@ def extraer_datos(plan: Plan, ext: Path, indice: dict) -> None:
     import efectos_original
     efectos_mov = efectos_original.efectos(gml("SecEffect1"))
     golpes_mov = efectos_original.golpes(gml("EsMultiple"))
+    climas_mov = efectos_original.climas(gml("SecEffect1"))
     funciones_mov = gml_eval.Funciones(scripts)  # ContactAtack
     ejecucion = Tabla(gml("ExecuteAtack"))
     rutas_mov: dict[int, Path] = {}
@@ -540,6 +543,8 @@ def extraer_datos(plan: Plan, ext: Path, indice: dict) -> None:
                 props.append(f"{clave} = {efecto[clave]}")
         if i in golpes_mov:
             props.append("golpes = PackedInt32Array(%s)" % ", ".join(str(n) for n in golpes_mov[i]))
+        if i in climas_mov:
+            props += [f"clima = {climas_mov[i][0]}", f"clima_objeto = {climas_mov[i][1]}"]
         if funciones_mov.llamar("ContactAtack", float(i)):
             props.append("contacto = true")
         plan.escribir(ruta, tres.texto(props))

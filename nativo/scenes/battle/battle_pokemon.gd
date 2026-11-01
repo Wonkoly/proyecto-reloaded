@@ -33,6 +33,8 @@ const ESPEJO: Dictionary[int, int] = {1: 3, 4: 6, 7: 9}
 var objetivo: BattlePokemon
 ## (17).HAB1 / HAB2: la habilidad del Pokémon en combate.
 var habilidad: int = 0
+var _ultimo_aviso_habilidad: int = -10000
+var _acum_habilidad: float = 0.0
 
 var pokemon: PokemonInstance
 var hp_max: int = 1
@@ -145,6 +147,12 @@ func atacar(indice: int) -> bool:
 	var move: MoveData = pokemon.movimientos[indice]
 	if _falla_por_estado(move):
 		return false
+	if objetivo and is_instance_valid(objetivo) and objetivo.habilidad == PRESION:
+		_set_energia(_energia - 25)
+		objetivo.habilidad_actuo()
+	# Danza Lluvia, Día Soleado...: el clima por 500 steps (800 con su roca equipada).
+	if move.clima > 0 and Clima.actual and is_instance_valid(Clima.actual):
+		Clima.actual.poner(move.clima, 800 if pokemon.objeto == move.clima_objeto and move.clima_objeto > 0 else 500, self)
 	_set_energia(_energia - move.costo_energia)
 	_cooldown = move.cooldown
 	_bloqueo = move.bloqueo_movimiento
@@ -235,6 +243,14 @@ const CONTACTO: Dictionary[int, Array] = {9: [MoveData.Estado.PARALISIS, [5]], 3
 ## Absorben un tipo (tipo del original → 1 recupera PS, 2 se lo come sin daño): Absorbe Elec. (10),
 ## Absorbe Agua y Piel Seca (11, 87), Absorbe Fuego (18), y la 284 con Tierra.
 const ABSORBE: Dictionary[int, Array] = {10: [5, 1], 11: [3, 1], 87: [3, 1], 18: [2, 2], 284: [8, 1]}
+## EffectHabilityStep: estados que la habilidad cura sola cada step (Flexibilidad, Despiste, Insomnio,
+## Espíritu Vital, Inmunidad, Ritmo Propio, Escudo Magma, Velo Agua, Pompa, Termoconversión).
+const CURA_ESTADO: Dictionary[int, int] = {7: 1, 12: 7, 15: 3, 72: 3, 17: 4, 20: 6, 40: 5, 41: 2, 200: 2, 296: 2}
+## SecEffect: estados que no le llegan (Insomnio y Espíritu Vital al sueño, Pompa y Termoconversión a
+## la quemadura).
+const BLOQUEA_ESTADO: Dictionary[int, Array] = {15: [3], 72: [3], 200: [2], 296: [2]}
+## Presión: cada ataque del rival le cuesta 25 de energía más.
+const PRESION: int = 46
 
 
 ## EffectHabilityCreate / UsaIntimidacion: lo que hacen algunas habilidades al salir al combate.
@@ -266,7 +282,41 @@ func absorbe(move: MoveData) -> int:
 
 ## hab_fugaz: el aviso de que actuó su habilidad (TextBattle 188: " (X actuó)").
 func habilidad_actuo() -> void:
+	# hab_fugaz es un aviso corto sobre el Pokémon: no se repite si la misma ya avisó hace poco.
+	var ahora: int = Time.get_ticks_msec()
+	if ahora - _ultimo_aviso_habilidad < 1500:
+		return
+	_ultimo_aviso_habilidad = ahora
 	mensaje.emit(Progreso.nombre(pokemon) + Textos.par(Textos.batalla(188), Habilidades.nombre(habilidad)))
+
+
+## EffectHabilityStep: lo que hacen algunas habilidades en cada step.
+func _step_habilidad() -> void:
+	var estado: int = int(pokemon.estado)
+	if estado != 0 and CURA_ESTADO.get(habilidad, -1) == estado:
+		_curar_estado()
+	match habilidad:
+		3:  # Impulso: 1 de cada 360 steps, +1 a la velocidad
+			if randi_range(1, 360) == 360 and etapa(5) < 12:
+				habilidad_actuo()
+				_cambiar_stats(null, self, {5: 1})
+		61:  # Mudar: 1 de cada 300 steps se cura
+			if estado != 0 and randi_range(1, 300) == 300:
+				_curar_estado()
+		93:  # Hidratación: con lluvia se cura
+			if estado != 0 and Clima.llueve():
+				_curar_estado()
+		51, 306:  # Vista Lince: no le bajan la precisión
+			if etapa(6) < 0:
+				_etapas[6] = 0
+				habilidad_actuo()
+
+
+func _curar_estado() -> void:
+	pokemon.estado = MoveData.Estado.NINGUNO
+	velocidad = _velocidad_actual()
+	habilidad_actuo()
+	_actualizar_animacion()
 
 
 ## Lo alcanza un ataque: avisa (golpeado) y aplica el daño.
@@ -300,7 +350,9 @@ func efectos_de_golpe(move: MoveData, atacante: BattlePokemon, danio: int) -> vo
 		if not evita and atacante.aplicar_estado(c[0]):
 			habilidad_actuo()
 	if move.estado != MoveData.Estado.NINGUNO and randi_range(1, 100) <= move.prob_estado:
-		aplicar_estado(move.estado, move)
+		# Sincronía: el estado que le ponen se lo pasa al atacante.
+		if aplicar_estado(move.estado, move) and habilidad == 28 and atacante.aplicar_estado(move.estado):
+			habilidad_actuo()
 	if (not move.cambios_rival.is_empty() or not move.cambios_propios.is_empty()) and randi_range(1, 100) <= move.prob_cambios:
 		if not esta_debilitado():
 			_cambiar_stats(move, self, move.cambios_rival)
@@ -342,6 +394,8 @@ static func _cambiar_stats(move: MoveData, quien: BattlePokemon, cambios: Dictio
 ## congelado 200-400, confusión y enamorado 150-350 (EffectStatuses).
 func aplicar_estado(nuevo: MoveData.Estado, move: MoveData = null) -> bool:
 	if esta_debilitado() or pokemon.estado != MoveData.Estado.NINGUNO:
+		return false
+	if int(nuevo) in BLOQUEA_ESTADO.get(habilidad, []):
 		return false
 	for t: Tipos.Tipo in INMUNE.get(nuevo, []):
 		if t in pokemon.especie.tipos:
@@ -403,6 +457,7 @@ func _velocidad_actual() -> float:
 	var v: float = pokemon.calcular_velocidad_batalla() + 7.5 * etapa(5)
 	if pokemon.estado == MoveData.Estado.PARALISIS:
 		v /= 1.125
+	v *= Clima.factor_velocidad(self)
 	return clampf(v, VELOCIDAD_MIN, VELOCIDAD_MAX)
 
 
@@ -441,6 +496,11 @@ func _physics_process(delta: float) -> void:
 				pokemon.estado = MoveData.Estado.NINGUNO
 				velocidad = _velocidad_actual()
 				_actualizar_animacion()
+	if not esta_debilitado() and habilidad != 0:
+		_acum_habilidad += delta
+		while _acum_habilidad >= 1.0 / 30.0:
+			_acum_habilidad -= 1.0 / 30.0
+			_step_habilidad()
 	if not esta_debilitado() and pokemon.objeto == 303:
 		_acum_objeto += delta
 		while _acum_objeto >= 1.0 / 30.0:

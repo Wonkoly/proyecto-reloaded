@@ -39,7 +39,7 @@ static func danio_en_batalla(atacante: BattlePokemon, defensor: BattlePokemon, m
 	for quien: BattlePokemon in hab[1]:
 		quien.habilidad_actuo()
 	return roundi(danio * factor_objetos(atacante.pokemon.objeto, defensor.pokemon.objeto, move, eff,
-		atacante.pokemon.especie.id_original) * float(hab[0]))
+		atacante.pokemon.especie.id_original) * float(hab[0]) * Clima.factor_danio(move, atacante, defensor))
 
 
 ## Número de tipo del original (TipoName: 1 Normal, 2 Fuego...) de cada Tipos.Tipo.

@@ -26,7 +26,7 @@ static func factor_danio(atacante: BattlePokemon, defensor: BattlePokemon, move:
 	var hab_def: int = defensor.habilidad
 	var valores: Array = [FormulasBatalla.TIPO_ORIGINAL[move.tipo], int(move.categoria), move.poder, eff,
 		int(atacante.pokemon.estado), int(defensor.pokemon.estado), atacante.pokemon.hp_actual, atacante.hp_max,
-		defensor.pokemon.hp_actual, defensor.hp_max, hab_at, hab_def, false, Reloj.es_de_dia()]
+		defensor.pokemon.hp_actual, defensor.hp_max, hab_at, hab_def, Clima.soleado(), Reloj.es_de_dia()]
 	var factor: float = 1.0
 	var usaron: Array[BattlePokemon] = []
 	for r: Dictionary in datos().get("danio", []):

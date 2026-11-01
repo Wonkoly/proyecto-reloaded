@@ -68,6 +68,14 @@ func _ready() -> void:
 		func(ganador: BattlePokemon) -> void: hud.mostrar_resultado("¡Gana %s!" % ganador.pokemon.especie.nombre))
 	manager.cambio_pokemon.connect(hud.cambiar_pokemon)
 	manager.mensaje_panel.connect(hud.mensaje)
+	# ClimaExterior(1): el combate empieza con el clima del mapa.
+	var clima := Clima.new()
+	clima.name = "Clima"
+	clima.en_batalla = true
+	clima.pokemon = [jugador, rival]
+	add_child(clima)
+	if desde_overworld and GameState.clima != 0:
+		clima.poner(GameState.clima)
 	manager.iniciar(jugador, rival, GameState.equipo if desde_overworld else [], equipo_rival)
 	hud.poner_equipo(GameState.equipo if desde_overworld else [p_jugador])
 	for bp: BattlePokemon in [jugador, rival]:

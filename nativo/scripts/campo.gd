@@ -19,6 +19,13 @@ static func datos() -> Dictionary:
 static func al_entrar(mapa: Mapa) -> void:
 	if mapa.nombre_original in datos().get("apaga_destello", []):
 		GameState.historia.erase("usadestello")
+	# El clima fijo del mapa (afuera): se ve en el mapa y pasa a los combates (ClimaExterior).
+	GameState.clima = int(datos().get("clima", {}).get(mapa.nombre_original, 0)) if GameState.mapa_salida == "" else 0
+	if GameState.clima != 0:
+		var c := Clima.new()
+		c.name = "Clima"
+		mapa.add_child(c)
+		c.poner(GameState.clima)
 	if mapa.nombre_original in datos().get("oscuros", []):
 		var o := Oscuridad.new()
 		o.name = "Oscuridad"

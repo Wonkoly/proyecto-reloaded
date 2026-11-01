@@ -73,6 +73,8 @@ var surf_lava: bool = false
 var ciclista: bool = false
 ## global.caballo: id_original del Pokémon montado con Vel. Extrema (0 = a pie).
 var caballo: int = 0
+## global.clima del mapa actual (Clima.Tipo; 0 = despejado).
+var clima: int = 0
 ## Nombre del protagonista (global.protaname); al empezar, el del perfil.
 var nombre_jugador: String = ""
 ## Nombre del rival (global.rivalname; lo elige la presentación del profesor, que aún no existe).

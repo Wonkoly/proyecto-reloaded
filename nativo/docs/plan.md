@@ -68,8 +68,11 @@ Amuleto Exp., Huevo Suerte y el objeto 138; y el apodo al capturar. Habilidades:
 especie (`PokemonHabilidad` con el ISEP de cada Pokémon), 34 reglas de daño extraídas
 (`tools/habilidades_original.py`: Espesura, Sebo, Agallas, Experto, Multiescamas...) y a mano
 Intimidación, Levitación, Ojo Compuesto, las de contacto (Elec. Estática, Punto Tóxico, Cuerpo Llama,
-Gran Encanto) y las que absorben un tipo. Faltan el resto de habilidades (unas 280), clima,
-megaevoluciones, movimientos Z y dinamax.
+Gran Encanto) y las que absorben un tipo; segunda tanda: curas de estado por step, inmunidades,
+Sincronía, Presión, Impulso, Mudar, Hidratación, Vista Lince y las de clima. Clima (`scenes/efectos/clima.gd`):
+el fijo de cada mapa (se ve en el mapa y pasa al combate), Danza Lluvia y compañía (500 steps, 800 con
+su roca), el daño de cada clima, arena y granizo que quitan PS, Nado Rápido, Clorofila, Ímpetu Arena,
+Cura Lluvia y Gélido. Faltan el resto de habilidades, megaevoluciones, movimientos Z y dinamax.
 - ~~El entrenador del jugador en la arena (`Trainer1`)~~: en el original no se mueve ni lo golpean.
 - Habilidades de los Pokémon (las más comunes primero, extraídas donde se pueda).
 - Lo que falta de los efectos: confusión, enamoramiento, drenaje, ataques múltiples, evasión,

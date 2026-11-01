@@ -76,6 +76,7 @@ func _initialize() -> void:
 	_ok(hecho > 0 and a.pokemon.hp_actual - 1 == maxi(1, hecho / 2), "Gigadrenado recupera la mitad del daño (hizo %d, recuperó %d)" % [hecho, a.pokemon.hp_actual - 1])
 	arena.free()
 	await _habilidades()
+	await _clima()
 	print("RESULTADO: ", "todo bien" if _fallas == 0 else "%d fallas" % _fallas)
 	quit(_fallas)
 
@@ -117,6 +118,40 @@ func _habilidades() -> void:
 	bulba.pokemon.hp_actual = 1
 	var apurado: float = hab.factor_danio(bulba, lapras, cepa, 2.0)[0]
 	_ok(normal == 1.0 and apurado == 1.5, "Espesura: ×1.5 a Planta con un tercio de vida (%.2f → %.2f)" % [normal, apurado])
+	arena.free()
+
+
+## Clima: daño con lluvia, Nado Rápido, Danza Lluvia por 500 steps y la arena que quita PS.
+func _clima() -> void:
+	var arena := Node2D.new()
+	root.add_child(arena)
+	var M := func(n: String) -> Resource: return load("res://data/extraido/moves/%s.tres" % n)
+	var psyduck = _pokemon(arena, 1, 54, Vector2(100, 160))
+	var machamp = _pokemon(arena, 2, 68, Vector2(220, 160))
+	psyduck.objetivo = machamp
+	machamp.objetivo = psyduck
+	psyduck.pokemon.isep = 100  # la oculta: Nado Rápido
+	psyduck.configurar(psyduck.pokemon)
+	var clima: Node = load("res://scenes/efectos/clima.gd").new()
+	clima.en_batalla = true
+	clima.pokemon.assign([psyduck, machamp])
+	arena.add_child(clima)
+	await process_frame
+	var surf: Resource = M.call("0009_surf")
+	var ascuas: Resource = M.call("0001_ascuas")
+	var C = load("res://scenes/efectos/clima.gd")
+	var v0: float = psyduck.velocidad
+	psyduck.pokemon.movimientos.assign([M.call("0208_danza_lluvia")])
+	psyduck._set_energia(psyduck.energia_max)
+	psyduck.atacar(0)
+	_ok(C.llueve() and clima.timer == 500, "Danza Lluvia: llueve 500 steps (%d)" % clima.timer)
+	_ok(C.factor_danio(surf, psyduck, machamp) == 1.5 and C.factor_danio(ascuas, psyduck, machamp) == 0.5,
+		"con lluvia el Agua ×1.5 y el Fuego ×0.5")
+	_ok(is_equal_approx(psyduck.velocidad, minf(v0 * 1.25, 450.0)), "Nado Rápido: ×1.25 de velocidad con lluvia (%.0f → %.0f)" % [v0, psyduck.velocidad])
+	clima.poner(4)
+	var hp: int = machamp.pokemon.hp_actual
+	await create_timer(8.0).timeout
+	_ok(machamp.pokemon.hp_actual < hp, "la tormenta de arena le quita PS a Machamp (%d → %d)" % [hp, machamp.pokemon.hp_actual])
 	arena.free()
 
 

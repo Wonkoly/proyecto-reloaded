@@ -49,3 +49,6 @@ enum Modo { CONTACTO, PROYECTIL, ESTADO, ESPECIAL }
 @export var golpes: PackedInt32Array = PackedInt32Array()
 ## ContactAtack: hace contacto (lo que activan Elec. Estática, Cuerpo Llama...).
 @export var contacto: bool = false
+## SecEffect: el clima que pone (global.clima; 0 = ninguno) y el objeto que lo alarga de 500 a 800 steps.
+@export var clima: int = 0
+@export var clima_objeto: int = 0

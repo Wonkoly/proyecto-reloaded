@@ -74,3 +74,20 @@ def golpes(es_multiple: str) -> dict[int, list[int]]:
         elif valor.isdigit():
             tabla[int(at)] = [int(valor)]
     return tabla
+
+
+# ClimaExterior: el objeto de cada clima y su número (global.clima).
+_CLIMA_OBJETO = {115: 1, 382: 2, 383: 4, 1954: 9, 217: 3}
+
+
+def climas(sec_effect: str) -> dict[int, list[int]]:
+    """Movimientos que cambian el clima: {at: [clima, objeto que lo alarga de 500 a 800 steps]}."""
+    tabla: dict[int, list[int]] = {}
+    for m in re.finditer(r"ZZ=instance_create\(0,0,\((\d+)\)\)", sec_effect):
+        clima = _CLIMA_OBJETO.get(int(m.group(1)))
+        ats = re.findall(r"if\(((?:at=\d+(?: \|\| )?)+)\)\{", sec_effect[max(0, m.start() - 1500):m.start()])
+        objeto = re.search(r"if\(global\.objpoke2\[ACTUAL2\]=(\d+)\)ZZ\.timer=800", sec_effect[m.start():m.start() + 200])
+        if clima and ats:
+            for at in re.findall(r"\d+", ats[-1]):
+                tabla.setdefault(int(at), [clima, int(objeto.group(1)) if objeto else 0])
+    return tabla

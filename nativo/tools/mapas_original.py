@@ -13,6 +13,7 @@ from __future__ import annotations
 
 import json
 import re
+import unicodedata
 import struct
 from pathlib import Path
 
@@ -493,6 +494,17 @@ def evento_entrenador(n: int, texto, inst: dict, room: str, companeros: list | N
                        f"hablante {f(quien) if isinstance(quien, float) else -1} {gd_str(nom)}", d, "hablante npc"]
     lineas += ["combate " + " ".join(str(x) for x in numeros), "si gano:"]
     lineas += [f"    bandera trainer_{x} = 1" for x in numeros]
+    # Líderes: la entrega de la medalla (Lider<Nombre>EntregaMedalla salta sola al acabar el combate).
+    if juego and nombre.startswith(("Líder ", "Lider ")):
+        script = "Lider" + "".join(unicodedata.normalize("NFKD", nombre.split(" ", 1)[1]).encode("ascii", "ignore").decode().split()) \
+            + "EntregaMedalla"
+        if (juego.ext / "scripts" / f"{script}.gml").exists():
+            import medallas_original
+            ordenes = medallas_original.entrega(juego.script(script))
+            for o in ordenes:
+                if o.startswith("hablante ") and o.split()[1].isdigit():
+                    juego.sprindex_usados.add(float(o.split()[1]))
+            lineas += [f"    # {script}"] + [f"    {o}" for o in ordenes]
     return "\n".join(lineas) + "\n"
 
 

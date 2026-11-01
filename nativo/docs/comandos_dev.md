@@ -23,6 +23,7 @@ Solo en builds de depuración (al correr desde el editor o con `--path`); en un 
 | `dar <especie> <nivel>` | Agrega un Pokémon al equipo (id o nombre) |
 | `curar` | HP y energía al máximo |
 | `nivel <n>` | Nivel del primer Pokémon del equipo |
+| `personaje <n>` | Cambia el protagonista (0-9 originales, 11 = Galleta) y recarga el mapa |
 | `encuentro <especie> <nivel>` | Batalla ya contra un salvaje |
 | `encuentros on\|off` | Activa/desactiva los salvajes en la hierba |
 | `dificultad <1\|2\|4\|0>` | Fuerza el divisor de daño (PowDif) de los dos lados; 0 vuelve al de la dificultad |

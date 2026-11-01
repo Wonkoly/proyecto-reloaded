@@ -25,6 +25,20 @@ static func movimiento(id_original: int) -> MoveData:
 	return load(ruta) as MoveData
 
 
+static var _megas: Array = []
+
+
+## CompMegaEvolucion: la mega de una especie con esa megapiedra equipada, o null.
+static func mega(id_especie: int, objeto: int) -> PokemonData:
+	if _megas.is_empty():
+		var f: FileAccess = FileAccess.open("res://data/extraido/pokemon/megas.json", FileAccess.READ)
+		_megas = JSON.parse_string(f.get_as_text()) if f else []
+	for m: Array in _megas:
+		if int(m[0]) == id_especie and int(m[1]) == objeto:
+			return especie(int(m[2]))
+	return null
+
+
 ## El entrenador número `id` (INDEX): el editado en data/entrenadores/ si existe, si no el extraído.
 static func entrenador(id: int) -> EntrenadorData:
 	for carpeta: String in ["res://data/entrenadores", "res://data/extraido/entrenadores"]:

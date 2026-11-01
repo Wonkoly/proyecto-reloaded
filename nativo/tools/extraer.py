@@ -412,16 +412,19 @@ def parse_rangos(texto: str) -> list[int]:
     return sorted(ids)
 
 
-def extraer_sprites(plan: Plan, ext: Path, ids: list[int]) -> None:
+def extraer_sprites(plan: Plan, ext: Path, ids: list[int] | None) -> None:
+    """ids None: todas las especies con sprites (también megas y formas: 100003, 200006...)."""
     indice = json.loads((ext / "pkmnbattle" / "index.json").read_text())
-    for pk in ids:
+    por_especie: dict[int, list] = {}
+    for clave, meta in indice.items():
+        m = re.fullmatch(r"P(\d+)_([0-9AHS])(_ALT)?", clave)
+        if m:
+            por_especie.setdefault(int(m.group(1)), []).append((clave, meta, m))
+    for pk in (sorted(por_especie) if ids is None else ids):
         carpeta = ASSETS / "sprites" / "pokemon" / f"{pk:04d}"
         tiras = {}  # sufijo -> (meta, png destino)
-        for clave, meta in indice.items():
-            m = re.fullmatch(rf"P{pk}_([0-9AHS])(_ALT)?", clave)
-            if not m:
-                continue
-            sufijo = m.group(1) + ("_alt" if m.group(2) else "")
+        for clave, meta, m in por_especie.get(pk, []):
+            sufijo = m.group(2) + ("_alt" if m.group(3) else "")
             destino = carpeta / f"{sufijo.lower()}.png"
             plan.copiar(ext / "pkmnbattle" / f"{clave}.png", destino)
             tiras[sufijo] = (meta, destino)
@@ -570,68 +573,79 @@ def extraer_datos(plan: Plan, ext: Path, indice: dict) -> None:
     evoluciones = leer_evoluciones(gml("CheckEvolution"), gml("EvolutionConfirmation"))
     pokedex: dict[int, list] = {}  # número de Pokédex -> [id_original, nombre] (la primera especie)
     total = 0
-    for a, b in RANGOS_ESPECIES:
-        for pk in range(a, b + 1):
-            linea = pk if pk <= 1000 else pk - 1000
-            nombre = nombres_pk[linea - 1].strip() if linea <= len(nombres_pk) else ""
-            if not nombre or stats["hp"].valor(pk) is None:
+    # Megaevoluciones (CompMegaEvolucion: especie + megapiedra → mega; NamePokemon: STR_POK[firstMega + k]).
+    comp_mega = gml("CompMegaEvolucion")
+    megas = [(int(a), int(b), int(c)) for a, b, c in
+             re.findall(r"if\(argument0=(\d+) && argument1=(\d+)\)return\((\d+)\);", comp_mega)]
+    nombre_pk = gml("NamePokemon")
+    primera_mega = int(re.search(r"firstMega=(\d+)", nombre_pk).group(1))
+    nombres_mega = {int(a): nombres_pk[primera_mega + int(k) - 1].strip() for a, k in
+                    re.findall(r"argument0=(\d+)\)return\(global\.STR_POK\[firstMega\+(\d+)\]\)", nombre_pk)}
+    base_mega = {mega: base for base, _, mega in megas}
+    plan.escribir(DATA / "pokemon" / "megas.json", json.dumps([[b, o, m] for b, o, m in megas], indent=0))
+    ids_especies = [pk for a, b in RANGOS_ESPECIES for pk in range(a, b + 1)] + sorted(set(base_mega) & set(nombres_mega))
+    for pk in ids_especies:
+        linea = pk if pk <= 1000 else pk - 1000
+        nombre = nombres_mega.get(pk) or (nombres_pk[linea - 1].strip() if linea <= len(nombres_pk) else "")
+        if not nombre or stats["hp"].valor(base_mega.get(pk, pk)) is None:
+            continue
+        dex = int(orden_dex.valor(base_mega.get(pk, pk), pk) or pk)
+        pokedex.setdefault(dex, [pk, nombre])
+        tres = Tres("Resource", "PokemonData")
+        tipos = [TIPO_JUEGO_A_ENUM[int(t)] for t in (tipo_a.valor(pk, 0), tipo_b.valor(pk, 0))
+                 if t and int(t) in TIPO_JUEGO_A_ENUM]
+        props = [
+            f"script = {tres.ext_resource('Script', 'res://scripts/resources/pokemon_data.gd')}",
+            f"nombre = {gd_str(nombre)}",
+            f"numero_pokedex = {dex}",
+            f"id_original = {pk}",
+            "tipos = Array[int]([%s])" % ", ".join(str(t) for t in tipos),
+        ]
+        for campo, tabla in stats.items():
+            # Los PS de una mega son los de su especie (StatPSPokemon le resta 100000).
+            props.append(f"{campo} = {int(tabla.valor(pk, None) or tabla.valor(base_mega.get(pk, pk), 1) or 1)}")
+        props.append(f"exp_base = {int(exp_base.valor(pk, 0) or 0)}")
+        props.append(f"crecimiento = {int(crecimiento.valor(dex, 0) or 0)}")
+        for campo, funcion, defecto in (("cria", "MYSON", pk), ("grupo_huevo_1", "GrupoHuevo1", 0),
+                                        ("grupo_huevo_2", "GrupoHuevo2", 0), ("sexo_unico", "OneSex", -1)):
+            v = funciones.llamar(funcion, float(pk))
+            props.append(f"{campo} = {int(v) if isinstance(v, float) else defecto}")
+        sexos = [funciones.llamar("PkmnSetSexValor", float(pk), float(v)) for v in range(1, 101)]
+        hembras = -1 if not any(x in (1.0, 2.0) for x in sexos) else sum(1 for x in sexos if x == 2.0)
+        props.append(f"porcentaje_hembra = {hembras}")
+        # PokemonHabilidad(especie, ISEP): ISEP 1-48 la primera, 49-99 la segunda, 100-102 la oculta.
+        habs = [funciones.llamar("PokemonHabilidad", float(pk), float(i)) for i in (1, 50, 100)]
+        if all(isinstance(h, float) for h in habs):
+            props.append("habilidades = PackedInt32Array(%s)" % ", ".join(str(int(h)) for h in habs))
+        rareza = funciones.llamar("NumRareza", float(pk))
+        props.append(f"ratio_captura = {int(rareza) if isinstance(rareza, float) else 45}")
+        if pk in evoluciones:
+            nv_evo, destino = evoluciones[pk]
+            if destino is None and funciones.llamar("MYSON", float(pk)) == funciones.llamar("MYSON", float(pk + 1)):
+                destino = pk + 1
+            if destino:
+                props += [f"nivel_evolucion = {nv_evo}", f"evoluciona_a = {destino}"]
+        frente = ASSETS / "sprites" / "pokemon" / f"{pk:04d}" / "2.png"
+        if frente.exists():  # la categoría sprites ya se sincronizó antes que datos
+            w, h = png_size(frente)
+            frames = indice.get(f"P{pk}_2", {}).get("frames", 1)
+            props.append(f"sprite = {atlas(tres, frente, (0, 0, w // max(frames, 1), h))}")
+        entradas = [(METODO["NIVEL"], m, nv) for nv, m in sorted(aprendizaje.get(pk, []))]
+        entradas += [(metodo, m, 0) for metodo, m in aprendizaje_otros(pk, mts, mt_mov, tutores, dts)]
+        script_apr = tres.ext_resource("Script", "res://scripts/resources/movimiento_aprendible.gd")
+        refs = []
+        for metodo, m, nv in entradas:
+            if m not in rutas_mov:
                 continue
-            dex = int(orden_dex.valor(pk, pk) or pk)
-            pokedex.setdefault(dex, [pk, nombre])
-            tres = Tres("Resource", "PokemonData")
-            tipos = [TIPO_JUEGO_A_ENUM[int(t)] for t in (tipo_a.valor(pk, 0), tipo_b.valor(pk, 0))
-                     if t and int(t) in TIPO_JUEGO_A_ENUM]
-            props = [
-                f"script = {tres.ext_resource('Script', 'res://scripts/resources/pokemon_data.gd')}",
-                f"nombre = {gd_str(nombre)}",
-                f"numero_pokedex = {dex}",
-                f"id_original = {pk}",
-                "tipos = Array[int]([%s])" % ", ".join(str(t) for t in tipos),
-            ]
-            for campo, tabla in stats.items():
-                props.append(f"{campo} = {int(tabla.valor(pk, 1) or 1)}")
-            props.append(f"exp_base = {int(exp_base.valor(pk, 0) or 0)}")
-            props.append(f"crecimiento = {int(crecimiento.valor(dex, 0) or 0)}")
-            for campo, funcion, defecto in (("cria", "MYSON", pk), ("grupo_huevo_1", "GrupoHuevo1", 0),
-                                            ("grupo_huevo_2", "GrupoHuevo2", 0), ("sexo_unico", "OneSex", -1)):
-                v = funciones.llamar(funcion, float(pk))
-                props.append(f"{campo} = {int(v) if isinstance(v, float) else defecto}")
-            sexos = [funciones.llamar("PkmnSetSexValor", float(pk), float(v)) for v in range(1, 101)]
-            hembras = -1 if not any(x in (1.0, 2.0) for x in sexos) else sum(1 for x in sexos if x == 2.0)
-            props.append(f"porcentaje_hembra = {hembras}")
-            # PokemonHabilidad(especie, ISEP): ISEP 1-48 la primera, 49-99 la segunda, 100-102 la oculta.
-            habs = [funciones.llamar("PokemonHabilidad", float(pk), float(i)) for i in (1, 50, 100)]
-            if all(isinstance(h, float) for h in habs):
-                props.append("habilidades = PackedInt32Array(%s)" % ", ".join(str(int(h)) for h in habs))
-            rareza = funciones.llamar("NumRareza", float(pk))
-            props.append(f"ratio_captura = {int(rareza) if isinstance(rareza, float) else 45}")
-            if pk in evoluciones:
-                nv_evo, destino = evoluciones[pk]
-                if destino is None and funciones.llamar("MYSON", float(pk)) == funciones.llamar("MYSON", float(pk + 1)):
-                    destino = pk + 1
-                if destino:
-                    props += [f"nivel_evolucion = {nv_evo}", f"evoluciona_a = {destino}"]
-            frente = ASSETS / "sprites" / "pokemon" / f"{pk:04d}" / "2.png"
-            if frente.exists():  # la categoría sprites ya se sincronizó antes que datos
-                w, h = png_size(frente)
-                frames = indice.get(f"P{pk}_2", {}).get("frames", 1)
-                props.append(f"sprite = {atlas(tres, frente, (0, 0, w // max(frames, 1), h))}")
-            entradas = [(METODO["NIVEL"], m, nv) for nv, m in sorted(aprendizaje.get(pk, []))]
-            entradas += [(metodo, m, 0) for metodo, m in aprendizaje_otros(pk, mts, mt_mov, tutores, dts)]
-            script_apr = tres.ext_resource("Script", "res://scripts/resources/movimiento_aprendible.gd")
-            refs = []
-            for metodo, m, nv in entradas:
-                if m not in rutas_mov:
-                    continue
-                sub = [f"script = {script_apr}", f"move = {tres.ext_resource('Resource', res(rutas_mov[m]))}"]
-                if nv:
-                    sub.append(f"nivel = {nv}")
-                if metodo:
-                    sub.append(f"metodo = {metodo}")
-                refs.append(tres.sub_resource("Resource", sub))
-            props.append(f"movimientos_aprendibles = Array[{script_apr}]([{', '.join(refs)}])")
-            plan.escribir(DATA / "pokemon" / f"{pk:04d}_{snake(nombre)}.tres", tres.texto(props))
-            total += 1
+            sub = [f"script = {script_apr}", f"move = {tres.ext_resource('Resource', res(rutas_mov[m]))}"]
+            if nv:
+                sub.append(f"nivel = {nv}")
+            if metodo:
+                sub.append(f"metodo = {metodo}")
+            refs.append(tres.sub_resource("Resource", sub))
+        props.append(f"movimientos_aprendibles = Array[{script_apr}]([{', '.join(refs)}])")
+        plan.escribir(DATA / "pokemon" / f"{pk:04d}_{snake(nombre)}.tres", tres.texto(props))
+        total += 1
     plan.escribir(DATA / "pokemon" / "pokedex.json",
                   json.dumps({str(k): v for k, v in sorted(pokedex.items())}, ensure_ascii=False, indent=0))
     # MT: objeto → movimiento (MTAtack; UseObject: objetos 194-290 y 618-637).
@@ -1031,7 +1045,7 @@ def main() -> None:
     ap = argparse.ArgumentParser(description="Extrae assets y datos del juego original para nativo/.")
     ap.add_argument("--juego", type=Path, default=REPO / "gamedata", help="carpeta gamedata/ (por defecto la del repo)")
     ap.add_argument("--extraido", type=Path, default=REPO / "extracted", help="carpeta extracted/ (por defecto la del repo)")
-    ap.add_argument("--pokemon", default="1-151", help="ids para los sprites de batalla, p. ej. 1-151,2001-2010")
+    ap.add_argument("--pokemon", default="todos", help="ids para los sprites de batalla, p. ej. 1-151,2001-2010 (todos)")
     ap.add_argument("--solo", help="solo estas categorías (separadas por coma): " + ", ".join(CATEGORIAS))
     for c in CATEGORIAS:
         if c not in POR_DEFECTO and c != "mapas":
@@ -1082,7 +1096,7 @@ def main() -> None:
             funciones = dialogos_original.Funciones(EXT / "scripts", EXT / "text" / "es")
             plan.escribir(DATA / "objetos.json", json.dumps(objetos_original.objetos(funciones), ensure_ascii=False, indent=1))
         elif cat == "sprites":
-            extraer_sprites(plan, EXT, parse_rangos(args.pokemon))
+            extraer_sprites(plan, EXT, None if args.pokemon == "todos" else parse_rangos(args.pokemon))
         elif cat == "fondos":
             extraer_fondos(plan, args.juego, args.fondos_todos)
         elif cat == "ui":

@@ -60,6 +60,7 @@ func ejecutar(evento: Evento, npc: Npc = null) -> bool:
 	_hablante = -2.0
 	_hablante_nombre = ""
 	_tienda.clear()
+	_locales.clear()
 	await _bloque(evento.ordenes, evento.ruta)
 	en_curso = false
 	return true
@@ -83,17 +84,20 @@ func _si(o: Dictionary, ruta: String) -> void:
 	await _bloque(o.sino, ruta)
 
 
-## Una condición: banderas por nombre (trainer_2 == 0), números, y/o/no, "gano" (el último combate)
-## y pregunta "¿texto?" (pregunta Sí/No).
+## Una condición: banderas por nombre (trainer_2 == 0), números, y/o/no, "gano" (el último combate),
+## pregunta "¿texto?" o pregunta N (Sí/No; "no pregunta N" para el No), "dia", "chico" (el protagonista
+## es chico: TrainerBoy) y las variables locales del evento (las que empiezan con "_").
 func condicion(texto: String, ruta: String = "", linea: int = 0) -> bool:
-	if texto.begins_with("pregunta "):
-		var partes: PackedStringArray = Evento.partir(texto)
-		return await CuadroOriginal.preguntar(self, _texto(partes.slice(1)))
+	if texto.begins_with("pregunta ") or texto.begins_with("no pregunta "):
+		var negada: bool = texto.begins_with("no ")
+		var partes: PackedStringArray = Evento.partir(texto.trim_prefix("no "))
+		var si: bool = await CuadroOriginal.preguntar(self, _texto(partes.slice(1)))
+		return si != negada
 	var e := Expression.new()
-	if e.parse(_expresion(texto), ["h", "gano", "opcion", "lugar", "o"]) != OK:
+	if e.parse(_expresion(texto), ENTRADAS) != OK:
 		_aviso(ruta, linea, "condición inválida: " + texto)
 		return false
-	var v: Variant = e.execute([GameState.historia, gano, opcion, GameState.indice_lugar, GameState.objetos])
+	var v: Variant = e.execute(_valores())
 	if e.has_execute_failed():
 		_aviso(ruta, linea, "no se pudo evaluar: " + texto)
 		return false
@@ -103,9 +107,19 @@ func condicion(texto: String, ruta: String = "", linea: int = 0) -> bool:
 ## Una condición sin pregunta (no espera): para los datos (MiembroEquipo.condicion).
 func condicion_simple(texto: String) -> bool:
 	var e := Expression.new()
-	if e.parse(_expresion(texto), ["h", "gano", "opcion", "lugar", "o"]) != OK:
+	if e.parse(_expresion(texto), ENTRADAS) != OK:
 		return false
-	return bool(e.execute([GameState.historia, gano, opcion, GameState.indice_lugar, GameState.objetos]))
+	return bool(e.execute(_valores()))
+
+
+const ENTRADAS: PackedStringArray = ["h", "gano", "opcion", "lugar", "o", "l", "dia", "chico"]
+## Variables locales del evento en curso (_progreso...): como las del objeto en el original.
+var _locales: Dictionary = {}
+
+
+func _valores() -> Array:
+	return [GameState.historia, gano, opcion, GameState.indice_lugar, GameState.objetos, _locales,
+		Reloj.es_de_dia(), GameState.es_chico()]
 
 
 ## La condición como expresión de Godot: cada palabra que no es número ni palabra clave es una bandera.
@@ -120,8 +134,10 @@ static func _expresion(texto: String) -> String:
 			out += w
 		elif w == "gano":
 			out += "gano"
-		elif w == "opcion" or w == "lugar":
+		elif w in ["opcion", "lugar", "dia", "chico"]:
 			out += w
+		elif w.begins_with("_"):
+			out += 'l.get("%s", 0)' % w
 		elif w.begins_with("objeto_") and w.substr(7).is_valid_int():
 			out += "o.get(%s, 0)" % w.substr(7)
 		elif PALABRAS.has(w):
@@ -364,15 +380,20 @@ func _bandera(a: PackedStringArray, ruta: String, linea: int) -> void:
 		return
 	var nombre: String = a[0].replace("[", "_").replace("]", "")
 	var e := Expression.new()
-	if e.parse(_expresion(" ".join(a.slice(2))), ["h", "gano", "opcion", "lugar", "o"]) != OK:
+	if e.parse(_expresion(" ".join(a.slice(2))), ENTRADAS) != OK:
 		_aviso(ruta, linea, "valor inválido")
 		return
-	var v: int = int(e.execute([GameState.historia, gano, opcion, GameState.indice_lugar, GameState.objetos]))
+	var v: int = int(e.execute(_valores()))
+	var local: bool = nombre.begins_with("_")
+	var antes: int = int(_locales.get(nombre, 0)) if local else GameState.bandera(nombre)
 	if a[1] == "+=":
-		v = GameState.bandera(nombre) + v
+		v = antes + v
 	elif a[1] == "-=":
-		v = GameState.bandera(nombre) - v
-	GameState.cambiar_historia(nombre, v)
+		v = antes - v
+	if local:
+		_locales[nombre] = v
+	else:
+		GameState.cambiar_historia(nombre, v)
 
 
 ## El nodo de "Objetos" con ese nombre (a[0]), o el NPC del evento si no se da o es "npc".

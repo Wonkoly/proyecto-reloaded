@@ -147,6 +147,12 @@ func atacar(indice: int) -> bool:
 	var move: MoveData = pokemon.movimientos[indice]
 	if _falla_por_estado(move):
 		return false
+	if z_restante > 0.0:
+		var z: MoveData = movimiento_z(move, pokemon.objeto)
+		if z:
+			move = z
+			z_restante = 0.0
+			z_terminado.emit(true)
 	if objetivo and is_instance_valid(objetivo) and objetivo.habilidad == PRESION:
 		_set_energia(_energia - 25)
 		objetivo.habilidad_actuo()
@@ -278,6 +284,68 @@ func levita() -> bool:
 func absorbe(move: MoveData) -> int:
 	var a: Array = ABSORBE.get(habilidad, [])
 	return int(a[1]) if not a.is_empty() and FormulasBatalla.TIPO_ORIGINAL[move.tipo] == int(a[0]) else 0
+
+
+## EfectoEnergy1: el aura del movimiento Z (13 s). Mientras dura, el primer ataque del tipo del cristal
+## equipado sale como su movimiento Z.
+var z_restante: float = 0.0
+signal z_terminado(usado: bool)
+
+
+## UpdateAttack_Z: el movimiento Z de un ataque con ese cristal (488-505, uno por tipo del original), o
+## null si no es de su tipo. Los físicos y especiales pasan a "<Movimiento Z del tipo>" con el poder de
+## BaseGenericZAttack; los de estado quedan "Z-<nombre>" con el mismo efecto.
+static func movimiento_z(move: MoveData, cristal: int) -> MoveData:
+	var t: int = FormulasBatalla.TIPO_ORIGINAL[move.tipo]
+	if cristal - 487 != t:
+		return null
+	var z: MoveData = move.duplicate()
+	z.golpes = PackedInt32Array()
+	if move.categoria == MoveData.Categoria.ESTADO:
+		z.nombre = Textos.par(Textos.linea("txt_menu", 2037), move.nombre)
+		return z
+	z.nombre = Textos.linea("txt_menu", 2037 + t)
+	var base: int = move.poder
+	z.poder = 100 if base <= 59 else 120 if base <= 69 else 140 if base <= 79 else 160 if base <= 89 else \
+		175 if base <= 99 else 180 if base <= 109 else 185 if base <= 119 else 190 if base <= 129 else \
+		195 if base <= 139 else 200
+	return z
+
+
+## EfectoGigamax: dinamax. El Pokémon (y su caja) crece 0.05 por step hasta el doble, con un brillo
+## rojo, durante 900 steps; después vuelve a su tamaño (FinEfectoGigamax).
+func dinamax() -> void:
+	var caja: Node2D = hurtbox
+	var t: Tween = create_tween()
+	t.tween_method(_escala_dinamax.bind(caja), 1.0, 2.0, 20.0 / 30.0)
+	t.tween_interval(900.0 / 30.0 - 20.0 / 30.0)
+	t.tween_method(_escala_dinamax.bind(caja), 2.0, 1.0, 20.0 / 30.0)
+	t.tween_callback(func() -> void: sprite.modulate = Color.WHITE)
+	sprite.modulate = Color(1.0, 0.65, 0.65)
+	mensaje.emit(Progreso.nombre(pokemon) + " - Dinamax")
+
+
+func _escala_dinamax(f: float, caja: Node2D) -> void:
+	sprite.scale = Vector2(f, f)
+	caja.scale = Vector2(f, f)
+
+
+## BattleMegaEvolution1: pasa a su mega (tipos, stats y habilidad nuevos; los PS que tenga y las etapas
+## se quedan), con el aviso "X se ha transformado en Y" (TextBattle 158). Se deshace al acabar el combate.
+func megaevolucionar(mega: PokemonData) -> void:
+	var nombre: String = Progreso.nombre(pokemon)
+	pokemon.especie_sin_mega = pokemon.especie
+	pokemon.especie = mega
+	if habilidad != pokemon.habilidad():
+		habilidad = pokemon.habilidad()
+	hp_max = pokemon.calcular_stats()["hp"]
+	velocidad = _velocidad_actual()
+	sprite.sprite_frames = mega.cargar_sprite_frames()
+	_actualizar_animacion()
+	mensaje.emit(Textos.par(Textos.batalla(158), nombre, mega.nombre))
+	GameState.marcar_pokedex(mega, 2)
+	al_entrar()
+	hp_cambiado.emit(pokemon.hp_actual, hp_max)
 
 
 ## hab_fugaz: el aviso de que actuó su habilidad (TextBattle 188: " (X actuó)").
@@ -476,6 +544,12 @@ func recibir_danio(cantidad: int) -> void:
 func _physics_process(delta: float) -> void:
 	var estaba_bloqueado: bool = _bloqueo > 0.0 or _herido > 0.0
 	_cooldown = maxf(0.0, _cooldown - delta)
+	if z_restante > 0.0:
+		z_restante -= delta
+		modulate = Color(1.4, 1.4, 1.0) if fmod(z_restante, 0.4) < 0.2 else Color.WHITE
+		if z_restante <= 0.0:
+			modulate = Color.WHITE
+			z_terminado.emit(false)  # EfectoEnergy1TimeUp: se pierde
 	_bloqueo = maxf(0.0, _bloqueo - delta)
 	_herido = maxf(0.0, _herido - delta)
 	if lado == 1 and GameState.dev_energia_infinita:

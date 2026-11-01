@@ -17,6 +17,7 @@ static func registrar_todos(c: Node) -> void:
 		func(i: int, t: String) -> PackedStringArray: return _filtrar(_especies(), t) if i == 0 else PackedStringArray())
 	c.registrar("curar", "Cura HP y energía del equipo", "curar", _curar)
 	c.registrar("medalla", "Da medallas (1-8, o todas) para usar las MO", "medalla <n|todas>", _medalla)
+	c.registrar("personaje", "Cambia el protagonista (0-9 originales, 11 = Galleta) y recarga el mapa", "personaje <n>", _personaje)
 	c.registrar("nivel", "Cambia el nivel del primer Pokémon del equipo", "nivel <n>", _nivel)
 	c.registrar("encuentro", "Batalla ya contra un salvaje", "encuentro <especie> <nivel>", _encuentro.bind(c),
 		func(i: int, t: String) -> PackedStringArray: return _filtrar(_especies(), t) if i == 0 else PackedStringArray())
@@ -237,6 +238,19 @@ static func _medalla(args: PackedStringArray) -> String:
 	for n: int in lista:
 		GameState.cambiar_historia("MEDALLA_STAR_%d" % n, 1)
 	return "Medallas: %s" % ", ".join(range(1, 9).filter(func(n: int) -> bool: return GameState.tiene_medalla(n)).map(str))
+
+
+static func _personaje(args: PackedStringArray) -> String:
+	if args.is_empty() or not args[0].is_valid_int():
+		return "Uso: personaje <n> (ahora: %d)" % GameState.personaje
+	var n: int = args[0].to_int()
+	if n == 10 or n < 0 or n > Personajes.ultimo() or Personajes.tabla().get("protagonistas", {}).get(str(n)) == null:
+		return "No hay protagonista %d (0-9, 11-%d)" % [n, Personajes.ultimo()]
+	GameState.personaje = n
+	var j: Jugador = Engine.get_main_loop().current_scene.get_node_or_null("Objetos/Jugador") as Jugador
+	if j:
+		SceneManager.ir_a_mapa(GameState.mapa_actual, j.global_position, j.mira)
+	return "Personaje: %d" % n
 
 
 static func _curar(_args: PackedStringArray) -> String:

@@ -33,6 +33,8 @@ const DIGITO_STAT: Dictionary[String, int] = {
 ## global.info[i,6] (ISEP, 1-102): decide la habilidad (PokemonHabilidad: hasta 48 la primera, hasta
 ## 99 la segunda y 100-102 la oculta).
 @export var isep: int = 1
+## La especie de antes de megaevolucionar (solo dura el combate; no se guarda).
+var especie_sin_mega: PokemonData
 ## Estado alterado (global.STD1): dura después del combate hasta que se cura.
 @export var estado: MoveData.Estado = MoveData.Estado.NINGUNO
 ## Valores individuales: 6 dígitos de 0 a 9 (aleatorios al nacer).

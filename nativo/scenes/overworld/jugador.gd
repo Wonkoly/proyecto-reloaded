@@ -396,17 +396,12 @@ func _revisar_salidas() -> void:
 	_salidas_dentro = dentro
 
 
-## Sprites del personaje elegido (código Q/CARA): data/extraido/personajes.json.
+## Sprites del personaje elegido (código Q/CARA): Personajes (data/extraido/personajes.json + data/personajes.json).
 func _aplicar_personaje() -> void:
-	var f: FileAccess = FileAccess.open("res://data/extraido/personajes.json", FileAccess.READ)
-	if f == null:
+	var nombres: Array = Personajes.del_jugador()
+	if nombres.size() < 3:
 		return
-	var tabla: Dictionary = JSON.parse_string(f.get_as_text())
-	var nombres: Variant = tabla["entrenadores"].get(str(GameState.personaje_entrenador)) if GameState.personaje == 10 \
-		else tabla["protagonistas"].get(str(GameState.personaje))
-	if not nombres is Array or (nombres as Array).size() < 3:
-		return
-	var cargar: Callable = func(n: String) -> SpriteOriginal: return load("res://assets/extraido/sprites/overworld/%s.tres" % n)
+	var cargar: Callable = Personajes.cargar
 	if GameState.personaje != 0 or sprite_abajo == null:
 		sprite_abajo = cargar.call(nombres[0])
 		sprite_arriba = cargar.call(nombres[1])

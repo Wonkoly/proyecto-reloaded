@@ -15,9 +15,9 @@ static func del_jugador(pos: Vector2) -> EntrenadorArena:
 	var e := EntrenadorArena.new()
 	e.name = "Trainer1"
 	e.position = pos
-	var nombres: Array = _personaje()
+	var nombres: Array = Personajes.del_jugador()
 	var i: int = 5 if GameState.ciclista and nombres.size() == 9 else 2
-	e.sprite = load(OVERWORLD % nombres[i]) if nombres.size() > i else null
+	e.sprite = Personajes.cargar(nombres[i]) if nombres.size() > i else null
 	e.xscale = -1.0 if pos.x > 288.0 else 1.0
 	return e
 
@@ -35,14 +35,6 @@ static func del_rival(entrenador: EntrenadorData, pos: Vector2) -> EntrenadorAre
 	e.sprite = load(OVERWORLD % nombre)
 	e.xscale = -1.0
 	return e
-
-
-static func _personaje() -> Array:
-	var f: FileAccess = FileAccess.open("res://data/extraido/personajes.json", FileAccess.READ)
-	var tabla: Dictionary = JSON.parse_string(f.get_as_text()) if f else {}
-	var v: Variant = tabla.get("entrenadores", {}).get(str(GameState.personaje_entrenador)) if GameState.personaje == 10 \
-		else tabla.get("protagonistas", {}).get(str(GameState.personaje))
-	return v if v is Array else []
 
 
 func _ready() -> void:

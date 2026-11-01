@@ -366,6 +366,15 @@ func con_habilidad_campo(n: int) -> PokemonInstance:
 	return null
 
 
+## TrainerBoy (SexoEntrenador): si el protagonista es chico. Son chicas Kris (3), Aura (4), Maya (6)
+## y Kate (8).
+const PERSONAJES_CHICA: Array[int] = [3, 4, 6, 8]
+
+
+func es_chico() -> bool:
+	return personaje not in PERSONAJES_CHICA
+
+
 func bandera(nombre: String) -> int:
 	return historia.get(nombre, 0)
 

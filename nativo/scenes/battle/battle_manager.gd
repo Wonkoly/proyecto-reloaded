@@ -38,6 +38,14 @@ var _cambios: int = 0
 var _objetos_usados: int = 0
 const LIMITE_OBJETOS: int = 6
 var _espera_cambio: float = 0.0
+## MEGAEVO1: ya megaevolucionó alguien del jugador en este combate.
+var _megaevolucionado: bool = false
+const MEGA_ARO: int = 193
+const PULSERA_Z: int = 568
+const MAXIMUNEQUERA: int = 658
+var _dinamax_usado: bool = false
+## MOVIMIENTO_Z1: ya usó (o perdió) su movimiento Z en este combate.
+var _z_usado: bool = false
 
 
 func iniciar(jugador: BattlePokemon, rival: BattlePokemon, equipo_jugador: Array = [], equipo_rival: Array = []) -> void:
@@ -95,6 +103,7 @@ func _salir() -> void:
 		return
 	_saliendo = true
 	await _dinero(_gano)
+	_deshacer_megas()
 	if _gano:
 		await Evolucion.revisar_equipo(self, _subidos)
 	_volver()
@@ -184,6 +193,10 @@ func _unhandled_input(event: InputEvent) -> void:
 		KEY_1, KEY_2, KEY_3, KEY_4, KEY_5, KEY_6:  # key_bt_pkmn1..6
 			get_viewport().set_input_as_handled()
 			cambiar_a(tecla.physical_keycode - KEY_1)
+		KEY_M:  # key_bt_mega_evolucion
+			if not _equipos[0].is_empty():
+				get_viewport().set_input_as_handled()
+				_megaevolucionar()
 		KEY_A:  # key_bt_obj_asig
 			if not _equipos[0].is_empty():
 				get_viewport().set_input_as_handled()
@@ -281,6 +294,7 @@ func _capturar(p: PokemonInstance) -> void:
 	GameState.marcar_pokedex(p.especie, 2)
 	await Progreso.pedir_apodo(self, p)
 	await _guardar_capturado(p)
+	_deshacer_megas()
 	await Evolucion.revisar_equipo(self, _subidos)
 	_volver()
 
@@ -330,7 +344,47 @@ func huir() -> void:
 		SceneManager.volver_de_batalla()
 
 
+## KeyActionsBattle (M): con la Mega Aro (objeto clave 193) y su megapiedra equipada, el Pokémon en
+## combate megaevoluciona; una vez por combate (MEGAEVO1). Antes, un destello de luz (obj 359).
+## Con la Pulsera Z (568) y un cristal de tipo (488-505), carga el movimiento Z (MOVIMIENTO_Z1).
+func _megaevolucionar() -> void:
+	var bp: BattlePokemon = _pokemon[0]
+	if bp.esta_debilitado():
+		return
+	if bp.pokemon.objeto >= 488 and bp.pokemon.objeto <= 505 and GameState.objetos.has(PULSERA_Z):
+		if not _z_usado and bp.z_restante <= 0.0:
+			bp.z_restante = 13.0
+			bp.z_terminado.connect(func(_u: bool) -> void: _z_usado = true; bp.modulate = Color.WHITE, CONNECT_ONE_SHOT)
+		return
+	# Dinamax: con la Maximunequera (658) y un Cristal o Caramelo Dinamax equipado (659, 660); una vez.
+	if bp.pokemon.objeto in [659, 660] and GameState.objetos.has(MAXIMUNEQUERA):
+		if not _dinamax_usado:
+			_dinamax_usado = true
+			bp.dinamax()
+		return
+	if _megaevolucionado or not GameState.objetos.has(MEGA_ARO):
+		return
+	var mega: PokemonData = Datos.mega(bp.pokemon.especie.id_original, bp.pokemon.objeto)
+	if mega == null:
+		return
+	_megaevolucionado = true
+	var t: Tween = bp.create_tween()
+	t.tween_property(bp, "modulate", Color(3, 3, 3), 1.0 / 3.0)
+	t.tween_callback(bp.megaevolucionar.bind(mega))
+	t.tween_property(bp, "modulate", Color.WHITE, 1.0 / 3.0)
+
+
+## Al acabar el combate las megas vuelven a su especie.
+func _deshacer_megas() -> void:
+	for equipo: Array in _equipos:
+		for p: PokemonInstance in equipo:
+			if p.especie_sin_mega:
+				p.especie = p.especie_sin_mega
+				p.especie_sin_mega = null
+
+
 func _volver() -> void:
+	_deshacer_megas()
 	if not is_inside_tree():
 		return
 	if GameState.combate_entrenador != 0:

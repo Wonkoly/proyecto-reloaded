@@ -154,9 +154,9 @@ func _desfallecer() -> void:
 	SceneManager.ir_a_mapa(CASA, CAMA, 2)
 
 
-## Q / CARA: personaje 0-9, o 10 = el sprite de un entrenador (1-351).
+## Q / CARA: personaje 0-9, 10 = el sprite de un entrenador (1-351), 11+ = propios (Personajes; 11 = Galleta).
 func _cambiar_personaje() -> void:
-	var n: int = await _dialogo.pedir_numero(_menu(1194), 0, 10)
+	var n: int = await _dialogo.pedir_numero(_menu(1194), 0, Personajes.ultimo())
 	if n == -1:
 		return
 	var entrenador: int = 1

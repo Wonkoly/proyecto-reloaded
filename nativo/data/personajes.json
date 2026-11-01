@@ -1,0 +1,15 @@
+{
+ "protagonistas": {
+  "11": [
+   "res://assets/sprites/characters/galleta/galleta_d.tres",
+   "res://assets/sprites/characters/galleta/galleta_u.tres",
+   "res://assets/sprites/characters/galleta/galleta_r.tres",
+   "res://assets/sprites/characters/galleta/galleta_db.tres",
+   "res://assets/sprites/characters/galleta/galleta_ub.tres",
+   "res://assets/sprites/characters/galleta/galleta_rb.tres",
+   "res://assets/sprites/characters/galleta/galleta_p_d.tres",
+   "res://assets/sprites/characters/galleta/galleta_p_u.tres",
+   "res://assets/sprites/characters/galleta/galleta_p_r.tres"
+  ]
+ }
+}

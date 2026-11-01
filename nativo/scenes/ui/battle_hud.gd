@@ -8,6 +8,8 @@ const UI: String = "res://assets/extraido/sprites/ui/"
 const ESCALA_BARRA: float = 200.0 / 3.0
 ## Teclas que se muestran en la lista de ataques (Shift), como NameTecla del original.
 const TECLAS: Array[String] = ["Z", "X", "C", "V"]
+## draw_modifier: los nombres de cada stat (TextMenu 804-808, 2436 precisión, 2437 evasión).
+const TEXTO_MODIFICADOR: Dictionary[int, int] = {1: 804, 2: 805, 3: 806, 4: 807, 5: 808, 6: 2436, 7: 2437}
 
 ## Lo que dibuja el panel de cada Pokémon.
 class Lado:
@@ -24,11 +26,19 @@ class Lado:
 	var exp_fraccion: float = 0.0
 	var ataques: Array[MoveData] = []
 	var debilitado: bool = false
+	## Etapas que no son 0 (stat → valor; la precisión ya ×2 como la muestra el original).
+	var modificadores: Dictionary[int, int] = {}
+	var bp: BattlePokemon
 
 var _jugador: Lado = Lado.new()
 var _rival: Lado = Lado.new()
 var _rival_entrenador: bool = false
 var _mostrar_ataques: bool = false
+## Con Ctrl (key_bt_tiempo): el tiempo de combate y los modificadores; con º (key_bt_show_pkmn), el equipo.
+var _mostrar_tiempo: bool = false
+var _mostrar_equipo: bool = false
+var _tiempo: float = 0.0
+var _equipo_jugador: Array = []
 var _spr: Dictionary[String, SpriteOriginal] = {}
 var _fuente_s: Font = load("res://assets/extraido/fonts/fuente_s.fnt")
 
@@ -50,6 +60,7 @@ func conectar(jugador: BattlePokemon, rival: BattlePokemon, rival_entrenador: bo
 	for par: Array in [[_jugador, jugador], [_rival, rival]]:
 		var lado: Lado = par[0]
 		var bp: BattlePokemon = par[1]
+		lado.bp = bp
 		lado.nombre = bp.pokemon.apodo if bp.pokemon.apodo != "" else bp.pokemon.especie.nombre
 		lado.nivel = bp.pokemon.nivel
 		lado.tipos.assign(bp.pokemon.especie.tipos.map(func(t: Tipos.Tipo) -> int: return Tipos.ID_ORIGINAL[t]))
@@ -85,10 +96,32 @@ func mostrar_resultado(texto: String) -> void:
 	_resultado.show()
 
 
-func _process(_delta: float) -> void:
-	var mostrar: bool = Input.is_action_pressed("mostrar_ataques")
-	if mostrar != _mostrar_ataques:
-		_mostrar_ataques = mostrar
+## El equipo del jugador para la lista de la tecla º (DIBUJA_PKMN).
+func poner_equipo(equipo: Array) -> void:
+	_equipo_jugador = equipo
+
+
+func _process(delta: float) -> void:
+	_tiempo += delta
+	var antes: Array = [_mostrar_ataques, _mostrar_tiempo, _mostrar_equipo]
+	_mostrar_ataques = Input.is_action_pressed("mostrar_ataques")
+	_mostrar_tiempo = Input.is_physical_key_pressed(KEY_CTRL)
+	_mostrar_equipo = Input.is_physical_key_pressed(KEY_QUOTELEFT)
+	var cambio: bool = antes != [_mostrar_ataques, _mostrar_tiempo, _mostrar_equipo] or _mostrar_tiempo
+	# El estado y las etapas cambian por muchos lados: se leen del Pokémon en combate.
+	for lado: Lado in [_jugador, _rival]:
+		if not is_instance_valid(lado.bp) or lado.bp.pokemon == null:
+			continue
+		var mods: Dictionary[int, int] = {}
+		for stat: int in range(1, 7):
+			var v: int = lado.bp.etapa(stat) * (2 if stat == 6 else 1)
+			if v != 0:
+				mods[stat] = v
+		if lado.estado != int(lado.bp.pokemon.estado) or mods != lado.modificadores:
+			lado.estado = int(lado.bp.pokemon.estado)
+			lado.modificadores = mods
+			cambio = true
+	if cambio:
 		_lienzo.queue_redraw()
 
 
@@ -133,8 +166,12 @@ func _dibujar() -> void:
 	_spr["spr_team"].dibujar(_lienzo, 0, Vector2(449, 5))
 	if _rival_entrenador:
 		_mini_pokeballs(Vector2(458, 10), _rival)
-	if _mostrar_ataques:
+	if _mostrar_equipo:
+		_lista_equipo()
+	elif _mostrar_ataques:
 		_lista_ataques()
+	elif _mostrar_tiempo:
+		_panel_tiempo()
 
 
 ## Panel de un Pokémon; el del rival es el mismo desplazado 224 px.
@@ -195,6 +232,40 @@ func _lista_ataques() -> void:
 	_lienzo.draw_rect(Rect2(103, 76, 97, 15 + 11 * lineas.size()), Color(0, 0, 0, 0.6))
 	for i: int in lineas.size():
 		_texto(lineas[i], Vector2(112, 80 + 11 * i), HORIZONTAL_ALIGNMENT_LEFT, Color(1, 1, 1, 0.9))
+
+
+## Con º: el equipo con la tecla de cada uno (DIBUJA_PKMN: "1 - Pikachu").
+func _lista_equipo() -> void:
+	var lineas: PackedStringArray = []
+	for i: int in _equipo_jugador.size():
+		var p: PokemonInstance = _equipo_jugador[i]
+		lineas.append("%d - %s" % [i + 1, Progreso.nombre(p)])
+	_lienzo.draw_rect(Rect2(103, 76, 97, 15 + 11 * lineas.size()), Color(0, 0, 0, 0.6))
+	for i: int in lineas.size():
+		_texto(lineas[i], Vector2(112, 80 + 11 * i), HORIZONTAL_ALIGNMENT_LEFT, Color(1, 1, 1, 0.9))
+
+
+## Con Ctrl (show_battle_time): el tiempo de combate (stringTime) y, de cada lado, las etapas que no
+## son 0 con una flecha por etapa (draw_modifier).
+func _panel_tiempo() -> void:
+	var s: int = 1 + floori(_tiempo)
+	_lienzo.draw_rect(Rect2(248, 50, 80, 23), Color(0, 0, 0, 0.6))
+	_texto("%02d:%02d:%02d" % [s / 3600, (s / 60) % 60, s % 60], Vector2(288, 54), HORIZONTAL_ALIGNMENT_CENTER, Color(1, 1, 1, 0.9))
+	for par: Array in [[_jugador, 103.0, 108.0], [_rival, 331.0, 336.0]]:
+		var lado: Lado = par[0]
+		if lado.modificadores.is_empty():
+			continue
+		_lienzo.draw_rect(Rect2(par[1], 50, 142, 15 + 11 * lado.modificadores.size()), Color(0, 0, 0, 0.6))
+		var y: float = 54.0
+		for stat: int in range(1, 8):
+			if not lado.modificadores.has(stat):
+				continue
+			var v: int = lado.modificadores[stat]
+			_texto(Textos.linea("txt_menu", TEXTO_MODIFICADOR[stat]), Vector2(par[2], y), HORIZONTAL_ALIGNMENT_LEFT, Color(1, 1, 1, 0.9))
+			for i: int in absi(v):
+				_spr["spr_mini_arrow"].dibujar(_lienzo, 0 if v > 0 else 1, Vector2(par[2] + 51 + 7 * i, y + 6),
+					Vector2.ONE, Color(1, 1, 1, 0.8))
+			y += 11.0
 
 
 ## draw_text del original: (x, y) es la esquina de arriba del texto, según la alineación.

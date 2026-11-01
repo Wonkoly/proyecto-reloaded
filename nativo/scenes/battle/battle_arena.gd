@@ -69,6 +69,7 @@ func _ready() -> void:
 	manager.cambio_pokemon.connect(hud.cambiar_pokemon)
 	manager.mensaje_panel.connect(hud.mensaje)
 	manager.iniciar(jugador, rival, GameState.equipo if desde_overworld else [], equipo_rival)
+	hud.poner_equipo(GameState.equipo if desde_overworld else [p_jugador])
 	for bp: BattlePokemon in [jugador, rival]:
 		bp.golpeado.connect(_mostrar_danio.bind(bp))
 		bp.mensaje.connect(hud.mensaje)

@@ -65,7 +65,7 @@ SPRITES_UI = [
     "spr_PkmnName1", "spr_PkmnName2", "spr_Team", "spr_have", "spr_SELhave", "spr_ball", "spr_objPokeBtt",
     "spr_barra_gray", "spr_barra_green", "spr_barra_yellow", "spr_barra_red", "spr_barra_blue",
     "spr_barra_purple", "spr_barra_silver", "spr_gotype", "spr_pkmnsex", "spr_stat",
-    "spr_simbolito_atfs", "spr_simbolito_atsp", "spr_simbolito_atst",
+    "spr_simbolito_atfs", "spr_simbolito_atsp", "spr_simbolito_atst", "spr_mini_arrow",
     # Intro y título (obj_blackIntro, InicioROOM) y los cuadros de pregunta (ShowDialogQuestion).
     "spr_credits_intro", "spr_title", "spr_title2", "spr_title3", "spr_lineafreak",
     "spr_bckConfirm", "spr_bckConfirmImportant", "spr_bckMessage", "spr_dialogo", "spr_dialogo_face", "spr_EXC", "spr_nanoball", "spr_pantalla",

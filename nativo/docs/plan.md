@@ -62,7 +62,8 @@ de vuelo con varias, y Teletransporte, Excavar, Gran Ojo, Dulce Aroma y Daño Se
 **En curso** (`feat/batalla-completa`). Hecho: los entrenadores en la arena (`Trainer1` y `Trainer2`:
 quietos, con sombra, en sus posiciones del original; `tests/prueba_arena.gd`); confusión (se golpea
 a sí mismo), parálisis y enamoramiento al atacar, drenaje, ataques múltiples y los ataques de contacto
-con la máscara del Pokémon (`tests/prueba_efectos.gd`).
+con la máscara del Pokémon (`tests/prueba_efectos.gd`); en el HUD, el icono de estado al día y los
+paneles de Ctrl (tiempo y etapas) y º (equipo).
 - ~~El entrenador del jugador en la arena (`Trainer1`)~~: en el original no se mueve ni lo golpean.
 - Habilidades de los Pokémon (las más comunes primero, extraídas donde se pueda).
 - Lo que falta de los efectos: confusión, enamoramiento, drenaje, ataques múltiples, evasión,

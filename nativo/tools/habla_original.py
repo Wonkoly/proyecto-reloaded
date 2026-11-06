@@ -48,6 +48,7 @@ class Traductor:
         # Variables del objeto (PROGRESO y las que el script asigna con valores simples).
         self.locales: set[str] = set()
         self.lineal = False
+        self.alarma = 0
         self.lineas: list[str] = []
         self.sin_traducir = 0
         self.hablante: str | None = None
@@ -244,7 +245,8 @@ class Traductor:
         if lv[0] == "campo" and lv[1] == ("id", "global") and lv[2] in ("index_place", "outx", "outy", "room_out"):
             return
         if lv[0] == "indice" and lv[1] == ("id", "alarm"):
-            if not self.lineal:
+            # Solo la alarma que llama a este script lo vuelve a correr (las otras son de otra cosa).
+            if not self.lineal and lv[2] == ("num", str(self.alarma)):
                 self._emitir(nivel, "bandera _sigue = 1")  # el original vuelve a correr el script
             return
         if lv[0] == "id" and lv[1] in self.locales:
@@ -437,11 +439,12 @@ def _distancia(cond) -> int:
     return 0
 
 
-def traducir(nombre: str, gml: str, salas: list[str] | None = None) -> tuple[str, int, int]:
+def traducir(nombre: str, gml: str, salas: list[str] | None = None, alarma: int = 0) -> tuple[str, int, int]:
     """(texto del .evento, cuántas instrucciones quedaron sin traducir, distancia a la que se lanza solo
     o 0)."""
     ast = gv.Parser(gv.tokenizar(gml)).programa()
     t = Traductor(nombre, salas)
+    t.alarma = alarma
     t.locales = _locales(ast)
     # if(PROGRESO=0){ if(distance_to_object((14))<N){...} }: el original lo lanza al acercarse.
     for n in ast:
@@ -457,7 +460,7 @@ def traducir(nombre: str, gml: str, salas: list[str] | None = None) -> tuple[str
         t.lineal = True
         for paso in pasos:
             t.bloque([c for c in paso if not _es_progreso(c)], 0)
-    elif "alarm[" in gml:
+    elif f"alarm[{alarma}]" in gml:
         # Mientras el script deje una alarma puesta, el original lo vuelve a correr.
         t._emitir(0, "bandera _sigue = 1")
         t._emitir(0, "mientras _sigue == 1:")

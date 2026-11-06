@@ -156,8 +156,10 @@ class Juego:
             self._habla = {}
         if obj not in self._habla:
             ruta = self.ext / "objects" / f"{obj}.gml"
-            hs = re.findall(r"^([A-Za-z0-9_]+Habla)\(\);", ruta.read_text(errors="replace"), re.M) if ruta.exists() else []
-            hs = [h for h in hs if h not in self.HABLA_GENERICOS and (self.ext / "scripts" / f"{h}.gml").exists()]
+            texto = ruta.read_text(errors="replace") if ruta.exists() else ""
+            # [(evento, script)]: el evento (alarm_N...) que llama a cada *Habla.
+            hs = re.findall(r"/// ==== (\w+) ====\n(?:(?!/// ====)[^\n]*\n)*?([A-Za-z0-9_]+Habla)\(\);", texto)
+            hs = [(ev, h) for ev, h in hs if h not in self.HABLA_GENERICOS and (self.ext / "scripts" / f"{h}.gml").exists()]
             self._habla[obj] = hs[0] if hs else None
         return self._habla[obj]
 
@@ -950,6 +952,13 @@ def escena_mapa(room: dict, juego: Juego, tilesets: dict, sprite_tres, snake, re
             destino = room_de(inst.get("ROOM", -1))
             salida(nombre, "Objetos", x, y, rect_obj, destino, (inst.get("X", 0), inst.get("Y", 0)), "puerta",
                    activacion=1, regreso=1, sprite=sprite, indice=int(inst.get("INDEX", 0)))
+        elif obj == "obj_puertaGym7":
+            # La puerta del Gimnasio de Polar (CreateDoors): abre con la medalla 7 o con los tres objetos
+            # clave 172, 173 y 174 (OPEN); si no, un cartel.
+            abre = '((h.get("MEDALLA_STAR_7", 0) == 1) or (o.get(172, 0) > 0 and o.get(173, 0) > 0 and o.get(174, 0) > 0))'
+            e.condicion = f"({e.condicion}) and {abre}" if e.condicion else abre
+            salida(nombre, "Objetos", x, y, rect_obj, room_de(inst.get("ROOM", -1)), (inst.get("X", 0), inst.get("Y", 0)),
+                   "puerta", activacion=1, regreso=1, sprite=sprite, indice=int(inst.get("INDEX", 0)))
         elif obj == "obj_door_inv":
             # Puerta invisible (InvisibleDoorStepActions): igual que obj_door; arriba=true salvo que se cambie.
             salida(nombre, "Salidas", x, y, rect_obj, room_de(inst.get("ROOM", -1)), (inst.get("X", 0), inst.get("Y", 0)),
@@ -1111,12 +1120,14 @@ def escena_mapa(room: dict, juego: Juego, tilesets: dict, sprite_tres, snake, re
                 juego.eventos_generados[(room["name"], nombre)] = (
                     "# La enfermera del Centro Pokémon (EnfermeraHabla). Generado por tools/extraer.py.\n"
                     "hablante 1290\ndecir 2460\ncurar_centro\ndecir 2461\nframe 2\nesperar 0.17\nframe 0\n")
-            habla = juego.habla_de(obj)
+            habla_ev = juego.habla_de(obj)
+            habla = habla_ev[1] if habla_ev else None
+            alarma = int(habla_ev[0][6:]) if habla_ev and habla_ev[0].startswith("alarm_") else -1
             if habla and not es_entrenador and (room["name"], nombre) not in juego.eventos_generados:
                 # El script propio del NPC (<Algo>Habla), traducido por tools/habla_original.py.
                 import habla_original
                 try:
-                    texto_ev, sin, auto = habla_original.traducir(habla, juego.script(habla), juego.rooms)
+                    texto_ev, sin, auto = habla_original.traducir(habla, juego.script(habla), juego.rooms, alarma)
                 except Exception as error:  # un script raro no frena el mapa
                     texto_ev, sin, auto = f"# No se pudo traducir ({type(error).__name__}: {error})\n", 1, 0
                 for n_h in re.findall(r"^\s*hablante (\d+)", texto_ev, re.M):

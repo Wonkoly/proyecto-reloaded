@@ -74,10 +74,10 @@ func cumple(condicion: String) -> bool:
 	if condicion == "":
 		return true
 	var e := Expression.new()
-	if e.parse(condicion, ["h", "lugar"]) != OK:
+	if e.parse(condicion, ["h", "lugar", "o"]) != OK:
 		push_warning("Condición de historia inválida: %s" % condicion)
 		return true
-	return bool(e.execute([GameState.historia, GameState.indice_lugar]))
+	return bool(e.execute([GameState.historia, GameState.indice_lugar, GameState.objetos]))
 
 
 func _activar(n: Node, activo: bool) -> void:

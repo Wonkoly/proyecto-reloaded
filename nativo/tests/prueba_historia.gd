@@ -16,6 +16,12 @@ func _initialize() -> void:
 	await _inicio()
 	await _ruta_al_gimnasio_1()
 	await _gimnasio_1()
+	# Los demás gimnasios: [ciudad de partida, gimnasio, nodo del líder, medalla].
+	for t: Array in [["CiudadSpica", "GYM2_Naos", "obj_Entrenador_s0", 2], ["CiudadNaos", "GYM3_Sirio", "obj_Entrenador_s0", 3],
+			["CiudadSirio", "GYM4_Deneb", "obj_Entrenador_s0", 4], ["CiudadDeneb", "GYM5_Vega", "obj_Entrenador_s0", 5],
+			["CiudadVega", "GYM6_Rigel", "obj_Entrenador_s19", 6], ["CiudadRigel", "GYM7_Polar", "obj_Entrenador_s10", 7],
+			["CiudadPolar", "GYM8_Antares", "obj_Entrenador_s21", 8]]:
+		await _tramo(t[0], t[1], t[2], t[3])
 	print("RESULTADO: ", "todo bien" if _fallas == 0 else "%d fallas" % _fallas)
 	quit(1 if _fallas else 0)
 
@@ -75,6 +81,39 @@ func _gimnasio_1() -> void:
 		"Mino entrega la Medalla Pedrusco y la MT35")
 	await _ir("CiudadSpica")
 	_ok(not _activo("obj_NoPass_s12"), "con la medalla se abre el paso de Ciudad Spica")
+
+
+## Un tramo de la historia: hay camino desde la ciudad anterior hasta el gimnasio sin que nadie cierre
+## el paso, y el líder entrega su medalla al vencerlo.
+func _tramo(origen: String, gimnasio: String, lider: String, medalla: int) -> void:
+	var conexiones = load("res://scenes/debug/conexiones_dev.gd")
+	gs.mapa_salida = ""
+	var camino: Array = conexiones.ruta(origen, gimnasio)
+	_ok(not camino.is_empty(), "medalla %d: hay camino de %s a %s (%d mapas)" % [medalla, origen, gimnasio, camino.size()])
+	for con: Dictionary in camino:
+		if str(con["origen"]).begins_with("GYM"):
+			continue
+		await _ir(con["origen"])
+		if current_scene == null or not current_scene.has_node("Objetos"):
+			continue
+		var r: Array = con["salida"].get("rect", [])
+		var salida := Rect2(r[0], r[1], r[2] - r[0], r[3] - r[1]).grow(48.0) if r.size() == 4 else Rect2()
+		var cerrados: Array = current_scene.get_node("Objetos").get_children().filter(
+			func(n: Node) -> bool: return n.get("no_pasar") and n.no_pasar > 0 and _activo(n.name) \
+				and salida.has_point((n as Node2D).position))
+		# La salida misma (puerta, borde) tiene que estar activa con las banderas de ahora.
+		var nodo_salida: Node = current_scene.find_child(str(con["salida"].get("nodo", "")), true, false)
+		if nodo_salida and nodo_salida.is_in_group("historia"):
+			_ok(current_scene.cumple(str(nodo_salida.get_meta("condicion", ""))), "medalla %d: %s → %s abierta (%s)" % [
+				medalla, con["origen"], con["destino"], nodo_salida.get_meta("condicion", "")])
+		_ok(cerrados.is_empty(), "medalla %d: %s: nadie cierra el paso %s" % [medalla, con["origen"], cerrados.map(
+			func(n: Node) -> String: return "%s (%s)" % [n.name, n.get_meta("condicion", "")])])
+	gs.dev_god = true
+	gs.dev_energia_infinita = true
+	await _hablar(gimnasio, lider)
+	gs.dev_god = false
+	gs.dev_energia_infinita = false
+	_ok(gs.tiene_medalla(medalla), "el líder de %s entrega la medalla %d" % [gimnasio, medalla])
 
 
 func _ir(mapa: String) -> void:

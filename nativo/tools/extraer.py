@@ -89,6 +89,8 @@ SPRITES_UI = [
     "IconosPokemonEspeciales", "IconosPokemonUnown", "IconosPokemonArceus", "IconosPokemonKalos", "IconosPokemonAlola",
     "IconosPokemonGalar", "IconosPokemonHisui", "IconosPokemonPaldea", "IconosPokemonMega", "spr_item_icon",
     "spr_item_icon_nuevos", "spr_item_icon_MT", "spr_item_icon_DT",
+    # La ficha (DrawGeneralMenuPokemon, DrawStatsMenuPokemon, DrawMovesMenuPokemon).
+    "spr_SelAttack", "spr_SelAttack2", "spr_type2", "spr_gobigtype", "spr_marcaShiny",
 ]
 # Fondos de la intro y el título (IntroROOM, InicioROOM) → sprites/ui/fondos/.
 FONDOS_UI = ["BackIntro", "BackIntroLetras", "GradienteNight", "BackFerProductions",

@@ -103,7 +103,7 @@ func _tramo(origen: String, gimnasio: String, lider: String, medalla: int) -> vo
 				and salida.has_point((n as Node2D).position))
 		# La salida misma (puerta, borde) tiene que estar activa con las banderas de ahora.
 		var nodo_salida: Node = current_scene.find_child(str(con["salida"].get("nodo", "")), true, false)
-		if nodo_salida and nodo_salida.is_in_group("historia"):
+		if nodo_salida and nodo_salida.is_in_group("historia") and not "lugar" in str(nodo_salida.get_meta("condicion", "")):
 			_ok(current_scene.cumple(str(nodo_salida.get_meta("condicion", ""))), "medalla %d: %s → %s abierta (%s)" % [
 				medalla, con["origen"], con["destino"], nodo_salida.get_meta("condicion", "")])
 		_ok(cerrados.is_empty(), "medalla %d: %s: nadie cierra el paso %s" % [medalla, con["origen"], cerrados.map(
@@ -143,7 +143,7 @@ func _hablar(mapa: String, nodo: String, _vuelta: String = "") -> void:
 			await _tecla(KEY_ENTER)
 		elif current_scene and current_scene.name == "BattleArena":
 			var a := InputEventAction.new()
-			a.action = "atacar_1"
+			a.action = "atacar_%d" % (1 + (i / 20) % 4)  # va probando los cuatro ataques
 			a.pressed = true
 			Input.parse_input_event(a)
 			await process_frame

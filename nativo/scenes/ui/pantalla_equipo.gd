@@ -216,7 +216,7 @@ func _accion() -> void:
 	var i: int = await MenuLista.elegir(self, Textos.linea("txt_menu", 776),
 		opciones.map(func(o: int) -> Dictionary: return {"texto": Textos.linea("txt_menu", o)}))
 	match opciones[i] if i >= 0 else -1:
-		764: await MenuEquipo.ficha(self, p_sel)
+		764: await FichaPokemon.abrir(self, p_sel)
 		765: _mover = _sel
 		2387, 2388: await MenuEquipo._objeto(self, p_sel)
 	_ocupado = false

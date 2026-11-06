@@ -120,7 +120,9 @@ class Traductor:
         if e[0] == "llamada" and e[1] == "SayMyName":
             return "$prota$"
         if e[0] == "llamada" and e[1] == "NameObject" and e[2][0][0] == "num":
-            return f'"{e[2][0][1]}"'
+            return f"objeto:{e[2][0][1]}"
+        if e[0] == "llamada" and e[1] == "NamePokemon" and e[2][0][0] == "num":
+            return f"pokemon:{e[2][0][1]}"
         if e[0] == "num":
             return e[1]
         if e[0] == "str":

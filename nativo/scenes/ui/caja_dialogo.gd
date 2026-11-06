@@ -65,8 +65,18 @@ static func preparar(texto: String, parametros: PackedStringArray = PackedString
 	var prota: String = GameState.apodo_jugador if GameState.apodo_jugador != "" else GameState.nombre_jugador
 	texto = texto.replace("$prota$", prota).replace("$rival$", GameState.nombre_rival).replace("...", "…")
 	for i: int in parametros.size():
-		texto = texto.replace("$par%d$" % (i + 1), parametros[i])
+		texto = texto.replace("$par%d$" % (i + 1), _parametro(parametros[i]))
 	return texto
+
+
+## "objeto:N" y "pokemon:N" se cambian por el nombre (NameObject, NamePokemon); lo demás queda igual.
+static func _parametro(p: String) -> String:
+	if p.begins_with("objeto:") and p.substr(7).is_valid_int():
+		return Inventario.nombre(int(p.substr(7)))
+	if p.begins_with("pokemon:") and p.substr(8).is_valid_int():
+		var e: PokemonData = Datos.especie(int(p.substr(8)))
+		return e.nombre if e else p
+	return p
 
 
 ## {nombre, retrato} de un sprINDEX (data/extraido/dialogo_personajes.json).

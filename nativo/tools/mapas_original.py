@@ -1016,6 +1016,26 @@ def escena_mapa(room: dict, juego: Juego, tilesets: dict, sprite_tres, snake, re
             if meta and (c := caja(meta, 0, 0, 1, 1)):
                 e.nodo("CollisionShape2D", "CollisionShape2D", f"Objetos/{nombre}", [
                     f"position = Vector2({f(c[0])}, {f(c[1])})", f"shape = {e.rect(c[2], c[3])}"])
+        elif not juego.es(obj, "obj_people") and juego.habla_de(obj) and not datos.get("visible", True):
+            # Objetos invisibles con un *Habla propio (obj_NightSirio, obj_GoIntercambio...): se les habla
+            # como a un NPC (ProtaInteraction) pero no se ven ni cierran el paso.
+            habla_ev = juego.habla_de(obj)
+            alarma = int(habla_ev[0][6:]) if habla_ev[0].startswith("alarm_") else -1
+            props = [f"position = Vector2({f(x)}, {f(y)})", "collision_layer = 0", "collision_mask = 0",
+                     f"objeto_original = {gd_str(obj)}", "mira = 2", "mira_fija = 2", "distancia = 12"]
+            import habla_original
+            try:
+                texto_ev, sin, auto = habla_original.traducir(habla_ev[1], juego.script(habla_ev[1]), juego.rooms, alarma)
+            except Exception as error:
+                texto_ev, sin, auto = f"# No se pudo traducir ({type(error).__name__}: {error})\n", 1, 0
+            for n_h in re.findall(r"^\s*hablante (\d+)", texto_ev, re.M):
+                juego.sprindex_usados.add(float(n_h))
+            juego.eventos_generados[(room["name"], nombre)] = (
+                f"# {habla_ev[1]} ({obj}, invisible). Traducido por tools/habla_original.py"
+                + (f"; {sin} instrucciones sin traducir.\n" if sin else ".\n") + texto_ev)
+            if auto:
+                props.append(f"automatico = {auto}")
+            e.nodo(nombre, None, "Objetos", props, instancia=e.ref("PackedScene", "res://scenes/overworld/npc.tscn"))
         elif juego.es(obj, "obj_people"):
             if obj == "obj_Watcher":
                 # DefineWatcher: sprINDEX 411, "Vigilante", alcance 80, TextDialog(5179), mira al azar, MOVE.

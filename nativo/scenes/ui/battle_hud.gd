@@ -49,9 +49,13 @@ var _fuente_s: Font = load("res://assets/extraido/fonts/fuente_s.fnt")
 
 func _ready() -> void:
 	_resultado.hide()
-	for archivo: String in DirAccess.get_files_at(UI):
-		if archivo.ends_with(".tres"):
-			_spr[archivo.get_basename()] = load(UI + archivo)
+	# Solo los sprites del HUD (en la carpeta también están las hojas de iconos, muy grandes).
+	for nombre: String in ["spr_barra_blue", "spr_barra_gray", "spr_barra_purple", "spr_barra_silver", "spr_barra_green",
+			"spr_barra_red", "spr_barra_yellow", "spr_gotype", "spr_have", "spr_selhave", "spr_stat", "spr_team",
+			"spr_mini_arrow", "spr_pkmnsex", "spr_pkmn_name1", "spr_pkmn_name2", "spr_simbolito_atfs",
+			"spr_simbolito_atsp", "spr_simbolito_atst"]:
+		if ResourceLoader.exists(UI + nombre + ".tres"):
+			_spr[nombre] = load(UI + nombre + ".tres")
 	_lienzo.draw.connect(_dibujar)
 
 

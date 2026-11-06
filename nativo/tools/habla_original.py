@@ -160,6 +160,13 @@ class Traductor:
                 self._emitir(nivel + 1, f"bandera trainer_{num} = 1")
                 self._emitir(nivel, "fin")
                 return
+            # if(!PillaObject(id, n)) exit;: da el objeto y sigue.
+            if n[0] == "if" and n[1][0] == "un" and n[1][1] == "!" and n[1][2][0] == "llamada" \
+                    and n[1][2][1] == "PillaObject" and n[1][2][2][0][0] == "num":
+                a = n[1][2][2]
+                self._emitir(nivel, f"dar_objeto {a[0][1]} {a[1][1] if len(a) > 1 and a[1][0] == 'num' else 1}")
+                i += 1
+                continue
             # if(c){...; exit;} resto  →  si c: ...  sino: resto
             if n[0] == "if" and n[3] is None and _termina_en_exit(n[2]) and i + 1 < len(nodos):
                 try:
@@ -201,6 +208,8 @@ class Traductor:
                 self._llamada(n[1], nivel)
             elif k == "with":
                 self._con(n, nivel)
+            elif k == "for":
+                self._para(n, nivel)
             else:
                 self._comentario(nivel, n)
         except _NoVa:
@@ -321,6 +330,29 @@ class Traductor:
                 self._emitir(nivel, f"esperar {ms / 1000:g}")
         else:
             raise _NoVa
+
+    def _para(self, n, nivel: int) -> None:
+        """for(i=0;i<90;i+=1){if(global.ObX[i]=N)...}: buscar el objeto N en la mochila (o quitarlo)."""
+        cuerpo = n[4][1] if n[4][0] == "bloque" else [n[4]]
+        if len(cuerpo) != 1 or cuerpo[0][0] != "if":
+            raise _NoVa
+        cond, entonces = cuerpo[0][1], cuerpo[0][2]
+        if not (cond[0] == "bin" and cond[1] in ("=", "==") and cond[2][0] == "indice"
+                and cond[2][1][0] == "campo" and cond[2][1][2].startswith("Ob") and cond[3][0] == "num"):
+            raise _NoVa
+        objeto = cond[3][1]
+        sentencias = entonces[1] if entonces[0] == "bloque" else [entonces]
+        quita = any(s[0] == "asig" and s[1][0] == "indice" and s[1][1][0] == "campo" and s[1][1][2].startswith("Ob")
+                    and s[3] == ("num", "0") for s in sentencias)
+        if quita:
+            self._emitir(nivel, f"quitar_objeto {objeto} 999")
+            return
+        asignaciones = [s for s in sentencias if s[0] == "asig" and s[1][0] == "id" and s[1][1] in self.locales]
+        if len(asignaciones) != len(sentencias) or not asignaciones:
+            raise _NoVa
+        self._emitir(nivel, f"si objeto_{objeto}:")
+        for s in asignaciones:
+            self._emitir(nivel + 1, f"bandera _{s[1][1].lower()} = {self.condicion(s[3])}")
 
     def _con(self, n, nivel: int) -> None:
         # with((14)){...}: el jugador (posturas); with((N)){ExclamationEffect();}: otro objeto.

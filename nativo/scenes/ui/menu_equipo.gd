@@ -9,6 +9,11 @@ static func fila(p: PokemonInstance) -> Dictionary:
 
 
 static func abrir(desde: Node) -> void:
+	await PantallaEquipo.abrir(desde)
+
+
+## La versión con listas (la usan las pruebas antiguas y la batalla mientras no tenga su pantalla).
+static func abrir_lista(desde: Node) -> void:
 	var sel: int = 0
 	while not GameState.equipo.is_empty():
 		sel = await MenuLista.elegir(desde, Textos.linea("txt_menu", 70), GameState.equipo.map(fila), {"inicial": sel})

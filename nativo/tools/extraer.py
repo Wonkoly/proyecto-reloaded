@@ -84,9 +84,17 @@ SPRITES_UI = [
     "spr_darkness1", "spr_darkness2",
     # El tono del clima (DrawEfectoLluvia, DrawEfectoSoleado).
     "spr_white", "spr_yellow", "spr_gotaLluvia", "spr_copoNieve",
+    # La pantalla del equipo (DrawMainMenuPokemon, DrawBarraPokemon) y sus iconos (Draw_mini, DrawIconItem).
+    "spr_barrapokemon1", "spr_backPokemonBigSprite", "IconosPokemon", "IconosPokemonStar", "IconosPokemonTeselia",
+    "IconosPokemonEspeciales", "IconosPokemonUnown", "IconosPokemonArceus", "IconosPokemonKalos", "IconosPokemonAlola",
+    "IconosPokemonGalar", "IconosPokemonHisui", "IconosPokemonPaldea", "IconosPokemonMega", "spr_item_icon",
+    "spr_item_icon_nuevos", "spr_item_icon_MT", "spr_item_icon_DT",
 ]
 # Fondos de la intro y el título (IntroROOM, InicioROOM) → sprites/ui/fondos/.
-FONDOS_UI = ["BackIntro", "BackIntroLetras", "GradienteNight", "BackFerProductions"]
+FONDOS_UI = ["BackIntro", "BackIntroLetras", "GradienteNight", "BackFerProductions",
+             # Las pantallas del menú (PokemonMenu, PkmnInfoMenu, PkmnMovMenu, CajaPkmnMenu, PokedexMenu...).
+             "MenuPokemon", "MenuInfoPokemon", "MenuBattPokemon", "MenuHabPokemon", "MenuCaja", "MenuPokedex",
+             "MenuPokedex2", "MenuMochila", "MenuPersonaje", "MenuOpciones"]
 # Sonidos de los menús → audio/sfx/ui/.
 SONIDOS_UI = ["snd_click", "snd_curar", "snd_get"]
 CARPETAS = {
@@ -669,6 +677,9 @@ def extraer_datos(plan: Plan, ext: Path, indice: dict) -> None:
     import habilidades_original  # habilidades que cambian el daño (Ataque1GolpeaPokemon2)
     plan.escribir(DATA / "habilidades.json", json.dumps(
         {"danio": habilidades_original.reglas_danio(gml("Ataque1GolpeaPokemon2"))}, ensure_ascii=False, indent=0))
+    import iconos_original  # el icono pequeño de cada especie (Draw_mini)
+    plan.escribir(DATA / "pokemon" / "iconos.json", json.dumps(iconos_original.iconos(
+        gml("Draw_mini"), json.loads((EXT / "index.json").read_text())["sprites"], ids_especies), indent=0))
     import vuelo_original  # mapa de la región y Vuelo (obj_pantallavuelo)
     plan.escribir(DATA / "vuelo.json", json.dumps(vuelo_original.vuelo(
         EXT / "scripts", json.loads((EXT / "index.json").read_text())["rooms"]), ensure_ascii=False, indent=0))

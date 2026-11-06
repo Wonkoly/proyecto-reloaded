@@ -72,7 +72,10 @@ Gran Encanto) y las que absorben un tipo; segunda tanda: curas de estado por ste
 Sincronía, Presión, Impulso, Mudar, Hidratación, Vista Lince y las de clima. Clima (`scenes/efectos/clima.gd`):
 el fijo de cada mapa (se ve en el mapa y pasa al combate), Danza Lluvia y compañía (500 steps, 800 con
 su roca), el daño de cada clima, arena y granizo que quitan PS, Nado Rápido, Clorofila, Ímpetu Arena,
-Cura Lluvia y Gélido. Faltan el resto de habilidades, megaevoluciones, movimientos Z y dinamax.
+Cura Lluvia y Gélido. Megaevoluciones (las 104 del original como especies; M con la Mega Aro y la
+megapiedra), movimientos Z genéricos (Pulsera Z + cristal de tipo) y dinamax; sprites de batalla de
+todas las especies y formas (3060). Queda para más adelante: el resto de habilidades (unas 250 con
+efectos propios), los movimientos Z exclusivos y los clones de Doble Equipo.
 - ~~El entrenador del jugador en la arena (`Trainer1`)~~: en el original no se mueve ni lo golpean.
 - Habilidades de los Pokémon (las más comunes primero, extraídas donde se pueda).
 - Lo que falta de los efectos: confusión, enamoramiento, drenaje, ataques múltiples, evasión,
@@ -87,6 +90,11 @@ Cura Lluvia y Gélido. Faltan el resto de habilidades, megaevoluciones, movimien
 - **Listo cuando**: cada pantalla se compara con una captura del original.
 
 ## Fase 6 — El resto de la historia
+**En curso.** `tools/habla_original.py` traduce los 425 scripts `*Habla` del original a `.evento`
+(773 eventos de NPC; las coreografías quedan como comentarios "# sin traducir") y
+`tools/medallas_original.py` agrega la entrega de medalla al evento de cada líder.
+`tests/prueba_eventos_generados.gd` comprueba que los 1634 eventos se lean y sus condiciones sean
+válidas. Los NPC cuyo evento el original lanza al acercarse tienen `automatico`.
 - Gimnasios 2 a 8 y todo lo que hay entre medio, con el ciclo de la fase 1 (validador → eventos →
   prueba), un gimnasio por rama.
 - Liga, final y post-juego.

@@ -371,6 +371,7 @@ func _megaevolucionar() -> void:
 	var t: Tween = bp.create_tween()
 	t.tween_property(bp, "modulate", Color(3, 3, 3), 1.0 / 3.0)
 	t.tween_callback(bp.megaevolucionar.bind(mega))
+	t.tween_callback(func() -> void: cambio_pokemon.emit(bp))  # el panel del HUD: nombre y tipos nuevos
 	t.tween_property(bp, "modulate", Color.WHITE, 1.0 / 3.0)
 
 

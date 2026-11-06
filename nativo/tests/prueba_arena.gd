@@ -39,6 +39,7 @@ func _initialize() -> void:
 	e.pressed = false
 	Input.parse_input_event(e)
 	await _repartir_exp(gs)
+	await _mega_z_dinamax(gs)
 	print("RESULTADO: ", "todo bien" if _fallas == 0 else "%d fallas" % _fallas)
 	quit(_fallas)
 
@@ -77,6 +78,56 @@ func _repartir_exp(gs: Node) -> void:
 	var ganado: Array = [gs.equipo[0].experiencia - exp0[0], gs.equipo[1].experiencia - exp0[1]]
 	_ok(ganado[0] == esperado and ganado[1] >= ceili(esperado / 2.0),
 		"Repartir Exp.: el que combate gana %d y el otro la mitad (%s)" % [esperado, ganado])
+
+
+## M en combate: megaevolución (Mega Aro + megapiedra), movimiento Z (Pulsera Z + cristal) y dinamax.
+func _mega_z_dinamax(gs: Node) -> void:
+	var PI = load("res://scripts/resources/pokemon_instance.gd")
+	var D = load("res://scripts/datos.gd")
+	gs.dev_god = true
+	root.get_node("DevConsole").ejecutar("tp Ruta_1")
+	await create_timer(1.5).timeout
+	gs.equipo.clear()
+	var zard = PI.crear(D.especie(6), 60)
+	zard.objeto = 416  # Charizardita X
+	gs.equipo.append(zard)
+	gs.objetos[193] = 1
+	root.get_node("SceneManager").ir_a_batalla(PI.crear(D.especie(19), 5), current_scene.get_node("Objetos/Jugador"))
+	await create_timer(2.5).timeout
+	await _tecla(KEY_M)
+	await create_timer(1.2).timeout
+	var jug: Node = current_scene.find_child("Jugador", true, false)
+	_ok(jug.pokemon.especie.id_original == 100006, "M megaevoluciona a Charizard en Mega Charizard X (%d)" % jug.pokemon.especie.id_original)
+	await _captura("arena_mega")
+	var manager: Node = current_scene.find_child("BattleManager", true, false)
+	manager._deshacer_megas()
+	_ok(zard.especie.id_original == 6, "al terminar el combate vuelve a ser Charizard")
+	# Movimiento Z: Pikachu con Electrostal Z (492) y la Pulsera Z.
+	var bp = load("res://scenes/battle/battle_pokemon.gd")
+	var impactrueno: Resource = D.movimiento(9) if false else null
+	for m: Resource in jug.pokemon.movimientos:
+		var z: Resource = bp.movimiento_z(m, 487 + 2)  # cristal de Fuego
+		if z:
+			_ok(z.nombre != m.nombre and z.poder >= 100, "%s con el cristal de Fuego pasa a %s (poder %d)" % [m.nombre, z.nombre, z.poder])
+			break
+	jug.dinamax()
+	await create_timer(1.0).timeout
+	_ok(jug.sprite.scale.x > 1.9, "dinamax: crece al doble (%.2f)" % jug.sprite.scale.x)
+	await _captura("arena_dinamax")
+	gs.dev_god = false
+
+
+func _tecla(k: Key) -> void:
+	var e := InputEventKey.new()
+	e.physical_keycode = k
+	e.keycode = k
+	e.pressed = true
+	Input.parse_input_event(e)
+	await process_frame
+	e = e.duplicate()
+	e.pressed = false
+	Input.parse_input_event(e)
+	await create_timer(0.1).timeout
 
 
 func _ok(c: bool, que: String) -> void:

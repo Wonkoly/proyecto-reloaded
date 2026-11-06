@@ -72,19 +72,23 @@ class Traductor:
         if k == "indice" and e[1][0] == "campo" and e[1][1] == ("num", "18") and e[2][0] == "num":
             return f"{e[1][2]}_{e[2][1]}"
         if k == "un" and e[1] == "!":
-            return f"no ({self.condicion(e[2])})"
+            dentro = self.condicion(e[2])
+            return f"no {dentro}" if dentro.startswith("pregunta ") else f"no ({dentro})"
         if k == "un" and e[1] == "-":
             return f"-{self.condicion(e[2])}"
         if k == "id" and e[1] in self.locales:
             return "_" + e[1].lower()
         if k == "campo" and e[1] == ("id", "global") and e[2] == "day":
             return "dia"
-        if k == "bin" and e[1] in ("=", "==") and e[3] in (("num", "0"), ("id", "false")) and e[2][0] == "llamada" \
-                and e[2][1] in ("show_pregunta", "ShowDialogQuestion"):
-            return f"no pregunta {self._texto(e[2][2][0])}"
-        if k == "bin" and e[1] in ("=", "==") and e[3] in (("num", "1"), ("id", "true")) and e[2][0] == "llamada" \
-                and e[2][1] in ("show_pregunta", "ShowDialogQuestion"):
-            return f"pregunta {self._texto(e[2][2][0])}"
+        if k == "llamada" and e[1] == "TrainerBoy":
+            return "chico"
+        if k == "campo" and e[1] == ("id", "global") and e[2] == "snd_SE":
+            return "0"  # el sonido del original: aquí no cambia nada
+        if k == "bin" and e[1] in ("=", "==", "!=") and e[2][0] == "llamada" \
+                and e[2][1] in ("show_pregunta", "ShowDialogQuestion") and e[3] in (("num", "0"), ("id", "false"), ("num", "1"), ("id", "true")):
+            # show_pregunta(...) = / != sí o no.
+            si = (e[3] in (("num", "1"), ("id", "true"))) == (e[1] != "!=")
+            return f"{'' if si else 'no '}pregunta {self._texto(e[2][2][0])}"
         if k == "bin" and e[1] in ("=", "==") and e[2] == ("campo", ("id", "global"), "day"):
             return "dia" if e[3] in (("id", "true"), ("num", "1")) else "no dia"
         if k == "bin":
@@ -131,6 +135,8 @@ class Traductor:
             quien = "npc"
         elif e[0] == "llamada" and e[1] in ("IndexProtaGrande", "SayMyName"):
             quien = "jugador"
+        elif e[0] == "llamada" and e[1] == "IndexRivalGrande" or e == ("campo", ("id", "global"), "rivalname"):
+            quien = "rival"
         else:
             raise _NoVa
         if quien != self.hablante and quien is not None:
@@ -260,8 +266,23 @@ class Traductor:
         nombre, args = e[1], e[2]
         if nombre in IGNORAR:
             return
+        if nombre in ("Dialogo", "DialogoSimple") and args and _texto_segun_sexo(args[0]):
+            # TextDialog(IfElse(TrainerBoy(), A, B)): un texto para chico y otro para chica.
+            a, b = _texto_segun_sexo(args[0])
+            resto = list(args[1:])
+            self._emitir(nivel, "si chico:")
+            self._llamada(("llamada", nombre, [("llamada", "TextDialog", [a])] + resto), nivel + 1)
+            self._emitir(nivel, "sino:")
+            self._llamada(("llamada", nombre, [("llamada", "TextDialog", [b])] + resto), nivel + 1)
+            self.hablante = None
+            return
         if nombre in ("Dialogo", "DialogoSimple"):
             texto = self._texto(args[0])
+            # Dialogo(texto, nombre, sprINDEX) con el nombre calculado (NameMainProta, rival...).
+            if len(args) > 2 and args[2][0] == "id" and args[2][1] == "sprINDEX":
+                args = [args[0], ("id", "sprINDEX")]
+            elif len(args) > 2 and args[2][0] == "llamada" and args[2][1] == "IndexRivalGrande":
+                args = [args[0], args[2]]
             if nombre == "Dialogo" and len(args) > 2 and args[2][0] == "num":
                 self._hablante(nivel, args[2])  # Dialogo(texto, nombre, sprINDEX)
                 self._emitir(nivel, f"decir {texto}")
@@ -346,6 +367,34 @@ def _pasos(ast) -> list | None:
     return [pasos[k] for k in sorted(pasos)] if pasos else None
 
 
+def _rellenar_vacios(lineas: list[str]) -> list[str]:
+    """Un "si/sino/mientras ...:" sin ninguna orden adentro (solo comentarios) lleva "esperar 0"."""
+    out: list[str] = []
+    for i, l in enumerate(lineas):
+        out.append(l)
+        if not l.rstrip().endswith(":") or l.lstrip().startswith("#"):
+            continue
+        sangria = len(l) - len(l.lstrip("\t"))
+        tiene = False
+        for sig in lineas[i + 1:]:
+            s = len(sig) - len(sig.lstrip("\t"))
+            if sig.strip() and not sig.lstrip().startswith("#"):
+                tiene = s > sangria
+                break
+        if not tiene:
+            out.append("\t" * (sangria + 1) + "esperar 0")
+    return out
+
+
+def _texto_segun_sexo(e):
+    """TextDialog(IfElse(TrainerBoy(), A, B)) → (A, B)."""
+    if e[0] == "llamada" and e[1] == "TextDialog" and e[2] and e[2][0][0] == "llamada" and e[2][0][1] == "IfElse":
+        a = e[2][0][2]
+        if len(a) == 3 and a[0] == ("llamada", "TrainerBoy", []) and a[1][0] == "num" and a[2][0] == "num":
+            return a[1], a[2]
+    return None
+
+
 def _es_progreso(n) -> bool:
     return n[0] == "asig" and n[1] == ("id", "PROGRESO")
 
@@ -409,18 +458,14 @@ def traducir(nombre: str, gml: str, salas: list[str] | None = None) -> tuple[str
         for paso in pasos:
             t.bloque([c for c in paso if not _es_progreso(c)], 0)
     elif "alarm[" in gml:
-        # Mientras el script deje una alarma puesta, el original lo vuelve a correr: tantas pasadas como
-        # pasos tenga la máquina de estados.
-        pasadas = min(40, len(set(re.findall(r"PROGRESO=(\d+)", gml))) + 2)
+        # Mientras el script deje una alarma puesta, el original lo vuelve a correr.
         t._emitir(0, "bandera _sigue = 1")
-        for _ in range(pasadas):
-            t._emitir(0, "si _sigue == 1:")
-            t._emitir(1, "bandera _sigue = 0")
-            t.hablante = None
-            t.bloque(ast, 1)
+        t._emitir(0, "mientras _sigue == 1:")
+        t._emitir(1, "bandera _sigue = 0")
+        t.bloque(ast, 1)
     else:
         t.bloque(ast, 0)
-    texto = "\n".join(t.lineas)
+    texto = "\n".join(_rellenar_vacios(t.lineas))
     # Un "fin" al final no hace falta.
     texto = re.sub(r"\nfin\s*$", "", texto)
     return texto + "\n", t.sin_traducir, t.automatico

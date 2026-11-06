@@ -68,12 +68,18 @@ sino:
 | `mostrar_pokemon id` / `ocultar_pokemon` | El cuadro con un Pokémon (`obj_PKCuadro`). |
 | `asignar_ball id` | La Poké Ball que se lanza con B. |
 | `fin` | Termina el evento. |
+| `mientras cond:` | Repite el bloque mientras se cumpla (hasta 200 veces). |
+| `hablante jugador` | Habla el protagonista con su nombre y retrato. |
 
 ### Condiciones (`si … :`, `sino si … :`, `sino:`)
 - Banderas por su nombre: `trainer_2 == 0`, `movil == 1`, `MEDALLA_STAR_1 >= 1`. Una bandera que nunca
   se puso vale 0. `trainer[2]` es lo mismo que `trainer_2`.
 - `y`, `o`, `no`, paréntesis y números: `si (fy_002 == 1 y no movil) o trainer_2 == 1:`
 - `gano`: si ganaste el último `combate`.
+- `dia` (es de día), `chico` (el protagonista es chico: `TrainerBoy`), `objeto_N` (tiene el objeto N) y
+  variables locales del evento: las que empiezan con `_` (`bandera _progreso += 1`), que se borran al
+  terminar el evento.
+- `pregunta N` / `no pregunta N`: pregunta Sí/No con la línea N de `txt_dialog`.
 - `pregunta "¿Texto?"`: pregunta Sí/No (`si pregunta "¿Quieres pelear?":`).
 - `opcion` (la última `elegir`), `lugar` (`global.index_place`: en qué ciudad está una sala compartida,
   como la tienda) y `objeto_N` (cuántos tienes del objeto N: `si objeto_15 > 0:`).

@@ -54,6 +54,10 @@ const DIR_TECLA: Dictionary[int, Vector2] = {37: Vector2.LEFT, 38: Vector2.UP, 3
 @export var entrenador: int = 0
 ## Vigila como un entrenador (obj_Watcher): si ve al jugador va hasta él y corre su evento.
 @export var vigila: bool = false
+## Su evento salta solo cuando el jugador se acerca a menos de estos px (los *Habla que empiezan con
+## if(distance_to_object((14))<N)); 0 = solo al hablarle. Salta una vez por visita al mapa.
+@export var automatico: float = 0.0
+var _automatico_hecho: bool = false
 ## Ruta fija (TimelineMovimientoPeople): 10 va y vuelve en horizontal, 11 en vertical, 0 da vueltas
 ## en sentido horario y 1 antihorario por el borde de ruta_caja; -1 = ninguna.
 @export var ruta: int = -1
@@ -211,6 +215,13 @@ func _paso() -> void:
 		return
 	if _hablando:
 		return
+	if automatico > 0.0 and not _automatico_hecho and visible and process_mode != PROCESS_MODE_DISABLED \
+			and not Eventos.en_curso and not SceneManager.en_transicion:
+		var cerca: Jugador = _jugador()
+		if cerca and global_position.distance_to(cerca.global_position) < automatico + 8.0:
+			_automatico_hecho = true
+			hablar(0)
+			return
 	if _pasos > 0:
 		_caminar()
 		return

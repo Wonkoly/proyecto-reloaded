@@ -72,6 +72,11 @@ func _bloque(ordenes: Array, ruta: String) -> void:
 			return
 		if o.orden == "si":
 			await _si(o, ruta)
+		elif o.orden == "mientras":
+			var vueltas: int = 0
+			while not _detener and vueltas < 200 and await condicion(o.cond, ruta, o.linea):
+				vueltas += 1
+				await _bloque(o.cuerpo, ruta)
 		else:
 			await _orden(o, ruta)
 
@@ -160,13 +165,16 @@ func _orden(o: Dictionary, ruta: String) -> void:
 				await CajaDialogo.decir(npc, _texto(a), npc.sprindex, npc.nombre)
 			else:
 				await CajaDialogo.decir(self, _texto(a))
-		"hablante":  # hablante 1290 | hablante "Nombre" | hablante npc | hablante rival
+		"hablante":  # hablante 1290 | hablante "Nombre" | hablante npc | hablante rival | hablante jugador
 			if a.is_empty() or a[0] == "npc":
 				_hablante = -2.0
 				_hablante_nombre = ""
 			elif a[0] == "rival":  # Dialogo(..., global.rivalname, IndexRivalGrande())
 				_hablante = 1000.0 + GameState.rival_personaje
 				_hablante_nombre = GameState.nombre_rival
+			elif a[0] == "jugador":  # Dialogo(..., SayMyName(), IndexProtaGrande())
+				_hablante = 1000.0 + GameState.personaje
+				_hablante_nombre = GameState.nombre_jugador
 			elif a[0].is_valid_float():
 				_hablante = float(a[0])
 				_hablante_nombre = a[1] if a.size() > 1 else ""

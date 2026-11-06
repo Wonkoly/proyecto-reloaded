@@ -147,6 +147,20 @@ class Juego:
             self._meta[sprite] = json.loads(ruta.read_text()) if ruta.exists() else None
         return self._meta[sprite]
 
+    # Los *Habla genéricos ya tienen su traducción propia (texto, entrenador, vigilante, regalo, enfermera).
+    HABLA_GENERICOS = {"TalkHabla", "EntrenadorHabla", "WatcherHabla", "RegalarHabla", "EnfermeraHabla"}
+
+    def habla_de(self, obj: str) -> str | None:
+        """El script <Algo>Habla propio del objeto (en sus eventos), o None."""
+        if not hasattr(self, "_habla"):
+            self._habla = {}
+        if obj not in self._habla:
+            ruta = self.ext / "objects" / f"{obj}.gml"
+            hs = re.findall(r"^([A-Za-z0-9_]+Habla)\(\);", ruta.read_text(errors="replace"), re.M) if ruta.exists() else []
+            hs = [h for h in hs if h not in self.HABLA_GENERICOS and (self.ext / "scripts" / f"{h}.gml").exists()]
+            self._habla[obj] = hs[0] if hs else None
+        return self._habla[obj]
+
     def script(self, nombre: str) -> str:
         return (self.ext / "scripts" / f"{nombre}.gml").read_text(encoding="utf-8")
 
@@ -1097,6 +1111,21 @@ def escena_mapa(room: dict, juego: Juego, tilesets: dict, sprite_tres, snake, re
                 juego.eventos_generados[(room["name"], nombre)] = (
                     "# La enfermera del Centro Pokémon (EnfermeraHabla). Generado por tools/extraer.py.\n"
                     "hablante 1290\ndecir 2460\ncurar_centro\ndecir 2461\nframe 2\nesperar 0.17\nframe 0\n")
+            habla = juego.habla_de(obj)
+            if habla and not es_entrenador and (room["name"], nombre) not in juego.eventos_generados:
+                # El script propio del NPC (<Algo>Habla), traducido por tools/habla_original.py.
+                import habla_original
+                try:
+                    texto_ev, sin, auto = habla_original.traducir(habla, juego.script(habla), juego.rooms)
+                except Exception as error:  # un script raro no frena el mapa
+                    texto_ev, sin, auto = f"# No se pudo traducir ({type(error).__name__}: {error})\n", 1, 0
+                for n_h in re.findall(r"^\s*hablante (\d+)", texto_ev, re.M):
+                    juego.sprindex_usados.add(float(n_h))
+                cabecera = f"# {habla} ({obj}). Traducido por tools/habla_original.py"
+                cabecera += f"; {sin} instrucciones sin traducir.\n" if sin else ".\n"
+                juego.eventos_generados[(room["name"], nombre)] = cabecera + texto_ev
+                if auto:
+                    props.append(f"automatico = {auto}")
             if es_entrenador:
                 n_ent = int(inst["INDEX"])
                 props.append(f"entrenador = {n_ent}")

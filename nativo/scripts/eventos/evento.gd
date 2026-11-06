@@ -14,7 +14,8 @@ extends RefCounted
 ##       decir "¡Eres muy fuerte!"
 ##
 ## Cada orden queda como {"orden", "args": PackedStringArray, "linea"}; un "si" como
-## {"orden": "si", "ramas": [[condición, órdenes]...], "sino": órdenes, "linea"}.
+## {"orden": "si", "ramas": [[condición, órdenes]...], "sino": órdenes, "linea"}; un "mientras cond:"
+## como {"orden": "mientras", "cond", "cuerpo", "linea"} (se repite mientras se cumpla, hasta 200 veces).
 
 var ruta: String = ""
 var ordenes: Array = []
@@ -84,12 +85,17 @@ func _bloque(lineas: Array, i: Array, sangria: int) -> Array:
 			i[0] += 1
 			continue
 		var texto: String = l[1]
-		if texto.begins_with("si ") and texto.ends_with(":"):
-			out.append(_si(lineas, i, sangria))
-			continue
 		if _es_sino(texto):
 			_error(l[2], "\"sino\" sin un \"si\" antes")
 			i[0] += 1
+			continue
+		if texto.begins_with("si ") and texto.ends_with(":"):
+			out.append(_si(lineas, i, sangria))
+			continue
+		if texto.begins_with("mientras ") and texto.ends_with(":"):
+			var cond: String = texto.substr(9, texto.length() - 10).strip_edges()
+			i[0] += 1
+			out.append({"orden": "mientras", "cond": cond, "cuerpo": _hijos(lineas, i, sangria, l[2]), "linea": l[2]})
 			continue
 		var partes: PackedStringArray = partir(texto)
 		if partes.is_empty():
@@ -126,8 +132,12 @@ func _hijos(lineas: Array, i: Array, sangria: int, linea: int) -> Array:
 	return _bloque(lineas, i, lineas[i[0]][0])
 
 
+## "sino:", "si no:", "sino si …:" o "si no si …:" (no "si no pregunta …:", que es un si negado).
 static func _es_sino(texto: String) -> bool:
-	return texto.ends_with(":") and (texto.begins_with("sino") or texto.begins_with("si no"))
+	if not texto.ends_with(":"):
+		return false
+	var t: String = texto.trim_suffix(":").strip_edges()
+	return t == "sino" or t == "si no" or t.begins_with("sino si ") or t.begins_with("si no si ")
 
 
 ## Parte una línea en palabras; lo que va entre comillas es una sola (sin las comillas). Vacío si
